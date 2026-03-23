@@ -33,7 +33,7 @@ export default async function HomePage() {
         {hero && (
           <Link href={`/articulos/${hero.slug}`}>
             <div className="hero-block">
-              <div className="hero-watermark">DG</div>
+              <div className="hero-watermark">DGL</div>
               <div style={{ position: 'relative' }}>
                 <span className="category-pill-accent">
                   {hero.category?.name ?? 'Artículo'}
@@ -100,7 +100,7 @@ function ArticleCardLarge({ article }) {
     <Link href={`/articulos/${article.slug}`} className="card-link">
       <div className="card-large">
         <div className="card-image-placeholder">
-          <span className="card-placeholder-text">DG</span>
+          <span className="card-placeholder-text">DGL</span>
         </div>
         <div className="card-body">
           <CategoryPill category={article.category} />

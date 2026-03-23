@@ -5,6 +5,37 @@ import ArticuloContent from './ArticuloContent'
 
 const prisma = new PrismaClient()
 
+export async function generateMetadata({ params }) {
+  const { slug } = await params
+  const articulo = await prisma.article.findUnique({
+    where: { slug },
+    include: { category: { select: { name: true } }, author: { select: { name: true } } },
+  })
+
+  if (!articulo) return { title: 'Artículo no encontrado — DUBOIS' }
+
+  return {
+    title: `${articulo.title} — Grupo Dubois`,
+    description: articulo.metaDesc ?? articulo.excerpt ?? '',
+    openGraph: {
+      title: articulo.metaTitle ?? articulo.title,
+      description: articulo.metaDesc ?? articulo.excerpt ?? '',
+      type: 'article',
+      publishedTime: articulo.publishedAt?.toISOString(),
+      authors: [articulo.author?.name ?? 'DUBOIS'],
+      tags: [articulo.category?.name ?? ''],
+      siteName: 'Grupo Dubois — Global Trade Intelligence',
+      ...(articulo.coverUrl ? { images: [{ url: articulo.coverUrl }] } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: articulo.metaTitle ?? articulo.title,
+      description: articulo.metaDesc ?? articulo.excerpt ?? '',
+      ...(articulo.coverUrl ? { images: [articulo.coverUrl] } : {}),
+    },
+  }
+}
+
 export default async function ArticuloPage({ params }) {
   const { slug } = await params
   const articulo = await prisma.article.findUnique({

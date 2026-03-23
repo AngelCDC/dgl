@@ -42,7 +42,7 @@ export default async function ArticulosPage() {
               </div>
             </Link>
           ))}
-        </div>
+        </div>  
       </main>
     </>
   )
