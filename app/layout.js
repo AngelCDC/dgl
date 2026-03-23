@@ -1,6 +1,8 @@
 import SessionProvider from './SessionProvider'
 import './globals.css'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'DUBOIS — Global Trade Intelligence',
   description: 'Inteligencia de comercio internacional para empresas latinoamericanas',
