@@ -1,65 +1,108 @@
-import Image from "next/image";
+import { PrismaClient } from '@prisma/client'
+import Link from 'next/link'
+import Navbar from './components/Navbar'
 
-export default function Home() {
+const prisma = new PrismaClient()
+
+export default async function HomePage() {
+  const [articulos, proveedores] = await Promise.all([
+    prisma.article.findMany({
+      where: { status: 'published' },
+      orderBy: { publishedAt: 'desc' },
+      take: 4,
+      include: { category: { select: { name: true, color: true } } },
+    }),
+    prisma.supplier.findMany({
+      where: { status: 'active' },
+      orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+      take: 6,
+      include: { category: { select: { name: true } } },
+    }),
+  ])
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
+    <>
+      <Navbar />
+      <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
+
+        {/* Hero */}
+        <section style={{ padding: '72px 0 56px', borderBottom: '1px solid #eee' }}>
+          <p style={{ fontSize: '13px', color: '#888', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sourcing Agent · Venezuela</p>
+          <h1 style={{ fontSize: '42px', fontWeight: '700', lineHeight: '1.15', letterSpacing: '-0.03em', maxWidth: '640px', marginBottom: '20px' }}>
+            Conectamos empresas venezolanas con proveedores del mundo
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p style={{ fontSize: '17px', color: '#555', maxWidth: '520px', marginBottom: '32px', lineHeight: '1.7' }}>
+            Experiencias reales de importación, guías de comercio internacional y un directorio de proveedores verificados.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <Link href="/proveedores" style={{ background: '#111', color: 'white', padding: '10px 22px', borderRadius: '8px', fontSize: '14px', fontWeight: '500' }}>
+              Ver proveedores
+            </Link>
+            <Link href="/articulos" style={{ border: '1px solid #ddd', padding: '10px 22px', borderRadius: '8px', fontSize: '14px', color: '#444' }}>
+              Leer artículos
+            </Link>
+          </div>
+        </section>
+
+        {/* Artículos recientes */}
+        {articulos.length > 0 && (
+          <section style={{ padding: '56px 0', borderBottom: '1px solid #eee' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '28px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '600' }}>Últimos artículos</h2>
+              <Link href="/articulos" style={{ fontSize: '13px', color: '#888' }}>Ver todos →</Link>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
+              {articulos.map(a => (
+                <Link key={a.id} href={`/articulos/${a.slug}`}>
+                  <div style={{ border: '1px solid #eee', borderRadius: '10px', overflow: 'hidden', transition: 'border-color 0.15s' }}>
+                    <div style={{ padding: '20px' }}>
+                      {a.category && (
+                        <span style={{ fontSize: '11px', fontWeight: '500', color: a.category.color ?? '#888', marginBottom: '8px', display: 'block' }}>
+                          {a.category.name}
+                        </span>
+                      )}
+                      <h3 style={{ fontSize: '15px', fontWeight: '600', lineHeight: '1.4', marginBottom: '8px' }}>{a.title}</h3>
+                      {a.excerpt && <p style={{ fontSize: '13px', color: '#777', lineHeight: '1.6' }}>{a.excerpt}</p>}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Proveedores destacados */}
+        {proveedores.length > 0 && (
+          <section style={{ padding: '56px 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '28px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '600' }}>Proveedores verificados</h2>
+              <Link href="/proveedores" style={{ fontSize: '13px', color: '#888' }}>Ver directorio →</Link>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+              {proveedores.map(p => (
+                <Link key={p.id} href={`/proveedores/${p.slug}`}>
+                  <div style={{ border: '1px solid #eee', borderRadius: '10px', padding: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                      <div style={{ width: '40px', height: '40px', background: '#f5f5f5', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: '700', color: '#888' }}>
+                        {p.name.charAt(0)}
+                      </div>
+                      {p.verified && (
+                        <span style={{ fontSize: '11px', background: '#e6f1fb', color: '#185FA5', padding: '2px 8px', borderRadius: '20px', fontWeight: '500' }}>
+                          Verificado
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontWeight: '600', fontSize: '14px', marginBottom: '4px' }}>{p.name}</div>
+                    <div style={{ fontSize: '12px', color: '#888' }}>{p.country}{p.city ? `, ${p.city}` : ''} · {p.category?.name ?? ''}</div>
+                    {p.description && <p style={{ fontSize: '13px', color: '#666', marginTop: '8px', lineHeight: '1.5', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description}</p>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
       </main>
-    </div>
-  );
+    </>
+  )
 }

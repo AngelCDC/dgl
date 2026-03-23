@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String
+  role      String    @default("editor")
+  avatarUrl String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  articles  Article[]
+}
+
+model Category {
+  id        String     @id @default(uuid())
+  name      String
+  slug      String     @unique
+  type      String     @default("both")
+  color     String?
+  createdAt DateTime   @default(now())
+  articles  Article[]
+  suppliers Supplier[]
+}
+
+model Tag {
+  id       String       @id @default(uuid())
+  name     String
+  slug     String       @unique
+  articles ArticleTag[]
+}
+
+model Article {
+  id          String       @id @default(uuid())
+  title       String
+  slug        String       @unique
+  excerpt     String?
+  content     Json?
+  coverUrl    String?
+  authorId    String
+  author      User         @relation(fields: [authorId], references: [id])
+  categoryId  String?
+  category    Category?    @relation(fields: [categoryId], references: [id])
+  status      String       @default("draft")
+  featured    Boolean      @default(false)
+  metaTitle   String?
+  metaDesc    String?
+  views       Int          @default(0)
+  publishedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  tags        ArticleTag[]
+}
+
+model ArticleTag {
+  articleId String
+  tagId     String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, tagId])
+}
+
+model SupplierPlan {
+  id           String     @id @default(uuid())
+  name         String
+  description  String?
+  price        Float?
+  currency     String     @default("USD")
+  durationDays Int        @default(30)
+  isFeatured   Boolean    @default(false)
+  badgeLabel   String?
+  maxProducts  Int        @default(5)
+  active       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  suppliers    Supplier[]
+}
+
+model Supplier {
+  id            String            @id @default(uuid())
+  name          String
+  slug          String            @unique
+  logoUrl       String?
+  coverUrl      String?
+  description   String?
+  country       String
+  city          String?
+  website       String?
+  email         String?
+  phone         String?
+  whatsapp      String?
+  categoryId    String?
+  category      Category?         @relation(fields: [categoryId], references: [id])
+  planId        String?
+  plan          SupplierPlan?     @relation(fields: [planId], references: [id])
+  planStart     DateTime?
+  planEnd       DateTime?
+  status        String            @default("pending")
+  verified      Boolean           @default(false)
+  featured      Boolean           @default(false)
+  internalNotes String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  products      SupplierProduct[]
+  contacts      ContactRequest[]
+}
+
+model SupplierProduct {
+  id          String   @id @default(uuid())
+  supplierId  String
+  supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  imageUrl    String?
+  moq         String?
+  priceRange  String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model ContactRequest {
+  id         String    @id @default(uuid())
+  type       String    @default("supplier")
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+  name       String
+  email      String
+  company    String?
+  message    String?
+  status     String    @default("new")
+  createdAt  DateTime  @default(now())
+}
