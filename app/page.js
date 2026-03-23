@@ -28,29 +28,22 @@ export default async function HomePage() {
   return (
     <>
       <Navbar active="/" />
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 32px 80px' }}>
+      <main className="main-content">
 
-        {/* Hero */}
         {hero && (
           <Link href={`/articulos/${hero.slug}`}>
-            <div style={{ background: 'var(--navy)', padding: '56px 48px', marginBottom: '28px', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', right: '40px', top: '50%', transform: 'translateY(-50%)', fontFamily: 'var(--font-dm)', fontWeight: '800', fontSize: '140px', color: 'rgba(255,255,255,0.03)', letterSpacing: '-0.05em', lineHeight: '1', pointerEvents: 'none', userSelect: 'none' }}>DG</div>
+            <div className="hero-block">
+              <div className="hero-watermark">DG</div>
               <div style={{ position: 'relative' }}>
-                <span style={{ fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '500', background: 'var(--accent)', color: '#fff', padding: '4px 12px', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px', display: 'inline-block' }}>
+                <span className="category-pill-accent">
                   {hero.category?.name ?? 'Artículo'}
                 </span>
-                <h1 style={{ fontFamily: 'var(--font-dm)', fontWeight: '700', fontSize: '36px', color: '#fff', lineHeight: '1.2', letterSpacing: '-0.02em', maxWidth: '620px', marginBottom: '14px' }}>
-                  {hero.title}
-                </h1>
-                {hero.excerpt && (
-                  <p style={{ fontFamily: 'var(--font-inter)', fontSize: '15px', color: 'rgba(255,255,255,0.6)', marginBottom: '20px', maxWidth: '540px', lineHeight: '1.7' }}>
-                    {hero.excerpt}
-                  </p>
-                )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>{hero.author?.name}</span>
-                  <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '12px' }}>·</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+                <h1 className="hero-title">{hero.title}</h1>
+                {hero.excerpt && <p className="hero-excerpt">{hero.excerpt}</p>}
+                <div className="meta-row">
+                  <span className="mono-sm">{hero.author?.name}</span>
+                  <span className="meta-dot">·</span>
+                  <span className="mono-sm">
                     {new Date(hero.publishedAt).toLocaleDateString('es-VE', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </span>
                 </div>
@@ -59,32 +52,29 @@ export default async function HomePage() {
           </Link>
         )}
 
-        {/* Grid 2/3 + 1/3 */}
         {grid.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '28px', marginBottom: '28px' }}>
+          <div className="grid-main">
             <ArticleCardLarge article={grid[0]} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+            <div className="grid-side">
               {grid[1] && <ArticleCardSmall article={grid[1]} />}
               {grid[2] && <ArticleCardSmall article={grid[2]} />}
             </div>
           </div>
         )}
 
-        {/* Proveedores destacados */}
         {proveedores.length > 0 && (
-          <section style={{ marginBottom: '48px' }}>
+          <section className="section-block">
             <SectionTitle label="Proveedores Globales" href="/proveedores" />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
+            <div className="grid-two">
               {proveedores.map(p => <SupplierCard key={p.id} supplier={p} />)}
             </div>
           </section>
         )}
 
-        {/* Más artículos */}
         {resto.length > 0 && (
-          <section>
+          <section className="section-block">
             <SectionTitle label="Más artículos" href="/articulos" />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
+            <div className="grid-two">
               {resto.map(a => <ArticleCardSmall key={a.id} article={a} />)}
             </div>
           </section>
@@ -98,24 +88,24 @@ export default async function HomePage() {
 
 function SectionTitle({ label, href }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--navy)', paddingBottom: '10px', marginBottom: '20px' }}>
-      <span style={{ fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '500', color: 'var(--navy)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</span>
-      <Link href={href} style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--steel)' }}>Ver todos →</Link>
+    <div className="section-title-row">
+      <span className="section-title-text">{label}</span>
+      <Link href={href} className="section-title-link">Ver todos →</Link>
     </div>
   )
 }
 
 function ArticleCardLarge({ article }) {
   return (
-    <Link href={`/articulos/${article.slug}`}>
-      <div style={{ background: '#fff', border: '1px solid var(--border)', height: '100%' }}>
-        <div style={{ background: 'var(--bg)', aspectRatio: '16/9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontFamily: 'var(--font-dm)', fontWeight: '800', fontSize: '40px', color: 'var(--border)' }}>DG</span>
+    <Link href={`/articulos/${article.slug}`} className="card-link">
+      <div className="card-large">
+        <div className="card-image-placeholder">
+          <span className="card-placeholder-text">DG</span>
         </div>
-        <div style={{ padding: '24px' }}>
+        <div className="card-body">
           <CategoryPill category={article.category} />
-          <h2 style={{ fontFamily: 'var(--font-dm)', fontWeight: '700', fontSize: '22px', color: 'var(--ink)', lineHeight: '1.3', letterSpacing: '-0.01em', margin: '10px 0' }}>{article.title}</h2>
-          {article.excerpt && <p style={{ fontFamily: 'var(--font-inter)', fontSize: '14px', color: 'var(--steel)', lineHeight: '1.7', marginBottom: '14px' }}>{article.excerpt}</p>}
+          <h2 className="card-title-lg">{article.title}</h2>
+          {article.excerpt && <p className="card-excerpt">{article.excerpt}</p>}
           <Meta article={article} />
         </div>
       </div>
@@ -125,11 +115,11 @@ function ArticleCardLarge({ article }) {
 
 function ArticleCardSmall({ article }) {
   return (
-    <Link href={`/articulos/${article.slug}`}>
-      <div style={{ background: '#fff', border: '1px solid var(--border)', padding: '20px', height: '100%' }}>
+    <Link href={`/articulos/${article.slug}`} className="card-link">
+      <div className="card-small">
         <CategoryPill category={article.category} />
-        <h3 style={{ fontFamily: 'var(--font-dm)', fontWeight: '700', fontSize: '16px', color: 'var(--ink)', lineHeight: '1.4', margin: '10px 0 8px' }}>{article.title}</h3>
-        {article.excerpt && <p style={{ fontFamily: 'var(--font-inter)', fontSize: '13px', color: 'var(--steel)', lineHeight: '1.6', marginBottom: '12px' }}>{article.excerpt}</p>}
+        <h3 className="card-title-sm">{article.title}</h3>
+        {article.excerpt && <p className="card-excerpt-sm">{article.excerpt}</p>}
         <Meta article={article} />
       </div>
     </Link>
@@ -138,31 +128,29 @@ function ArticleCardSmall({ article }) {
 
 function SupplierCard({ supplier }) {
   return (
-    <Link href={`/proveedores/${supplier.slug}`}>
-      <div style={{ background: '#fff', border: '1px solid var(--border)', borderLeft: '4px solid var(--accent)', padding: '20px', height: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+    <Link href={`/proveedores/${supplier.slug}`} className="card-link">
+      <div className="supplier-card">
+        <div className="supplier-card-header">
           <div>
-            <div style={{ fontFamily: 'var(--font-dm)', fontWeight: '700', fontSize: '16px', color: 'var(--navy)', marginBottom: '2px' }}>{supplier.name}</div>
-            <div style={{ fontFamily: 'var(--font-inter)', fontSize: '13px', color: 'var(--steel)' }}>{supplier.country}{supplier.city ? `, ${supplier.city}` : ''}</div>
+            <div className="supplier-name">{supplier.name}</div>
+            <div className="supplier-location">{supplier.country}{supplier.city ? `, ${supplier.city}` : ''}</div>
           </div>
-          {supplier.verified && (
-            <span style={{ fontFamily: 'var(--font-dm)', fontSize: '11px', background: '#eff6ff', color: '#1d4ed8', padding: '3px 10px', fontWeight: '500', letterSpacing: '0.04em' }}>Verificado</span>
-          )}
+          {supplier.verified && <span className="badge-verified">Verificado</span>}
         </div>
         {supplier.description && (
-          <p style={{ fontFamily: 'var(--font-inter)', fontSize: '13px', color: 'var(--steel)', lineHeight: '1.6', marginBottom: '14px' }}>{supplier.description.slice(0, 100)}...</p>
+          <p className="supplier-desc">{supplier.description.slice(0, 100)}...</p>
         )}
-        <div style={{ display: 'flex', gap: '16px' }}>
+        <div className="supplier-meta">
           {supplier.plan?.badgeLabel && (
             <div>
-              <div style={{ fontFamily: 'var(--font-dm)', fontSize: '10px', color: 'var(--steel)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>Plan</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--accent)' }}>{supplier.plan.badgeLabel}</div>
+              <div className="meta-label">Plan</div>
+              <div className="mono-accent">{supplier.plan.badgeLabel}</div>
             </div>
           )}
           {supplier.category && (
             <div>
-              <div style={{ fontFamily: 'var(--font-dm)', fontSize: '10px', color: 'var(--steel)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>Categoría</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--ink)' }}>{supplier.category.name}</div>
+              <div className="meta-label">Categoría</div>
+              <div className="mono-ink">{supplier.category.name}</div>
             </div>
           )}
         </div>
@@ -173,19 +161,15 @@ function SupplierCard({ supplier }) {
 
 function CategoryPill({ category }) {
   if (!category) return null
-  return (
-    <span style={{ fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '500', background: 'var(--bg)', color: 'var(--accent)', padding: '3px 10px', letterSpacing: '0.06em', textTransform: 'uppercase', display: 'inline-block' }}>
-      {category.name}
-    </span>
-  )
+  return <span className="category-pill">{category.name}</span>
 }
 
 function Meta({ article }) {
   return (
-    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--steel)' }}>{article.author?.name}</span>
-      <span style={{ color: 'var(--border)', fontSize: '12px' }}>·</span>
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--steel)' }}>
+    <div className="meta-row">
+      <span className="mono-sm">{article.author?.name}</span>
+      <span className="meta-dot">·</span>
+      <span className="mono-sm">
         {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString('es-VE', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
       </span>
     </div>
