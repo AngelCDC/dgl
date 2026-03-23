@@ -16,7 +16,7 @@ export async function generateMetadata({ params }) {
 
   return {
     title: `${articulo.title} — Grupo Dubois`,
-    description: articulo.metaDesc ?? articulo.excerpt ?? '',
+    description: articulo.metaDesc || articulo.excerpt || '',
     openGraph: {
       title: articulo.metaTitle ?? articulo.title,
       description: articulo.metaDesc ?? articulo.excerpt ?? '',
