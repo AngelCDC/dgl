@@ -6,8 +6,9 @@ import ArticuloContent from './ArticuloContent'
 const prisma = new PrismaClient()
 
 export default async function ArticuloPage({ params }) {
+  const { slug } = await params
   const articulo = await prisma.article.findUnique({
-    where: { slug: params.slug },
+    where: { slug },
     include: { author: { select: { name: true } }, category: { select: { name: true, color: true } } },
   })
 

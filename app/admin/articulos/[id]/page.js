@@ -6,9 +6,10 @@ import ArticuloEditor from '../ArticuloEditor'
 const prisma = new PrismaClient()
 
 export default async function EditarArticuloPage({ params }) {
+  const { id } = await params
   const session = await getServerSession(authOptions)
   const [articulo, categorias] = await Promise.all([
-    prisma.article.findUnique({ where: { id: params.id } }),
+    prisma.article.findUnique({ where: { id } }),
     prisma.category.findMany({ orderBy: { name: 'asc' } }),
   ])
 

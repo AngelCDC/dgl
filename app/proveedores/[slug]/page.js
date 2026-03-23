@@ -6,8 +6,9 @@ import Navbar from '../../components/Navbar'
 const prisma = new PrismaClient()
 
 export default async function ProveedorPage({ params }) {
+  const { slug } = await params
   const proveedor = await prisma.supplier.findUnique({
-    where: { slug: params.slug },
+    where: { slug },
     include: {
       category: { select: { name: true } },
       plan: { select: { name: true, badgeLabel: true } },
