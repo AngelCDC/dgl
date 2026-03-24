@@ -16,6 +16,7 @@ export async function POST(req) {
       slug: data.slug,
       excerpt: data.excerpt,
       content: data.content,
+      coverUrl: data.coverUrl || null,
       categoryId: data.categoryId,
       authorId: data.authorId,
       status: data.status,
