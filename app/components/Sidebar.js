@@ -1,7 +1,7 @@
-import Link from 'next/link'
 import { PrismaClient } from '@prisma/client'
-const prisma = new PrismaClient()
+import Link from 'next/link'
 
+const prisma = new PrismaClient()
 
 export default async function Sidebar() {
   const [recientes, proveedores] = await Promise.all([
@@ -12,8 +12,9 @@ export default async function Sidebar() {
       include: { category: { select: { name: true, color: true } } },
     }),
     prisma.supplier.findMany({
-      where: { status: 'active', featured: true },
-      take: 3,
+      where: { status: 'active' },
+      orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+      take: 4,
       include: { category: { select: { name: true } } },
     }),
   ])
@@ -22,6 +23,7 @@ export default async function Sidebar() {
     <div className="sidebar-desktop">
       <aside className="articulos-sidebar">
 
+        {/* Artículos recientes */}
         <div className="sidebar-block">
           <div className="sidebar-title">Más recientes</div>
           {recientes.length === 0 && (
@@ -48,21 +50,28 @@ export default async function Sidebar() {
           ))}
         </div>
 
+        {/* Últimos proveedores */}
         {proveedores.length > 0 && (
           <div className="sidebar-block">
-            <div className="sidebar-title">Proveedores destacados</div>
+            <div className="sidebar-title">Últimos proveedores</div>
             {proveedores.map(p => (
               <Link key={p.id} href={`/proveedores/${p.slug}`}>
                 <div className="sidebar-supplier-row">
-                  <div style={{ width: '36px', height: '36px', background: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span style={{ fontFamily: 'var(--font-dm)', fontWeight: '800', fontSize: '12px', color: '#fff' }}>{p.name.charAt(0)}</span>
+                  <div style={{ width: '36px', height: '36px', background: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                    {p.logoUrl
+                      ? <img src={p.logoUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <span style={{ fontFamily: 'var(--font-dm)', fontWeight: '800', fontSize: '12px', color: '#fff' }}>{p.name.charAt(0)}</span>
+                    }
                   </div>
-                  <div>
-                    <div style={{ fontFamily: 'var(--font-dm)', fontSize: '13px', fontWeight: '600', color: 'var(--navy)', marginBottom: '2px' }}>{p.name}</div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: 'var(--font-dm)', fontSize: '13px', fontWeight: '600', color: 'var(--navy)', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--steel)' }}>
                       {p.country}{p.category ? ` · ${p.category.name}` : ''}
                     </div>
                   </div>
+                  {p.verified && (
+                    <span style={{ fontFamily: 'var(--font-dm)', fontSize: '10px', background: '#eff6ff', color: '#1d4ed8', padding: '2px 6px', fontWeight: '500', flexShrink: 0 }}>✓</span>
+                  )}
                 </div>
               </Link>
             ))}
@@ -72,6 +81,7 @@ export default async function Sidebar() {
           </div>
         )}
 
+        {/* Newsletter */}
         <div className="sidebar-newsletter">
           <div style={{ fontFamily: 'var(--font-dm)', fontWeight: '700', fontSize: '15px', color: '#fff', marginBottom: '8px' }}>
             Global Trade Intelligence

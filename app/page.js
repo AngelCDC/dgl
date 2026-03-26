@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import Link from "next/link";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import Sidebar from "./components/Sidebar";
 
 const prisma = new PrismaClient();
 
@@ -29,84 +30,71 @@ export default async function HomePage() {
     <>
       <Navbar />
       <main className="main-content">
-        {hero && (
-          <Link href={`/articulos/${hero.slug}`}>
-            <div className="hero-block" style={{ position: "relative" }}>
-              {hero.coverUrl && (
-                <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
-                  <img
-                    src={hero.coverUrl}
-                    alt={hero.title}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      display: "block",
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      background: "rgba(10,22,40,0.75)",
-                    }}
-                  />
+        <div className="articulos-layout">
+
+          {/* Contenido principal */}
+          <div style={{ minWidth: 0 }}>
+
+            {hero && (
+              <Link href={`/articulos/${hero.slug}`}>
+                <div className="hero-block" style={{ position: "relative", marginBottom: '28px' }}>
+                  {hero.coverUrl && (
+                    <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+                      <img src={hero.coverUrl} alt={hero.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                      <div style={{ position: "absolute", inset: 0, background: "rgba(10,22,40,0.75)" }} />
+                    </div>
+                  )}
+                  <div style={{ position: "relative", zIndex: 1 }}>
+                    <div className="hero-watermark">DG</div>
+                    <span className="category-pill-accent">{hero.category?.name ?? "Artículo"}</span>
+                    <h1 className="hero-title">{hero.title}</h1>
+                    {hero.excerpt && <p className="hero-excerpt">{hero.excerpt}</p>}
+                    <div className="meta-row">
+                      <span className="mono-sm">{hero.author?.name}</span>
+                      <span className="meta-dot">·</span>
+                      <span className="mono-sm">
+                        {new Date(hero.publishedAt).toLocaleDateString("es-VE", { day: "numeric", month: "short", year: "numeric" })}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              )}
-              <div style={{ position: "relative", zIndex: 1 }}>
-                <div className="hero-watermark">DGL</div>
-                <span className="category-pill-accent">
-                  {hero.category?.name ?? "Artículo"}
-                </span>
-                <h1 className="hero-title">{hero.title}</h1>
-                {hero.excerpt && <p className="hero-excerpt">{hero.excerpt}</p>}
-                <div className="meta-row">
-                  <span className="mono-sm">{hero.author?.name}</span>
-                  <span className="meta-dot">·</span>
-                  <span className="mono-sm">
-                    {new Date(hero.publishedAt).toLocaleDateString("es-VE", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </span>
+              </Link>
+            )}
+
+            {grid.length > 0 && (
+              <div className="grid-main" style={{ marginBottom: '28px' }}>
+                <ArticleCardLarge article={grid[0]} />
+                <div className="grid-side">
+                  {grid[1] && <ArticleCardSmall article={grid[1]} />}
+                  {grid[2] && <ArticleCardSmall article={grid[2]} />}
                 </div>
               </div>
-            </div>
-          </Link>
-        )}
+            )}
 
-        {grid.length > 0 && (
-          <div className="grid-main">
-            <ArticleCardLarge article={grid[0]} />
-            <div className="grid-side">
-              {grid[1] && <ArticleCardSmall article={grid[1]} />}
-              {grid[2] && <ArticleCardSmall article={grid[2]} />}
-            </div>
+            {proveedores.length > 0 && (
+              <section className="section-block">
+                <SectionTitle label="Proveedores Globales" href="/proveedores" />
+                <div className="grid-two">
+                  {proveedores.map((p) => <SupplierCard key={p.id} supplier={p} />)}
+                </div>
+              </section>
+            )}
+
+            {resto.length > 0 && (
+              <section className="section-block">
+                <SectionTitle label="Más artículos" href="/articulos" />
+                <div className="grid-two">
+                  {resto.map((a) => <ArticleCardSmall key={a.id} article={a} />)}
+                </div>
+              </section>
+            )}
+
           </div>
-        )}
 
-        {proveedores.length > 0 && (
-          <section className="section-block">
-            <SectionTitle label="Proveedores Globales" href="/proveedores" />
-            <div className="grid-two">
-              {proveedores.map((p) => (
-                <SupplierCard key={p.id} supplier={p} />
-              ))}
-            </div>
-          </section>
-        )}
+          {/* Sidebar */}
+          <Sidebar />
 
-        {resto.length > 0 && (
-          <section className="section-block">
-            <SectionTitle label="Más artículos" href="/articulos" />
-            <div className="grid-two">
-              {resto.map((a) => (
-                <ArticleCardSmall key={a.id} article={a} />
-              ))}
-            </div>
-          </section>
-        )}
+        </div>
       </main>
       <Footer />
     </>

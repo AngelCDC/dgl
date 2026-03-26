@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import Search from './Search'
 
 const NAV_LINKS = [
   { label: 'Inicio', href: '/' },
@@ -39,7 +40,7 @@ export default function NavbarClient() {
       <div className="navbar-logo-row">
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ width: '44px', height: '44px', background: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--corp)', flexShrink: 0 }}>
-            <span style={{ fontFamily: 'var(--font-dm)', fontWeight: '800', fontSize: '14px', color: '#fff', letterSpacing: '-0.02em' }}>DG</span>
+            <span style={{ fontFamily: 'var(--font-dm)', fontWeight: '800', fontSize: '14px', color: '#fff', letterSpacing: '-0.02em' }}>DGL</span>
           </div>
           <div>
             <div style={{ fontFamily: 'var(--font-dm)', fontWeight: '800', fontSize: '26px', color: 'var(--navy)', letterSpacing: '-0.03em', lineHeight: '1' }}>DUBOIS</div>
@@ -49,10 +50,7 @@ export default function NavbarClient() {
             </div>
           </div>
         </Link>
-        <div className="navbar-search">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5a6478" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <span style={{ fontFamily: 'var(--font-dm)', fontSize: '13px', color: 'var(--steel)' }}>Buscar...</span>
-        </div>
+        <Search />
       </div>
 
       <nav className="navbar-nav">
