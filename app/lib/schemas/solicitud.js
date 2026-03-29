@@ -15,7 +15,6 @@ export const solicitudSchema = z.object({
   telCel: z.string().min(1, 'Requerido'),
   ext: z.string().optional(),
   email: z.string().email('Email inválido'),
-  centroGastos: z.string().optional(),
 
   // 2. Justificación
   descripcionNecesidad: z.string().min(1, 'Requerido'),
@@ -41,7 +40,6 @@ export const solicitudSchema = z.object({
 
   // 7. Valor estimado
   valorEstimado: z.string().min(1, 'Requerido'),
-  cdpNo: z.string().optional(),
 
   // 8. Forma de pago
   formaPago: z.enum(['unico', 'parciales']),
@@ -75,10 +73,10 @@ export const solicitudSchema = z.object({
   comiteEvaluador: z.array(z.string()).max(3).optional(),
 
   // 15. Supervisor
-  supervisorNombre: z.string().min(1, 'Requerido'),
-  supervisorCorreo: z.string().email().optional().or(z.literal('')),
-  supervisorCelular: z.string().optional(),
-  supervisorCargo: z.string().optional(),
+  //supervisorNombre: z.string().min(1, 'Requerido'),
+  //supervisorCorreo: z.string().email().optional().or(z.literal('')),
+  //supervisorCelular: z.string().optional(),
+  //supervisorCargo: z.string().optional(),
 
   // 16. Documentos soporte
   documentosSoporte: z.array(z.string()).optional(),

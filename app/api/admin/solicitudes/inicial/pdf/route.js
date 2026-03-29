@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { createElement } from 'react';
 import SolicitudLevantamientoProcuraPDF from '../../../../../components/SolicitudLevantamientoProcuraPDF';
-import { solicitudLevantamientoProcuraSchema } from '../../../../../lib/schemas/solicitud-levantamiento-procura';
+import { solicitudProcuraSimpleSchema } from '../../../../../lib/schemas/solicitud-levantamiento-procura';
 
 export async function POST(request) {
   try {
     const data = await request.json();
 
-    const validatedData = solicitudLevantamientoProcuraSchema.parse(data);
+    const validatedData = solicitudProcuraSimpleSchema.parse(data);
 
     const empresa = validatedData.empresaCliente
       ? validatedData.empresaCliente

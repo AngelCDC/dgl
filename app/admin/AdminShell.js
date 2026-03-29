@@ -163,27 +163,29 @@ export default function AdminShell({ children, userName }) {
       </aside>
 
       <style jsx>{`
-        .admin-sidebar-desktop {
-          display: none;
-        }
+  @media (max-width: 767px) {
+    .admin-sidebar-desktop {
+      display: none !important;
+    }
+  }
 
-        @media (min-width: 768px) {
-          .admin-mobile-header {
-            display: none !important;
-          }
+  @media (min-width: 768px) {
+    .admin-mobile-header {
+      display: none !important;
+    }
 
-          .admin-sidebar-desktop {
-            display: flex;
-            min-height: 100vh;
-            position: sticky;
-            top: 0;
-          }
+    .admin-sidebar-desktop {
+      display: flex !important;
+      min-height: 100vh;
+      position: sticky;
+      top: 0;
+    }
 
-          .admin-sidebar-mobile {
-            display: none !important;
-          }
-        }
-      `}</style>
+    .admin-sidebar-mobile {
+      display: none !important;
+    }
+  }
+`}</style>
     </div>
   );
 }

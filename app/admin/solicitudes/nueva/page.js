@@ -70,7 +70,6 @@ export default function NuevaSolicitudPage() {
     telCel: '',
     ext: '',
     email: '',
-    centroGastos: '',
     descripcionNecesidad: '',
     pertinencia: '',
     descripcionObjeto: '',
@@ -81,7 +80,6 @@ export default function NuevaSolicitudPage() {
     justificacionModalidad: '',
     cotizantes: [defaultCotizante(), defaultCotizante(), defaultCotizante()],
     valorEstimado: '',
-    cdpNo: '',
     formaPago: '',
     detallePago: '',
     criterioMenorPrecio: true,
@@ -257,9 +255,7 @@ export default function NuevaSolicitudPage() {
             <Field label="E-mail" required>
               <input className="sol-input" type="email" value={form.email} onChange={e => set('email', e.target.value)} />
             </Field>
-            <Field label="Centro de Gastos">
-              <input className="sol-input" value={form.centroGastos} onChange={e => set('centroGastos', e.target.value)} />
-            </Field>
+            
           </div>
         </div>
 
@@ -362,9 +358,6 @@ export default function NuevaSolicitudPage() {
           <div className="sol-grid-2">
             <Field label="Valor Estimado" required>
               <input className="sol-input" placeholder="$" value={form.valorEstimado} onChange={e => set('valorEstimado', e.target.value)} />
-            </Field>
-            <Field label="CDP No.">
-              <input className="sol-input" value={form.cdpNo} onChange={e => set('cdpNo', e.target.value)} />
             </Field>
           </div>
         </div>
@@ -481,7 +474,7 @@ export default function NuevaSolicitudPage() {
           </div>
         )}
 
-        {/* ── 15. SUPERVISOR ── */}
+        {/* ── 15. SUPERVISOR ── 
         <div className="sol-section">
           <SectionTitle n="15" title="Supervisor / Interventoría" />
           <div className="sol-grid-2">
@@ -500,7 +493,7 @@ export default function NuevaSolicitudPage() {
               <input className="sol-input" value={form.supervisorCelular} onChange={e => set('supervisorCelular', e.target.value)} />
             </Field>
           </div>
-        </div>
+        </div>*/}
 
         {/* ── FIRMAS ── */}
         <div className="sol-section">
