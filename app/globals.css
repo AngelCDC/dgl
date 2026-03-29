@@ -557,3 +557,427 @@ img {
     display: none;
   }
 }
+
+
+
+/* ─── SOLICITUD DE ADQUISICIÓN ──────────────────────────────────────────────
+   Pega esto al final de tu global.css
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Form container */
+.sol-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 960px;
+}
+
+/* Section card */
+.sol-section {
+  background: var(--white);
+  border: 1px solid var(--border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sol-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.sol-section-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--navy);
+  color: var(--white);
+  font-family: var(--font-dm);
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sol-section-title {
+  font-family: var(--font-dm);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--navy);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* Grids */
+.sol-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.sol-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.sol-grid-4 { display: grid; grid-template-columns: 1fr 0.5fr 2fr 1.5fr; gap: 16px; }
+
+/* Field */
+.sol-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sol-label {
+  font-family: var(--font-dm);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--steel);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sol-req { color: #dc2626; }
+
+/* Inputs */
+.sol-input {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  font-family: var(--font-inter);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--white);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 2px;
+}
+.sol-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+.sol-input-xs { width: 52px; }
+.sol-input-sm { width: 76px; }
+
+.sol-select {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  font-family: var(--font-inter);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--white);
+  outline: none;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 2px;
+}
+.sol-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.sol-textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  font-family: var(--font-inter);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--white);
+  outline: none;
+  resize: vertical;
+  line-height: 1.6;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 2px;
+}
+.sol-textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Date row */
+.sol-date-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sol-date-sep {
+  color: var(--border);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* Chips */
+.sol-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sol-chip {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  font-family: var(--font-dm);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--steel);
+  cursor: pointer;
+  transition: all 0.15s;
+  border-radius: 2px;
+}
+.sol-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.sol-chip-active {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--white);
+}
+.sol-chip-active:hover {
+  background: var(--corp);
+  color: var(--white);
+}
+
+/* Item rows (obligaciones, comité) */
+.sol-item-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sol-item-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--steel);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* Table form */
+.sol-table {
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.sol-table-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--navy);
+  padding: 10px 14px;
+  font-family: var(--font-dm);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--white);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.sol-table-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+}
+.sol-table-row-alt { background: var(--bg); }
+
+/* Cotizantes cols */
+.sol-col-num  { flex: 0.4; font-size: 13px; }
+.sol-col-prov { flex: 3; }
+.sol-col-val  { flex: 2; }
+
+/* Riesgos cols */
+.sol-col-r1 { flex: 1; }
+.sol-col-r2 { flex: 3; }
+.sol-col-r3 { flex: 3; }
+.sol-col-r4 { flex: 1.5; }
+
+/* Firmas */
+.sol-firmas-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+.sol-firma-card {
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sol-firma-role {
+  font-family: var(--font-dm);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+/* Buttons */
+.sol-btn-add {
+  align-self: flex-start;
+  padding: 6px 14px;
+  border: 1px dashed var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-family: var(--font-dm);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-radius: 2px;
+}
+.sol-btn-add:hover { background: #eff6ff; }
+
+.sol-btn-preview {
+  padding: 10px 24px;
+  background: var(--navy);
+  color: var(--white);
+  border: none;
+  font-family: var(--font-dm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-radius: 2px;
+}
+.sol-btn-preview:hover    { background: var(--corp); }
+.sol-btn-preview:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.sol-btn-cancel {
+  padding: 10px 20px;
+  background: transparent;
+  color: var(--steel);
+  border: 1px solid var(--border);
+  font-family: var(--font-inter);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-radius: 2px;
+}
+.sol-btn-cancel:hover { border-color: var(--steel); color: var(--ink); }
+
+/* Form footer */
+.sol-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 0 40px;
+}
+
+/* Error */
+.sol-error {
+  padding: 12px 16px;
+  background: #fef2f2;
+  border-left: 3px solid #dc2626;
+  color: #dc2626;
+  font-family: var(--font-inter);
+  font-size: 13px;
+}
+
+/* ── Preview page ── */
+.sol-preview-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg);
+}
+.sol-preview-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--navy);
+  border-bottom: 2px solid var(--corp);
+  flex-shrink: 0;
+}
+.sol-preview-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.sol-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sol-btn-back {
+  padding: 6px 14px;
+  background: transparent;
+  color: rgba(255,255,255,0.6);
+  border: 1px solid var(--corp);
+  font-family: var(--font-inter);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-radius: 2px;
+}
+.sol-btn-back:hover { color: var(--white); border-color: rgba(255,255,255,0.4); }
+
+.sol-btn-save {
+  padding: 7px 16px;
+  background: #16a34a;
+  color: var(--white);
+  border: none;
+  font-family: var(--font-dm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-radius: 2px;
+}
+.sol-btn-save:hover    { background: #15803d; }
+.sol-btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.sol-btn-download {
+  padding: 7px 16px;
+  background: var(--accent);
+  color: var(--white);
+  border: none;
+  font-family: var(--font-dm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-radius: 2px;
+}
+.sol-btn-download:hover { background: #1d4ed8; }
+
+.sol-saved-badge {
+  padding: 7px 14px;
+  background: #dcfce7;
+  color: #16a34a;
+  font-family: var(--font-dm);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 2px;
+}
+
+.sol-pdf-frame {
+  flex: 1;
+  width: 100%;
+  border: none;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .sol-grid-2,
+  .sol-grid-3,
+  .sol-grid-4,
+  .sol-firmas-grid { grid-template-columns: 1fr; }
+  .sol-table-head,
+  .sol-table-row   { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .sol-col-num, .sol-col-prov, .sol-col-val,
+  .sol-col-r1, .sol-col-r2, .sol-col-r3, .sol-col-r4 { flex: unset; width: 100%; }
+}
