@@ -223,37 +223,25 @@ function SidebarNav({ pathname, onNavigate }) {
         Dashboard
       </NavLink>
 
-      <SectionTitle>Cotizaciones</SectionTitle>
-      <NavLink
-        href="/admin/solicitudes/nueva"
-        pathname={pathname}
-        onNavigate={onNavigate}
-      >
-        Generar Solicitud de procura
+      <SectionTitle>Documentos</SectionTitle>
+      <NavLink href="/admin/solicitudes" pathname={pathname} onNavigate={onNavigate}>
+        Solicitud de Adquisición
+      </NavLink>
+      <NavLink href="/admin/adquisiciones" pathname={pathname} onNavigate={onNavigate}>
+        Estudio de Mercado
       </NavLink>
 
+
       <SectionTitle>Contenido</SectionTitle>
-      <NavLink
-        href="/admin/articulos"
-        pathname={pathname}
-        onNavigate={onNavigate}
-      >
+      <NavLink href="/admin/articulos" pathname={pathname} onNavigate={onNavigate}>
         Artículos
       </NavLink>
-      <NavLink
-        href="/admin/categorias"
-        pathname={pathname}
-        onNavigate={onNavigate}
-      >
+      <NavLink href="/admin/categorias" pathname={pathname} onNavigate={onNavigate}>
         Categorías
       </NavLink>
 
       <SectionTitle>Proveedores</SectionTitle>
-      <NavLink
-        href="/admin/proveedores"
-        pathname={pathname}
-        onNavigate={onNavigate}
-      >
+      <NavLink href="/admin/proveedores" pathname={pathname} onNavigate={onNavigate}>
         Directorio
       </NavLink>
       <NavLink href="/admin/planes" pathname={pathname} onNavigate={onNavigate}>
@@ -261,13 +249,6 @@ function SidebarNav({ pathname, onNavigate }) {
       </NavLink>
 
       <SectionTitle>Sistema</SectionTitle>
-      <NavLink
-        href="/admin/solicitudes"
-        pathname={pathname}
-        onNavigate={onNavigate}
-      >
-        Solicitudes
-      </NavLink>
       <NavLink href="/admin/equipo" pathname={pathname} onNavigate={onNavigate}>
         Equipo
       </NavLink>

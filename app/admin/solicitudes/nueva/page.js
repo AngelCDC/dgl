@@ -141,18 +141,18 @@ export default function NuevaSolicitudPage() {
   };
 
   const handleSave = async () => {
-    setSaving(true); setError(null);
-    try {
-      const res = await fetch('/api/admin/solicitudes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) throw new Error('Error al guardar la solicitud');
-      setSaved(true);
-    } catch (e) { setError(e.message); }
-    finally     { setSaving(false); }
-  };
+  setSaving(true); setError(null);
+  try {
+    const res = await fetch('/api/admin/solicitudes/adquisicion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form),
+    })
+    if (!res.ok) throw new Error('Error al guardar la solicitud')
+    setSaved(true)
+  } catch (e) { setError(e.message) }
+  finally { setSaving(false) }
+}
 
   // ── PREVIEW ───────────────────────────────────────────────────────────────
   if (step === 2) return (
@@ -501,8 +501,7 @@ export default function NuevaSolicitudPage() {
           <div className="sol-firmas-grid">
             {[
               { label: 'Quien Elabora la Solicitud', field: 'elaboradoPor' },
-              { label: 'Ordenador del Gasto',         field: 'ordenadorGasto' },
-              { label: 'Responsable de Contratación', field: 'responsableContratacion' },
+              { label: 'Contratante', field: 'responsableContratacion' },
             ].map(({ label, field }) => (
               <div key={field} className="sol-firma-card">
                 <p className="sol-firma-role">{label}</p>

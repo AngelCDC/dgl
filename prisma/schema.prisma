@@ -137,3 +137,189 @@ model ContactRequest {
   status     String    @default("new")
   createdAt  DateTime  @default(now())
 }
+
+model SolicitudProcura {
+  id String @id @default(uuid())
+
+  // 1. Reunión
+  fecha           String
+  empresaCliente  String
+  nombreComercial String?
+  ciudad          String?
+  direccion       String?
+
+  // 3. Contexto
+  objetivoReunion       String
+  resumenCliente        String?
+  sectorIndustria       String?
+  canalComercializacion String?
+
+  // 6. Observaciones
+  fortalezasDetectadas    String[]
+  restriccionesDetectadas String[]
+  comentariosFinales      String?
+
+  // 7. Próximos pasos
+  proximosPasos String[]
+
+  // 8. Elaborado por
+  elaboradoPorNombre String
+  elaboradoPorCargo  String?
+  elaboradoPorFecha  String
+
+  // Relaciones
+  contactos   ContactoProcura[]
+  productos   ProductoProcura[]
+  necesidades NecesidadProcura[]
+
+  // Meta
+  status    String   @default("borrador") // borrador | finalizado
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  adquisicion SolicitudAdquisicion? // relación inversa
+}
+
+model ContactoProcura {
+  id          String           @id @default(uuid())
+  solicitudId String
+  solicitud   SolicitudProcura @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+  esPrincipal Boolean          @default(false)
+  nombre      String
+  cargo       String?
+  telefono    String?
+  email       String?
+}
+
+model ProductoProcura {
+  id                         String           @id @default(uuid())
+  solicitudId                String
+  solicitud                  SolicitudProcura @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+  nombreProducto             String
+  categoria                  String?
+  descripcionGeneral         String
+  caracteristicasPrincipales String[]
+  presentaciones             String[]
+  materiales                 String[]
+  colores                    String[]
+  dimensiones                String?
+  peso                       String?
+  empaque                    String?
+  marca                      String?
+  referenciaModelo           String?
+  paisOrigen                 String?
+  usosAplicaciones           String?
+  requerimientosEspeciales   String?
+  observaciones              String?
+  sortOrder                  Int              @default(0)
+}
+
+model NecesidadProcura {
+  id                      String           @id @default(uuid())
+  solicitudId             String
+  solicitud               SolicitudProcura @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+  productoRelacionado     String
+  tipoNecesidad           String
+  tipoNecesidadOtro       String?
+  descripcion             String
+  especificacionesMinimas String?
+  frecuenciaRequerida     String?
+  cantidadReferencial     String?
+  prioridad               String?
+  observaciones           String?
+  sortOrder               Int              @default(0)
+}
+
+model SolicitudAdquisicion {
+  id String @id @default(uuid())
+
+  // 1. General
+  fecha             String
+  tipoDocumento     String?
+  tipoDocumentoOtro String?
+  solicitante       String
+  ccNit             String
+  telCel            String?
+  ext               String?
+  email             String
+
+  // 2. Justificación
+  descripcionNecesidad String
+  pertinencia          String?
+
+  // 3. Objeto
+  descripcionObjeto String
+  especificaciones  String?
+  requierePermisos  String?
+
+  // 4. Obligaciones
+  obligaciones String[]
+
+  // 5. Modalidad
+  modalidad              String
+  justificacionModalidad String
+
+  // 7. Valor
+  valorEstimado String
+
+  // 8. Pago
+  formaPago   String?
+  detallePago String?
+
+  // 9. Criterios
+  criterioMenorPrecio Boolean @default(true)
+  criterioOtro        String?
+
+  // 10. Contratista
+  contratistaNombre   String?
+  contratistaCcNit    String?
+  contratistaEmail    String?
+  contratistaCiudad   String?
+  contratistaTelefono String?
+
+  // 13. Plazo
+  plazo String
+
+  // 14. Comité
+  comiteEvaluador String[]
+
+  // Firmas
+  elaboradoPorNombre String?
+  elaboradoPorCargo  String?
+  elaboradoPorFecha  String?
+  contratanteNombre  String?
+  contratanteCargo   String?
+  contratanteFecha   String?
+
+  // Relaciones
+  cotizantes CotizanteAdquisicion[]
+  riesgos    RiesgoAdquisicion[]
+
+  // Meta
+  status    String   @default("borrador")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Vinculación
+  solicitudProcuraId String?           @unique
+  solicitudProcura   SolicitudProcura? @relation(fields: [solicitudProcuraId], references: [id])
+}
+
+model CotizanteAdquisicion {
+  id          String               @id @default(uuid())
+  solicitudId String
+  solicitud   SolicitudAdquisicion @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+  nombre      String
+  valor       String
+  sortOrder   Int                  @default(0)
+}
+
+model RiesgoAdquisicion {
+  id          String               @id @default(uuid())
+  solicitudId String
+  solicitud   SolicitudAdquisicion @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+  descripcion String
+  mitigacion  String?
+  asignacion  String               @default("Contratante")
+  sortOrder   Int                  @default(0)
+}

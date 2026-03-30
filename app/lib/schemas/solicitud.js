@@ -87,11 +87,6 @@ export const solicitudSchema = z.object({
     cargo: z.string(), 
     fecha: z.string() 
   }),
-  ordenadorGasto: z.object({ 
-    nombre: z.string(), 
-    cargo: z.string(), 
-    fecha: z.string() 
-  }),
   responsableContratacion: z.object({ 
     nombre: z.string(), 
     cargo: z.string(), 

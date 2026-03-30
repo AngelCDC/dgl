@@ -183,7 +183,13 @@ const styles = StyleSheet.create({
     marginTop: 32,
     paddingHorizontal: 32,
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
+    gap: 40,
+  },
+
+  signatureBox: {
+    width: "40%",
+    alignItems: "center",
   },
   signatureBox: {
     width: "30%",
@@ -587,9 +593,8 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
         <View style={styles.signatureSection}>
           {[
             { role: "ELABORADO POR", person: data.elaboradoPor },
-            { role: "ORDENADOR DEL GASTO", person: data.ordenadorGasto },
             {
-              role: "RESPONSABLE CONTRATACIÓN",
+              role: "CONTRATANTE",
               person: data.responsableContratacion,
             },
           ].map(({ role, person }, idx) => (
