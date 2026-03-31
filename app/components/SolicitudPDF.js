@@ -298,12 +298,12 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
               />
             ) : (
               <View style={styles.monogram}>
-                <Text style={styles.monogramText}>DG</Text>
+                <Text style={styles.monogramText}>DGL</Text>
               </View>
             )}
             <View style={styles.headerTextContainer}>
-              <Text style={styles.companyName}>DUBOIS · Grupo Logístico</Text>
-              <Text style={styles.documentTitle}>SOLICITUD DE PROCURA</Text>
+              <Text style={styles.companyName}>GRUPO DUBOIS</Text>
+              <Text style={styles.documentTitle}>ESTUDIO DE MERCADO</Text>
               <Text style={styles.documentSubtitle}>
                 GLOBAL TRADE INTELLIGENCE
               </Text>
