@@ -79,9 +79,11 @@ const styles = StyleSheet.create({
 
   // ── Contenido principal ──────────────────────────────────────────────────────
   body: {
-    paddingHorizontal: 28,
-    paddingTop: 20,
-  },
+  paddingHorizontal: 28,
+  paddingTop: 20,
+  paddingBottom: 40,
+  marginTop: 0,
+},
 
   // Título del documento
   docTitle: {
@@ -154,10 +156,11 @@ const styles = StyleSheet.create({
 
   // ── Items de lista (productos / necesidades) ────────────────────────────────
   itemCard: {
-    marginBottom: 8,
-    borderTop: `0.5pt solid ${C.border}`,
-    paddingTop: 7,
-  },
+  marginBottom: 8,
+  paddingTop: 7,
+  borderTopWidth: 0.5,
+  borderTopColor: C.border,
+},
   itemCardFirst: {
     marginBottom: 8,
     paddingTop: 0,
@@ -167,6 +170,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
     fontSize: 9,
     marginBottom: 4,
+    flex: 1,
   },
   itemBullet: {
     color: C.electric,
@@ -278,11 +282,17 @@ function SectionBlock({ title, children }) {
   );
 }
 
+function displayValue(value) {
+  if (value === undefined || value === null) return '—';
+  const str = String(value).trim();
+  return str ? str : '—';
+}
+
 function Field({ label, value }) {
   return (
     <View style={styles.fieldRow}>
       <Text style={styles.fieldLabel}>{label}</Text>
-      <Text style={styles.fieldValue}>{value || '—'}</Text>
+      <Text style={styles.fieldValue}>{displayValue(value)}</Text>
     </View>
   );
 }
@@ -291,89 +301,145 @@ function SubField({ label, value }) {
   return (
     <View style={styles.subFieldRow}>
       <Text style={styles.subFieldLabel}>{label}</Text>
-      <Text style={styles.subFieldValue}>{value || '—'}</Text>
+      <Text style={styles.subFieldValue}>{displayValue(value)}</Text>
     </View>
   );
 }
 
 function PriorityBadge({ priority }) {
-  const isHigh = priority?.toLowerCase() === 'alta' || priority?.toLowerCase() === 'high';
-  const isMed  = priority?.toLowerCase() === 'media' || priority?.toLowerCase() === 'medium';
+  const normalized = (priority || '').toLowerCase();
+  const isHigh = normalized === 'alta' || normalized === 'high';
+  const isMed  = normalized === 'media' || normalized === 'medium';
   const bg     = isHigh ? C.amber : isMed ? C.corp : C.steel;
   return (
     <View style={[styles.priorityBadge, { backgroundColor: bg }]}>
       <Text style={[styles.priorityText, { color: C.white }]}>
-        {(priority || '—').toUpperCase()}
+        {displayValue(priority).toUpperCase()}
       </Text>
     </View>
   );
 }
 
+function formatFecha(fecha) {
+  if (!fecha) return 'DD/MM/AAAA';
+  return `${fecha.dd || 'DD'}/${fecha.mm || 'MM'}/${fecha.aaaa || 'AAAA'}`;
+}
+
+function formatTipoNecesidad(tipo, otro) {
+  if (!tipo) return '—';
+
+  const labels = {
+    materia_prima: 'Materia Prima',
+    producto_terminado: 'Producto Terminado',
+    empaque: 'Empaque',
+    repuesto: 'Repuesto',
+    equipo: 'Equipo',
+    servicio: 'Servicio',
+    otro: 'Otro',
+  };
+
+  if (tipo === 'otro') {
+    return otro?.trim() ? `Otro: ${otro}` : 'Otro';
+  }
+
+  return labels[tipo] || tipo;
+}
+
 // ─── Componente principal ────────────────────────────────────────────────────
 
 export default function SolicitudLevantamientoProcuraPDF({ data }) {
-  const fechaStr = `${data.fecha?.dd || 'DD'}/${data.fecha?.mm || 'MM'}/${data.fecha?.aaaa || 'AAAA'}`;
+  const fechaStr = formatFecha(data?.fechaReunion);
+  const cliente = data?.cliente || {};
+  const contactos = data?.contactos || [];
+  const contactoPrincipal = contactos[0];
+  const productos = data?.productosCliente || [];
+  const proximosPasos = data?.proximosPasos || [];
 
   return (
-    <Document>
-      <Page size="A4" style={styles.page}>
-
-        {/* ── HEADER ── */}
-        <View style={styles.header}>
-          {/* Monograma DG */}
-          <View style={styles.monogram}>
-            <Text style={styles.monogramText}>DG</Text>
-          </View>
-          {/* Nombre + Slogan */}
-          <View style={styles.headerTextBlock}>
-            <Text style={styles.headerBrand}>DUBOIS · Grupo Logístico</Text>
-            <Text style={styles.headerSlogan}>GLOBAL TRADE INTELLIGENCE</Text>
-          </View>
+  <Document>
+    <Page size="A4" style={styles.page} wrap>
+      {/* ── HEADER ── */}
+      <View style={styles.header} fixed>
+        {/* Monograma DG */}
+        <View style={styles.monogram}>
+          <Text style={styles.monogramText}>DG</Text>
         </View>
+        {/* Nombre + Slogan */}
+        <View style={styles.headerTextBlock}>
+          <Text style={styles.headerBrand}>DUBOIS · Grupo Logístico</Text>
+          <Text style={styles.headerSlogan}>GLOBAL TRADE INTELLIGENCE</Text>
+        </View>
+      </View>
 
-        {/* Franja acento eléctrico */}
-        <View style={styles.accentStripe} />
+      {/* Franja acento eléctrico */}
+      <View style={styles.accentStripe} fixed />
 
-        {/* ── CUERPO ── */}
-        <View style={styles.body}>
+      {/* ── CUERPO ── */}
+      <View style={styles.body}>
+        {/* Título documento */}
+        <Text style={styles.docTitle}>Ficha de Levantamiento de Procura</Text>
+        <View style={styles.docTitleUnderline} />
 
-          {/* Título documento */}
-          <Text style={styles.docTitle}>Ficha de Levantamiento de Procura</Text>
-          <View style={styles.docTitleUnderline} />
+        {/* 1. Información general */}
+        <SectionBlock title="01 — Información General">
+          <Field label="Razón social" value={cliente.razonSocial} />
+          <Field label="Nombre comercial" value={cliente.nombreComercial} />
+          <Field label="Fecha" value={fechaStr} />
+          <Field label="Ciudad" value={cliente.ciudad} />
+          <Field label="Dirección" value={cliente.direccion} />
+          <Field label="Sector" value={cliente.sectorIndustria} />
+          <Field label="Canal comercial" value={cliente.canalComercializacion} />
+        </SectionBlock>
 
-          {/* 1. Información general */}
-          <SectionBlock title="01 — Información General">
-            <Field label="Empresa"         value={data.empresaCliente} />
-            <Field label="Nombre comercial" value={data.nombreComercial} />
-            <Field label="Fecha"            value={fechaStr} />
-            <Field label="Ciudad"           value={data.ciudad} />
-            <Field label="Dirección"        value={data.direccion} />
-          </SectionBlock>
-
-          {/* 2. Contacto principal */}
-          <SectionBlock title="02 — Contacto Principal">
-            <Field label="Nombre"   value={data.contactoPrincipal?.nombre} />
-            <Field label="Cargo"    value={data.contactoPrincipal?.cargo} />
-            <Field label="Teléfono" value={data.contactoPrincipal?.telefono} />
-            <Field label="Email"    value={data.contactoPrincipal?.email} />
-          </SectionBlock>
-
-          {/* 3. Objetivo de la reunión */}
-          <SectionBlock title="03 — Objetivo de la Reunión">
-            <Text style={styles.freeText}>{data.objetivoReunion}</Text>
-          </SectionBlock>
-
-          {/* 4. Productos del cliente */}
-          <SectionBlock title="04 — Productos del Cliente">
-            {data.productosCliente.map((producto, index) => (
-              <View key={index} style={index === 0 ? styles.itemCardFirst : styles.itemCard}>
-                {/* Nombre producto */}
-                <View style={styles.itemTitleRow}>
+        {/* 2. CONTACTOS */}
+        <SectionBlock title="02 — Contactos">
+          {contactos.length ? (
+            contactos.map((contacto, index) => (
+              <View
+                key={index}
+                style={index === 0 ? styles.itemCardFirst : styles.itemCard}
+                wrap
+              >
+                <View style={styles.itemTitleRow} wrap={false}>
                   <Text style={styles.itemBullet}>▸</Text>
-                  <Text style={styles.itemTitle}>{producto.nombreProducto}</Text>
+                  <Text style={styles.itemTitle}>
+                    {displayValue(contacto.nombre)}
+                    {index === 0 ? ' (Principal)' : ''}
+                  </Text>
                 </View>
-                <SubField label="Categoría"       value={producto.categoria} />
-                <SubField label="Descripción"      value={producto.descripcionGeneral} />
+                <SubField label="Cargo" value={contacto.cargo} />
+                <SubField label="Teléfono" value={contacto.telefono} />
+                <SubField label="Email" value={contacto.email} />
+              </View>
+            ))
+          ) : (
+            <>
+              <Field label="Nombre" value={contactoPrincipal?.nombre} />
+              <Field label="Cargo" value={contactoPrincipal?.cargo} />
+              <Field label="Teléfono" value={contactoPrincipal?.telefono} />
+              <Field label="Email" value={contactoPrincipal?.email} />
+            </>
+          )}
+        </SectionBlock>
+
+        {/* 3. Productos del cliente y necesidad de procura */}
+        <SectionBlock title="03 — Productos del Cliente y Necesidad de Procura">
+          {productos.length ? (
+            productos.map((producto, index) => (
+              <View
+                key={index}
+                style={index === 0 ? styles.itemCardFirst : styles.itemCard}
+                wrap
+              >
+                <View style={styles.itemTitleRow} wrap={false}>
+                  <Text style={styles.itemBullet}>▸</Text>
+                  <Text style={styles.itemTitle}>
+                    {displayValue(producto.nombreProducto)}
+                  </Text>
+                </View>
+
+                <SubField label="Categoría" value={producto.categoria} />
+                <SubField label="Descripción" value={producto.descripcionTecnica} />
                 <SubField
                   label="Características"
                   value={
@@ -382,55 +448,71 @@ export default function SolicitudLevantamientoProcuraPDF({ data }) {
                       : undefined
                   }
                 />
-              </View>
-            ))}
-          </SectionBlock>
+                <SubField
+                  label="Materiales"
+                  value={
+                    producto.materiales?.length
+                      ? producto.materiales.join(' · ')
+                      : undefined
+                  }
+                />
+                <SubField label="Dimensiones" value={producto.dimensiones} />
+                <SubField label="Empaque" value={producto.empaque} />
+                <SubField label="Marca" value={producto.marca} />
+                <SubField label="Modelo" value={producto.referenciaModelo} />
+                <SubField label="País de origen" value={producto.paisOrigen} />
+                <SubField label="Notas" value={producto.notasProducto} />
+                <SubField
+                  label="Tipo necesidad"
+                  value={formatTipoNecesidad(producto.tipoNecesidad, producto.tipoNecesidadOtro)}
+                />
+                <SubField label="Frecuencia" value={producto.frecuenciaRequerida} />
+                <SubField label="Cantidad" value={producto.cantidadReferencial} />
 
-          {/* 5. Necesidades de procura */}
-          <SectionBlock title="05 — Necesidades de Procura">
-            {data.necesidadesProcura.map((item, index) => (
-              <View key={index} style={index === 0 ? styles.itemCardFirst : styles.itemCard}>
-                <View style={styles.itemTitleRow}>
-                  <Text style={styles.itemBullet}>▸</Text>
-                  <Text style={styles.itemTitle}>{item.productoRelacionado}</Text>
-                </View>
-                <SubField label="Tipo"                   value={item.tipoNecesidad} />
-                <SubField label="Descripción"             value={item.descripcion} />
-                <SubField label="Especif. mínimas"        value={item.especificacionesMinimas} />
-                {/* Badge de prioridad */}
-                <View style={styles.subFieldRow}>
+                <View style={styles.subFieldRow} wrap={false}>
                   <Text style={styles.subFieldLabel}>Prioridad</Text>
-                  <PriorityBadge priority={item.prioridad} />
+                  <PriorityBadge priority={producto.prioridad} />
                 </View>
               </View>
-            ))}
-          </SectionBlock>
+            ))
+          ) : (
+            <Text style={styles.freeText}>—</Text>
+          )}
+        </SectionBlock>
 
-          {/* 6. Próximos pasos */}
-          <SectionBlock title="06 — Próximos Pasos">
-            {data.proximosPasos.map((paso, index) => (
-              <View key={index} style={styles.stepRow}>
+        {/* 4. Próximos pasos */}
+        <SectionBlock title="04 — Próximos Pasos">
+          {proximosPasos.length ? (
+            proximosPasos.map((paso, index) => (
+              <View key={index} style={styles.stepRow} wrap={false}>
                 <Text style={styles.stepNumber}>{index + 1}</Text>
-                <Text style={styles.stepText}>{paso}</Text>
+                <Text style={styles.stepText}>{displayValue(paso)}</Text>
               </View>
-            ))}
-          </SectionBlock>
+            ))
+          ) : (
+            <Text style={styles.freeText}>—</Text>
+          )}
+        </SectionBlock>
 
-        </View>
+        {/* 5. Registro interno */}
+        <SectionBlock title="05 — Registro Interno">
+          <Field label="Elaborado por" value={data?.elaboradoPor?.nombre} />
+          <Field label="Cargo" value={data?.elaboradoPor?.cargo} />
+        </SectionBlock>
+      </View>
 
-        {/* ── FOOTER ── */}
-        <View style={styles.footer}>
-          <Text style={styles.footerLeft}>
-            DUBOIS · Grupo Logístico{'\n'}
-            <Text style={{ color: C.border }}>Global Trade Intelligence</Text>
-          </Text>
-          <Text style={styles.footerRight}>
-            Documento confidencial — uso interno{' '}
-            <Text style={styles.footerAccent}>·</Text>
-          </Text>
-        </View>
-
-      </Page>
-    </Document>
-  );
+      {/* ── FOOTER ── */}
+      <View style={styles.footer} fixed>
+        <Text style={styles.footerLeft}>
+          DUBOIS · Grupo Logístico{'\n'}
+          <Text style={{ color: C.border }}>Global Trade Intelligence</Text>
+        </Text>
+        <Text style={styles.footerRight}>
+          Documento confidencial — uso interno{' '}
+          <Text style={styles.footerAccent}>·</Text>
+        </Text>
+      </View>
+    </Page>
+  </Document>
+);
 }

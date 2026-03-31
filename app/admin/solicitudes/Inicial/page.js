@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-// ─── CONSTANTES ───────────────────────────────────────────────────────────────
 const TIPOS_NECESIDAD = [
   { value: 'materia_prima', label: 'Materia Prima' },
   { value: 'producto_terminado', label: 'Producto Terminado' },
@@ -16,7 +15,6 @@ const TIPOS_NECESIDAD = [
 
 const PRIORIDADES = ['alta', 'media', 'baja'];
 
-// Fecha actual
 const now = new Date();
 const HOY = {
   dd: String(now.getDate()).padStart(2, '0'),
@@ -34,41 +32,27 @@ const defaultContacto = () => ({
 const defaultProducto = () => ({
   nombreProducto: '',
   categoria: '',
-  descripcionGeneral: '',
+  descripcionTecnica: '',
   caracteristicasPrincipales: [''],
-  presentaciones: [''],
   materiales: [''],
-  colores: [''],
   dimensiones: '',
-  peso: '',
   empaque: '',
   marca: '',
   referenciaModelo: '',
   paisOrigen: '',
-  usosAplicaciones: '',
-  requerimientosEspeciales: '',
-  observaciones: '',
-});
-
-const defaultNecesidad = () => ({
-  productoRelacionado: '',
+  notasProducto: '',
   tipoNecesidad: '',
   tipoNecesidadOtro: '',
-  descripcion: '',
-  especificacionesMinimas: '',
   frecuenciaRequerida: '',
   cantidadReferencial: '',
   prioridad: '',
-  observaciones: '',
 });
 
-const defaultFirma = () => ({
+const defaultElaboradoPor = () => ({
   nombre: '',
   cargo: '',
-  fecha: '',
 });
 
-// ─── SUBCOMPONENTES ───────────────────────────────────────────────────────────
 function SectionTitle({ n, title }) {
   return (
     <div className="sol-section-header">
@@ -112,35 +96,25 @@ function Chips({ options, value, onChange }) {
   );
 }
 
-// ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
 export default function NuevaSolicitudInicialPage() {
   const router = useRouter();
 
   const [form, setForm] = useState({
-    fecha: HOY,
-    empresaCliente: '',
-    nombreComercial: '',
-    ciudad: '',
-    direccion: '',
+    fechaReunion: HOY,
 
-    contactoPrincipal: defaultContacto(),
-    otrosContactos: [defaultContacto()],
+    cliente: {
+      razonSocial: '',
+      nombreComercial: '',
+      ciudad: '',
+      direccion: '',
+      sectorIndustria: '',
+      canalComercializacion: '',
+    },
 
-    objetivoReunion: '',
-    resumenCliente: '',
-    sectorIndustria: '',
-    canalComercializacion: '',
-
+    contactos: [defaultContacto()],
     productosCliente: [defaultProducto()],
-    necesidadesProcura: [defaultNecesidad()],
-
-    fortalezasDetectadas: [''],
-    restriccionesDetectadas: [''],
-    comentariosFinales: '',
-
     proximosPasos: [''],
-
-    elaboradoPor: defaultFirma(),
+    elaboradoPor: defaultElaboradoPor(),
   });
 
   const [step, setStep] = useState(1);
@@ -150,7 +124,6 @@ export default function NuevaSolicitudInicialPage() {
   const [error, setError] = useState(null);
   const [saved, setSaved] = useState(false);
 
-  // ─── helpers generales ─────────────────────────────────────────────────────
   const set = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -161,6 +134,16 @@ export default function NuevaSolicitudInicialPage() {
       [field]: {
         ...prev[field],
         [key]: value,
+      },
+    }));
+  };
+
+  const setDoubleNested = (parent, field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      [parent]: {
+        ...prev[parent],
+        [field]: value,
       },
     }));
   };
@@ -202,25 +185,12 @@ export default function NuevaSolicitudInicialPage() {
     });
   };
 
-  // ─── agregadores ───────────────────────────────────────────────────────────
-  const addOtroContacto = () => {
-    set('otrosContactos', [...form.otrosContactos, defaultContacto()]);
+  const addContacto = () => {
+    set('contactos', [...form.contactos, defaultContacto()]);
   };
 
   const addProducto = () => {
     set('productosCliente', [...form.productosCliente, defaultProducto()]);
-  };
-
-  const addNecesidad = () => {
-    set('necesidadesProcura', [...form.necesidadesProcura, defaultNecesidad()]);
-  };
-
-  const addFortaleza = () => {
-    set('fortalezasDetectadas', [...form.fortalezasDetectadas, '']);
-  };
-
-  const addRestriccion = () => {
-    set('restriccionesDetectadas', [...form.restriccionesDetectadas, '']);
   };
 
   const addProximoPaso = () => {
@@ -238,9 +208,9 @@ export default function NuevaSolicitudInicialPage() {
     });
   };
 
-  // ─── removedores ───────────────────────────────────────────────────────────
-  const removeOtroContacto = (index) => {
-    set('otrosContactos', form.otrosContactos.filter((_, i) => i !== index));
+  const removeContacto = (index) => {
+    if (form.contactos.length === 1) return;
+    set('contactos', form.contactos.filter((_, i) => i !== index));
   };
 
   const removeProducto = (index) => {
@@ -248,17 +218,9 @@ export default function NuevaSolicitudInicialPage() {
     set('productosCliente', form.productosCliente.filter((_, i) => i !== index));
   };
 
-  const removeNecesidad = (index) => {
-    if (form.necesidadesProcura.length === 1) return;
-    set('necesidadesProcura', form.necesidadesProcura.filter((_, i) => i !== index));
-  };
-
   const removeSimpleItem = (field, index) => {
     if (form[field].length === 1) return;
-    set(
-      field,
-      form[field].filter((_, i) => i !== index)
-    );
+    set(field, form[field].filter((_, i) => i !== index));
   };
 
   const removeProductoSubItem = (productoIndex, field, itemIndex) => {
@@ -277,27 +239,21 @@ export default function NuevaSolicitudInicialPage() {
     });
   };
 
-  // ─── sanitizador básico antes de enviar ───────────────────────────────────
   const cleanFormData = () => {
     return {
       ...form,
-      otrosContactos: form.otrosContactos.filter(
+      contactos: form.contactos.filter(
         (c) => c.nombre || c.cargo || c.telefono || c.email
       ),
-      fortalezasDetectadas: form.fortalezasDetectadas.filter((x) => x.trim()),
-      restriccionesDetectadas: form.restriccionesDetectadas.filter((x) => x.trim()),
       proximosPasos: form.proximosPasos.filter((x) => x.trim()),
       productosCliente: form.productosCliente.map((p) => ({
         ...p,
         caracteristicasPrincipales: p.caracteristicasPrincipales.filter((x) => x.trim()),
-        presentaciones: p.presentaciones.filter((x) => x.trim()),
         materiales: p.materiales.filter((x) => x.trim()),
-        colores: p.colores.filter((x) => x.trim()),
       })),
     };
   };
 
-  // ─── acciones ──────────────────────────────────────────────────────────────
   const handlePreview = async () => {
     setLoading(true);
     setError(null);
@@ -356,7 +312,6 @@ export default function NuevaSolicitudInicialPage() {
     }
   };
 
-  // ─── PREVIEW ───────────────────────────────────────────────────────────────
   if (step === 2) {
     return (
       <div className="sol-preview-page">
@@ -390,7 +345,6 @@ export default function NuevaSolicitudInicialPage() {
     );
   }
 
-  // ─── FORMULARIO ────────────────────────────────────────────────────────────
   return (
     <div className="main-content">
       <div className="section-title-row" style={{ marginBottom: 28 }}>
@@ -399,28 +353,27 @@ export default function NuevaSolicitudInicialPage() {
       </div>
 
       <div className="sol-form">
-        {/* ── 1. INFORMACIÓN GENERAL ── */}
         <div className="sol-section">
           <SectionTitle n="1" title="Información General de la Reunión" />
 
           <div className="sol-grid-3">
             <Field label="Fecha">
               <div className="sol-date-row">
-                <input className="sol-input sol-input-xs" value={form.fecha.dd} readOnly />
+                <input className="sol-input sol-input-xs" value={form.fechaReunion.dd} readOnly />
                 <span className="sol-date-sep">/</span>
-                <input className="sol-input sol-input-xs" value={form.fecha.mm} readOnly />
+                <input className="sol-input sol-input-xs" value={form.fechaReunion.mm} readOnly />
                 <span className="sol-date-sep">/</span>
-                <input className="sol-input sol-input-sm" value={form.fecha.aaaa} readOnly />
+                <input className="sol-input sol-input-sm" value={form.fechaReunion.aaaa} readOnly />
               </div>
               <span className="sol-date-hint">Fecha actual (automática)</span>
             </Field>
 
             <div style={{ gridColumn: 'span 2' }}>
-              <Field label="Empresa Cliente" required>
+              <Field label="Razón Social" required>
                 <input
                   className="sol-input"
-                  value={form.empresaCliente}
-                  onChange={(e) => set('empresaCliente', e.target.value)}
+                  value={form.cliente.razonSocial}
+                  onChange={(e) => setDoubleNested('cliente', 'razonSocial', e.target.value)}
                 />
               </Field>
             </div>
@@ -430,158 +383,103 @@ export default function NuevaSolicitudInicialPage() {
             <Field label="Nombre Comercial">
               <input
                 className="sol-input"
-                value={form.nombreComercial}
-                onChange={(e) => set('nombreComercial', e.target.value)}
+                value={form.cliente.nombreComercial}
+                onChange={(e) => setDoubleNested('cliente', 'nombreComercial', e.target.value)}
               />
             </Field>
             <Field label="Ciudad">
               <input
                 className="sol-input"
-                value={form.ciudad}
-                onChange={(e) => set('ciudad', e.target.value)}
+                value={form.cliente.ciudad}
+                onChange={(e) => setDoubleNested('cliente', 'ciudad', e.target.value)}
               />
             </Field>
             <Field label="Dirección">
               <input
                 className="sol-input"
-                value={form.direccion}
-                onChange={(e) => set('direccion', e.target.value)}
+                value={form.cliente.direccion}
+                onChange={(e) => setDoubleNested('cliente', 'direccion', e.target.value)}
               />
             </Field>
           </div>
-        </div>
-
-        {/* ── 2. CONTACTOS ── */}
-        <div className="sol-section">
-          <SectionTitle n="2" title="Contactos del Cliente" />
-
-          <Field label="Contacto Principal" required>
-            <div className="sol-grid-4">
-              <input
-                className="sol-input"
-                placeholder="Nombre"
-                value={form.contactoPrincipal.nombre}
-                onChange={(e) => setNested('contactoPrincipal', 'nombre', e.target.value)}
-              />
-              <input
-                className="sol-input"
-                placeholder="Cargo"
-                value={form.contactoPrincipal.cargo}
-                onChange={(e) => setNested('contactoPrincipal', 'cargo', e.target.value)}
-              />
-              <input
-                className="sol-input"
-                placeholder="Teléfono"
-                value={form.contactoPrincipal.telefono}
-                onChange={(e) => setNested('contactoPrincipal', 'telefono', e.target.value)}
-              />
-              <input
-                className="sol-input"
-                placeholder="Email"
-                type="email"
-                value={form.contactoPrincipal.email}
-                onChange={(e) => setNested('contactoPrincipal', 'email', e.target.value)}
-              />
-            </div>
-          </Field>
-
-          <div style={{ marginTop: 18 }}>
-            <div className="sol-subtitle">Otros contactos</div>
-
-            {form.otrosContactos.map((contacto, i) => (
-              <div key={i} className="sol-card-block">
-                <div className="sol-card-top">
-                  <span className="sol-card-title">Contacto adicional #{i + 1}</span>
-                  {form.otrosContactos.length > 1 && (
-                    <button
-                      type="button"
-                      className="sol-btn-remove"
-                      onClick={() => removeOtroContacto(i)}
-                    >
-                      Eliminar
-                    </button>
-                  )}
-                </div>
-
-                <div className="sol-grid-4">
-                  <input
-                    className="sol-input"
-                    placeholder="Nombre"
-                    value={contacto.nombre}
-                    onChange={(e) => setArrNested('otrosContactos', i, 'nombre', e.target.value)}
-                  />
-                  <input
-                    className="sol-input"
-                    placeholder="Cargo"
-                    value={contacto.cargo}
-                    onChange={(e) => setArrNested('otrosContactos', i, 'cargo', e.target.value)}
-                  />
-                  <input
-                    className="sol-input"
-                    placeholder="Teléfono"
-                    value={contacto.telefono}
-                    onChange={(e) => setArrNested('otrosContactos', i, 'telefono', e.target.value)}
-                  />
-                  <input
-                    className="sol-input"
-                    placeholder="Email"
-                    type="email"
-                    value={contacto.email}
-                    onChange={(e) => setArrNested('otrosContactos', i, 'email', e.target.value)}
-                  />
-                </div>
-              </div>
-            ))}
-
-            <button type="button" className="sol-btn-add" onClick={addOtroContacto}>
-              + Agregar contacto
-            </button>
-          </div>
-        </div>
-
-        {/* ── 3. CONTEXTO ── */}
-        <div className="sol-section">
-          <SectionTitle n="3" title="Contexto de la Reunión" />
-
-          <Field label="Objetivo de la Reunión" required>
-            <textarea
-              className="sol-textarea"
-              rows={3}
-              value={form.objetivoReunion}
-              onChange={(e) => set('objetivoReunion', e.target.value)}
-            />
-          </Field>
-
-          <Field label="Resumen del Cliente">
-            <textarea
-              className="sol-textarea"
-              rows={3}
-              value={form.resumenCliente}
-              onChange={(e) => set('resumenCliente', e.target.value)}
-            />
-          </Field>
 
           <div className="sol-grid-2">
             <Field label="Sector / Industria">
               <input
                 className="sol-input"
-                value={form.sectorIndustria}
-                onChange={(e) => set('sectorIndustria', e.target.value)}
+                value={form.cliente.sectorIndustria}
+                onChange={(e) => setDoubleNested('cliente', 'sectorIndustria', e.target.value)}
               />
             </Field>
             <Field label="Canal de Comercialización">
               <input
                 className="sol-input"
-                value={form.canalComercializacion}
-                onChange={(e) => set('canalComercializacion', e.target.value)}
+                value={form.cliente.canalComercializacion}
+                onChange={(e) =>
+                  setDoubleNested('cliente', 'canalComercializacion', e.target.value)
+                }
               />
             </Field>
           </div>
         </div>
 
-        {/* ── 4. PRODUCTOS ── */}
         <div className="sol-section">
-          <SectionTitle n="4" title="Productos del Cliente" />
+          <SectionTitle n="2" title="Contactos del Cliente" />
+
+          {form.contactos.map((contacto, i) => (
+            <div key={i} className="sol-card-block">
+              <div className="sol-card-top">
+                <span className="sol-card-title">
+                  {i === 0 ? 'Contacto principal' : `Contacto #${i + 1}`}
+                </span>
+                {form.contactos.length > 1 && (
+                  <button
+                    type="button"
+                    className="sol-btn-remove"
+                    onClick={() => removeContacto(i)}
+                  >
+                    Eliminar
+                  </button>
+                )}
+              </div>
+
+              <div className="sol-grid-4">
+                <input
+                  className="sol-input"
+                  placeholder="Nombre"
+                  value={contacto.nombre}
+                  onChange={(e) => setArrNested('contactos', i, 'nombre', e.target.value)}
+                />
+                <input
+                  className="sol-input"
+                  placeholder="Cargo"
+                  value={contacto.cargo}
+                  onChange={(e) => setArrNested('contactos', i, 'cargo', e.target.value)}
+                />
+                <input
+                  className="sol-input"
+                  placeholder="Teléfono"
+                  value={contacto.telefono}
+                  onChange={(e) => setArrNested('contactos', i, 'telefono', e.target.value)}
+                />
+                <input
+                  className="sol-input"
+                  placeholder="Email"
+                  type="email"
+                  value={contacto.email}
+                  onChange={(e) => setArrNested('contactos', i, 'email', e.target.value)}
+                />
+              </div>
+            </div>
+          ))}
+
+          <button type="button" className="sol-btn-add" onClick={addContacto}>
+            + Agregar contacto
+          </button>
+        </div>
+
+        <div className="sol-section">
+          <SectionTitle n="3" title="Productos del Cliente y Necesidad de Procura" />
 
           {form.productosCliente.map((producto, i) => (
             <div key={i} className="sol-card-block">
@@ -620,13 +518,13 @@ export default function NuevaSolicitudInicialPage() {
                 </Field>
               </div>
 
-              <Field label="Descripción General" required>
+              <Field label="Descripción Técnica">
                 <textarea
                   className="sol-textarea"
                   rows={3}
-                  value={producto.descripcionGeneral}
+                  value={producto.descripcionTecnica}
                   onChange={(e) =>
-                    setArrNested('productosCliente', i, 'descripcionGeneral', e.target.value)
+                    setArrNested('productosCliente', i, 'descripcionTecnica', e.target.value)
                   }
                 />
               </Field>
@@ -652,9 +550,7 @@ export default function NuevaSolicitudInicialPage() {
                     <button
                       type="button"
                       className="sol-btn-remove-inline"
-                      onClick={() =>
-                        removeProductoSubItem(i, 'caracteristicasPrincipales', j)
-                      }
+                      onClick={() => removeProductoSubItem(i, 'caracteristicasPrincipales', j)}
                     >
                       ✕
                     </button>
@@ -669,6 +565,38 @@ export default function NuevaSolicitudInicialPage() {
                 + Agregar característica
               </button>
 
+              <div className="sol-subtitle" style={{ marginTop: 18 }}>
+                Materiales
+              </div>
+              {producto.materiales.map((item, j) => (
+                <div key={j} className="sol-item-row">
+                  <input
+                    className="sol-input"
+                    placeholder={`Material ${j + 1}`}
+                    value={item}
+                    onChange={(e) =>
+                      setDeepArr('productosCliente', i, 'materiales', j, e.target.value)
+                    }
+                  />
+                  {producto.materiales.length > 1 && (
+                    <button
+                      type="button"
+                      className="sol-btn-remove-inline"
+                      onClick={() => removeProductoSubItem(i, 'materiales', j)}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                className="sol-btn-add"
+                onClick={() => addProductoSubItem(i, 'materiales')}
+              >
+                + Agregar material
+              </button>
+
               <div className="sol-grid-2" style={{ marginTop: 16 }}>
                 <Field label="Dimensiones">
                   <input
@@ -680,18 +608,6 @@ export default function NuevaSolicitudInicialPage() {
                   />
                 </Field>
 
-                <Field label="Peso">
-                  <input
-                    className="sol-input"
-                    value={producto.peso}
-                    onChange={(e) =>
-                      setArrNested('productosCliente', i, 'peso', e.target.value)
-                    }
-                  />
-                </Field>
-              </div>
-
-              <div className="sol-grid-3">
                 <Field label="Empaque">
                   <input
                     className="sol-input"
@@ -701,7 +617,9 @@ export default function NuevaSolicitudInicialPage() {
                     }
                   />
                 </Field>
+              </div>
 
+              <div className="sol-grid-3">
                 <Field label="Marca">
                   <input
                     className="sol-input"
@@ -721,9 +639,7 @@ export default function NuevaSolicitudInicialPage() {
                     }
                   />
                 </Field>
-              </div>
 
-              <div className="sol-grid-2">
                 <Field label="País de Origen">
                   <input
                     className="sol-input"
@@ -733,80 +649,40 @@ export default function NuevaSolicitudInicialPage() {
                     }
                   />
                 </Field>
-
-                <Field label="Usos / Aplicaciones">
-                  <input
-                    className="sol-input"
-                    value={producto.usosAplicaciones}
-                    onChange={(e) =>
-                      setArrNested('productosCliente', i, 'usosAplicaciones', e.target.value)
-                    }
-                  />
-                </Field>
               </div>
 
-              <Field label="Requerimientos Especiales">
+              <Field label="Notas del Producto">
                 <textarea
                   className="sol-textarea"
                   rows={2}
-                  value={producto.requerimientosEspeciales}
+                  value={producto.notasProducto}
                   onChange={(e) =>
-                    setArrNested(
-                      'productosCliente',
-                      i,
-                      'requerimientosEspeciales',
-                      e.target.value
-                    )
+                    setArrNested('productosCliente', i, 'notasProducto', e.target.value)
                   }
                 />
               </Field>
-
-              <Field label="Observaciones">
-                <textarea
-                  className="sol-textarea"
-                  rows={2}
-                  value={producto.observaciones}
-                  onChange={(e) =>
-                    setArrNested('productosCliente', i, 'observaciones', e.target.value)
-                  }
-                />
-              </Field>
-            </div>
-          ))}
-
-          <button type="button" className="sol-btn-add" onClick={addProducto}>
-            + Agregar producto
-          </button>
-        </div>
-
-        {/* ── 5. NECESIDADES DE PROCURA ── */}
-        <div className="sol-section">
-          <SectionTitle n="5" title="Necesidades de Procura Detectadas" />
-
-          {form.necesidadesProcura.map((item, i) => (
-            <div key={i} className="sol-card-block">
-              <div className="sol-card-top">
-                <span className="sol-card-title">Necesidad #{i + 1}</span>
-                {form.necesidadesProcura.length > 1 && (
-                  <button
-                    type="button"
-                    className="sol-btn-remove"
-                    onClick={() => removeNecesidad(i)}
-                  >
-                    Eliminar
-                  </button>
-                )}
-              </div>
 
               <div className="sol-grid-2">
-                <Field label="Producto Relacionado" required>
-                  <input
-                    className="sol-input"
-                    value={item.productoRelacionado}
-                    onChange={(e) =>
-                      setArrNested('necesidadesProcura', i, 'productoRelacionado', e.target.value)
+                <Field label="Tipo de necesidad" required>
+                  <Chips
+                    options={TIPOS_NECESIDAD}
+                    value={producto.tipoNecesidad}
+                    onChange={(val) =>
+                      setArrNested('productosCliente', i, 'tipoNecesidad', val)
                     }
                   />
+
+                  {producto.tipoNecesidad === 'otro' && (
+                    <input
+                      className="sol-input"
+                      style={{ marginTop: 8 }}
+                      placeholder="Especifique el tipo de necesidad..."
+                      value={producto.tipoNecesidadOtro}
+                      onChange={(e) =>
+                        setArrNested('productosCliente', i, 'tipoNecesidadOtro', e.target.value)
+                      }
+                    />
+                  )}
                 </Field>
 
                 <Field label="Prioridad">
@@ -815,169 +691,43 @@ export default function NuevaSolicitudInicialPage() {
                       value: p,
                       label: p.charAt(0).toUpperCase() + p.slice(1),
                     }))}
-                    value={item.prioridad}
-                    onChange={(val) =>
-                      setArrNested('necesidadesProcura', i, 'prioridad', val)
-                    }
+                    value={producto.prioridad}
+                    onChange={(val) => setArrNested('productosCliente', i, 'prioridad', val)}
                   />
                 </Field>
               </div>
 
-              <Field label="Tipo de Necesidad" required>
-                <Chips
-                  options={TIPOS_NECESIDAD}
-                  value={item.tipoNecesidad}
-                  onChange={(val) =>
-                    setArrNested('necesidadesProcura', i, 'tipoNecesidad', val)
-                  }
-                />
-
-                {item.tipoNecesidad === 'otro' && (
+              <div className="sol-grid-2">
+                <Field label="Frecuencia requerida">
                   <input
                     className="sol-input"
-                    style={{ marginTop: 8 }}
-                    placeholder="Especifique el tipo de necesidad..."
-                    value={item.tipoNecesidadOtro}
+                    value={producto.frecuenciaRequerida}
                     onChange={(e) =>
-                      setArrNested('necesidadesProcura', i, 'tipoNecesidadOtro', e.target.value)
-                    }
-                  />
-                )}
-              </Field>
-
-              <Field label="Descripción" required>
-                <textarea
-                  className="sol-textarea"
-                  rows={3}
-                  value={item.descripcion}
-                  onChange={(e) =>
-                    setArrNested('necesidadesProcura', i, 'descripcion', e.target.value)
-                  }
-                />
-              </Field>
-
-              <div className="sol-grid-3">
-                <Field label="Especificaciones Mínimas">
-                  <input
-                    className="sol-input"
-                    value={item.especificacionesMinimas}
-                    onChange={(e) =>
-                      setArrNested(
-                        'necesidadesProcura',
-                        i,
-                        'especificacionesMinimas',
-                        e.target.value
-                      )
+                      setArrNested('productosCliente', i, 'frecuenciaRequerida', e.target.value)
                     }
                   />
                 </Field>
 
-                <Field label="Frecuencia Requerida">
+                <Field label="Cantidad referencial">
                   <input
                     className="sol-input"
-                    value={item.frecuenciaRequerida}
+                    value={producto.cantidadReferencial}
                     onChange={(e) =>
-                      setArrNested('necesidadesProcura', i, 'frecuenciaRequerida', e.target.value)
-                    }
-                  />
-                </Field>
-
-                <Field label="Cantidad Referencial">
-                  <input
-                    className="sol-input"
-                    value={item.cantidadReferencial}
-                    onChange={(e) =>
-                      setArrNested('necesidadesProcura', i, 'cantidadReferencial', e.target.value)
+                      setArrNested('productosCliente', i, 'cantidadReferencial', e.target.value)
                     }
                   />
                 </Field>
               </div>
-
-              <Field label="Observaciones">
-                <textarea
-                  className="sol-textarea"
-                  rows={2}
-                  value={item.observaciones}
-                  onChange={(e) =>
-                    setArrNested('necesidadesProcura', i, 'observaciones', e.target.value)
-                  }
-                />
-              </Field>
             </div>
           ))}
 
-          <button type="button" className="sol-btn-add" onClick={addNecesidad}>
-            + Agregar necesidad de procura
+          <button type="button" className="sol-btn-add" onClick={addProducto}>
+            + Agregar producto
           </button>
         </div>
 
-        {/* ── 6. HALLAZGOS ── */}
         <div className="sol-section">
-          <SectionTitle n="6" title="Hallazgos y Observaciones" />
-
-          <div className="sol-subtitle">Fortalezas detectadas</div>
-          {form.fortalezasDetectadas.map((item, i) => (
-            <div key={i} className="sol-item-row">
-              <input
-                className="sol-input"
-                placeholder={`Fortaleza ${i + 1}`}
-                value={item}
-                onChange={(e) => setArr('fortalezasDetectadas', i, e.target.value)}
-              />
-              {form.fortalezasDetectadas.length > 1 && (
-                <button
-                  type="button"
-                  className="sol-btn-remove-inline"
-                  onClick={() => removeSimpleItem('fortalezasDetectadas', i)}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          ))}
-          <button type="button" className="sol-btn-add" onClick={addFortaleza}>
-            + Agregar fortaleza
-          </button>
-
-          <div className="sol-subtitle" style={{ marginTop: 18 }}>
-            Restricciones detectadas
-          </div>
-          {form.restriccionesDetectadas.map((item, i) => (
-            <div key={i} className="sol-item-row">
-              <input
-                className="sol-input"
-                placeholder={`Restricción ${i + 1}`}
-                value={item}
-                onChange={(e) => setArr('restriccionesDetectadas', i, e.target.value)}
-              />
-              {form.restriccionesDetectadas.length > 1 && (
-                <button
-                  type="button"
-                  className="sol-btn-remove-inline"
-                  onClick={() => removeSimpleItem('restriccionesDetectadas', i)}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          ))}
-          <button type="button" className="sol-btn-add" onClick={addRestriccion}>
-            + Agregar restricción
-          </button>
-
-          <Field label="Comentarios Finales">
-            <textarea
-              className="sol-textarea"
-              rows={3}
-              value={form.comentariosFinales}
-              onChange={(e) => set('comentariosFinales', e.target.value)}
-            />
-          </Field>
-        </div>
-
-        {/* ── 7. PRÓXIMOS PASOS ── */}
-        <div className="sol-section">
-          <SectionTitle n="7" title="Próximos Pasos" />
+          <SectionTitle n="4" title="Próximos Pasos" />
 
           {form.proximosPasos.map((paso, i) => (
             <div key={i} className="sol-item-row">
@@ -1004,9 +754,8 @@ export default function NuevaSolicitudInicialPage() {
           </button>
         </div>
 
-        {/* ── 8. REGISTRO INTERNO ── */}
         <div className="sol-section">
-          <SectionTitle n="8" title="Registro Interno" />
+          <SectionTitle n="5" title="Registro Interno" />
 
           <div className="sol-firmas-grid" style={{ gridTemplateColumns: '1fr' }}>
             <div className="sol-firma-card">
@@ -1027,20 +776,10 @@ export default function NuevaSolicitudInicialPage() {
                   onChange={(e) => setNested('elaboradoPor', 'cargo', e.target.value)}
                 />
               </Field>
-
-              <Field label="Fecha" required>
-                <input
-                  className="sol-input"
-                  type="date"
-                  value={form.elaboradoPor.fecha}
-                  onChange={(e) => setNested('elaboradoPor', 'fecha', e.target.value)}
-                />
-              </Field>
             </div>
           </div>
         </div>
 
-        {/* ── ERROR & SUBMIT ── */}
         {error && <div className="sol-error">{error}</div>}
 
         <div className="sol-form-footer">
