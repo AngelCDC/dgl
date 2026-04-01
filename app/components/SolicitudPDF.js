@@ -8,7 +8,6 @@ import {
   Image,
 } from "@react-pdf/renderer";
 
-// ─── DUBOIS · Grupo Logístico — Brand System ─────────────────────────────────
 const C = {
   navy:     "#0a1628",
   corp:     "#1a3a6b",
@@ -28,7 +27,6 @@ const PAGE_TOP_OFFSET = HEADER_HEIGHT + ACCENT_STRIPE_HEIGHT + PAGE_TOP_GAP;
 
 const styles = StyleSheet.create({
 
-  // ── Página ──────────────────────────────────────────────────────────────────
   page: {
     backgroundColor: C.white,
     paddingTop: PAGE_TOP_OFFSET,
@@ -39,7 +37,6 @@ const styles = StyleSheet.create({
     color: C.carbon,
   },
 
-  // ── Header (igual al original — fixed en todas las páginas) ─────────────────
   header: {
     backgroundColor: C.navy,
     paddingVertical: 16,
@@ -66,9 +63,7 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     letterSpacing: 1,
   },
-  headerTextBlock: {
-    flexDirection: "column",
-  },
+  headerTextBlock: { flexDirection: "column" },
   headerBrand: {
     color: C.white,
     fontSize: 15,
@@ -82,8 +77,6 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     marginTop: 2,
   },
-
-  // Franja acento eléctrico
   accentStripe: {
     height: ACCENT_STRIPE_HEIGHT,
     backgroundColor: C.electric,
@@ -93,12 +86,8 @@ const styles = StyleSheet.create({
     right: 0,
   },
 
-  // ── Cuerpo ───────────────────────────────────────────────────────────────────
-  body: {
-    paddingHorizontal: 32,
-  },
+  body: { paddingHorizontal: 32 },
 
-  // Título del documento
   docTitle: {
     fontSize: 15,
     fontFamily: "Helvetica-Bold",
@@ -113,10 +102,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
 
-  // ── Secciones ────────────────────────────────────────────────────────────────
-  section: {
-    marginBottom: 16,
-  },
+  section: { marginBottom: 16 },
   sectionTitle: {
     fontSize: 11,
     fontFamily: "Helvetica-Bold",
@@ -128,7 +114,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
   },
 
-  // ── Filas de datos ───────────────────────────────────────────────────────────
   row: {
     flexDirection: "row",
     marginBottom: 6,
@@ -148,11 +133,24 @@ const styles = StyleSheet.create({
     color: C.carbon,
   },
 
-  // ── Tablas ───────────────────────────────────────────────────────────────────
+  // ── Tabla de cotizantes ───────────────────────────────────────────────────────
   table: {
     marginTop: 6,
     marginBottom: 8,
     marginHorizontal: 10,
+  },
+  // Sub-título por producto dentro de la sección 8
+  productoTableTitle: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: C.navy,
+    backgroundColor: C.bgSoft,
+    borderLeft: `3pt solid ${C.electric}`,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    marginHorizontal: 10,
+    marginTop: 10,
+    marginBottom: 0,
   },
   tableHeader: {
     flexDirection: "row",
@@ -178,15 +176,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     backgroundColor: C.bgSoft,
   },
-  tableCell: {
-    fontSize: 9,
-    color: C.carbon,
-  },
+  tableCell: { fontSize: 9, color: C.carbon },
   col1:    { width: 370 },
   col3:    { width: 125, textAlign: "right" },
   colRisk: { width: 165 },
 
-  // ── Firmas ───────────────────────────────────────────────────────────────────
   signatureSection: {
     marginTop: 32,
     paddingHorizontal: 32,
@@ -221,7 +215,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  // ── Footer (igual al original) ────────────────────────────────────────────────
   footer: {
     position: "absolute",
     bottom: 20,
@@ -233,19 +226,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  footerLeft: {
-    color: C.steel,
-    fontSize: 7,
-    letterSpacing: 0.8,
-  },
-  footerRight: {
-    color: C.steel,
-    fontSize: 7,
-  },
-  footerAccent: {
-    color: C.electric,
-    fontFamily: "Helvetica-Bold",
-  },
+  footerLeft:   { color: C.steel, fontSize: 7, letterSpacing: 0.8 },
+  footerRight:  { color: C.steel, fontSize: 7 },
+  footerAccent: { color: C.electric, fontFamily: "Helvetica-Bold" },
 });
 
 // ─── Utilidades ───────────────────────────────────────────────────────────────
@@ -255,12 +238,14 @@ const formatFecha = (fechaObj) => {
 };
 
 const formatMoneda = (valor) => {
-  if (!valor) return "N/A";
+  if (!valor || valor === '0') return "—";
+  const n = parseFloat(valor);
+  if (isNaN(n)) return valor;
   return new Intl.NumberFormat("es-CO", {
     style: "currency",
     currency: "COP",
     minimumFractionDigits: 0,
-  }).format(parseFloat(valor));
+  }).format(n);
 };
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
@@ -281,6 +266,18 @@ const Field = ({ label, value }) => (
   </View>
 );
 
+// Agrupa cotizantes por productoNombre
+// Entrada: [{ productoNombre, nombre, valor, sortOrder }]
+// Salida:  { [productoNombre]: [{ nombre, valor }] }
+const groupCotizantesByProducto = (cotizantes = []) => {
+  return cotizantes.reduce((acc, c) => {
+    const key = c.productoNombre || 'Sin producto';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(c);
+    return acc;
+  }, {});
+};
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 export const SolicitudPDF = ({ data, logoUrl }) => {
   const fechaGeneracion = new Date().toLocaleDateString("es-CO", {
@@ -290,11 +287,15 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
   });
   const fechaDocumento = formatFecha(data.fecha);
 
+  // Cotizantes agrupados por producto para sección 8
+  const cotizantesPorProducto = groupCotizantesByProducto(data.cotizantes);
+  const productosConCotizantes = Object.entries(cotizantesPorProducto);
+
   return (
     <Document>
       <Page size="A4" style={styles.page} wrap>
 
-        {/* ── HEADER fijo (igual al original) ── */}
+        {/* ── HEADER fijo ── */}
         <View style={styles.header} fixed>
           <View style={styles.monogram}>
             {logoUrl ? (
@@ -308,26 +309,23 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
             <Text style={styles.headerSlogan}>GLOBAL TRADE INTELLIGENCE</Text>
           </View>
         </View>
-
-        {/* Franja acento eléctrico fija */}
         <View style={styles.accentStripe} fixed />
 
         {/* ── CUERPO ── */}
         <View style={styles.body}>
 
-          {/* Título del documento */}
           <Text style={styles.docTitle}>Estudio de Mercado</Text>
           <View style={styles.docTitleUnderline} />
 
           {/* 1. Información General */}
           <SectionBlock number="1" title="INFORMACIÓN GENERAL">
-            <Field label="Solicitante"       value={data.solicitante} />
-            <Field label="CC / NIT"          value={data.ccNit} />
+            <Field label="Solicitante"      value={data.solicitante} />
+            <Field label="CC / NIT"         value={data.ccNit} />
             <Field
               label="Teléfono / Celular"
               value={data.ext ? `${data.telCel}  Ext: ${data.ext}` : data.telCel}
             />
-            <Field label="Email"             value={data.email} />
+            <Field label="Email"            value={data.email} />
           </SectionBlock>
 
           {/* 2. Justificación */}
@@ -338,8 +336,8 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
 
           {/* 3. Objeto a Contratar */}
           <SectionBlock number="3" title="OBJETO A CONTRATAR">
-            <Field label="Descripción"      value={data.descripcionObjeto} />
-            <Field label="Especificaciones" value={data.especificaciones} />
+            <Field label="Descripción"       value={data.descripcionObjeto} />
+            <Field label="Especificaciones"  value={data.especificaciones} />
             <Field label="Requiere Permisos" value={data.requierePermisos} />
           </SectionBlock>
 
@@ -347,9 +345,7 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
           <SectionBlock number="4" title="OBLIGACIONES DEL CONTRATISTA">
             {data.obligaciones.map((obligacion, idx) => (
               <View key={idx} style={[styles.row, { alignItems: "flex-start" }]} wrap={false}>
-                <Text style={{ color: C.electric, fontSize: 8.5, marginRight: 6, flexShrink: 0 }}>
-                  ▸
-                </Text>
+                <Text style={{ color: C.electric, fontSize: 8.5, marginRight: 6, flexShrink: 0 }}>▸</Text>
                 <Text style={styles.value}>{obligacion}</Text>
               </View>
             ))}
@@ -379,28 +375,52 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
             {data.criterioOtro && <Field label="Otro Criterio" value={data.criterioOtro} />}
           </SectionBlock>
 
-          {/* 8. Estudio de Mercado */}
+          {/* 8. Estudio de Mercado — una tabla por producto */}
           <SectionBlock number="8" title="ESTUDIO DE MERCADO">
-            <View style={styles.table}>
-              <View style={styles.tableHeader} wrap={false}>
-                <Text style={[styles.tableHeaderCell, { width: 370 }]}>COTIZANTE / PROVEEDOR</Text>
-                <Text style={[styles.tableHeaderCell, { width: 125, textAlign: "right" }]}>VALOR</Text>
-              </View>
-              {data.cotizantes?.map((cotizante, idx) => (
-                <View
-                  key={idx}
-                  style={idx % 2 === 0 ? styles.tableRow : styles.tableRowAlt}
-                  wrap={false}
-                >
-                  <Text style={[styles.tableCell, styles.col1]}>{cotizante.nombre}</Text>
-                  <Text style={[styles.tableCell, styles.col3]}>{formatMoneda(cotizante.valor)}</Text>
+            {productosConCotizantes.length > 0 ? (
+              productosConCotizantes.map(([productoNombre, cotizantes], pIdx) => (
+                <View key={pIdx} wrap>
+                  {/* Sub-título del producto */}
+                  <Text style={styles.productoTableTitle} wrap={false}>
+                    {productoNombre}
+                  </Text>
+
+                  {/* Tabla de cotizantes para este producto */}
+                  <View style={styles.table}>
+                    <View style={styles.tableHeader} wrap={false}>
+                      <Text style={[styles.tableHeaderCell, { width: 370 }]}>
+                        COTIZANTE / PROVEEDOR
+                      </Text>
+                      <Text style={[styles.tableHeaderCell, { width: 125, textAlign: "right" }]}>
+                        VALOR
+                      </Text>
+                    </View>
+                    {cotizantes.map((cotizante, cIdx) => (
+                      <View
+                        key={cIdx}
+                        style={cIdx % 2 === 0 ? styles.tableRow : styles.tableRowAlt}
+                        wrap={false}
+                      >
+                        <Text style={[styles.tableCell, styles.col1]}>
+                          {cotizante.nombre || '—'}
+                        </Text>
+                        <Text style={[styles.tableCell, styles.col3]}>
+                          {formatMoneda(cotizante.valor)}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
-              ))}
-            </View>
-            <Field label="Valor Estimado" value={formatMoneda(data.valorEstimado)} />
+              ))
+            ) : (
+              <Field label="Sin cotizantes" value="—" />
+            )}
+
+            {/* Valor estimado global al final */}
+            <Field label="Valor Estimado Total" value={formatMoneda(data.valorEstimado)} />
           </SectionBlock>
 
-          {/* 9. Contratista Propuesto (solo contratación directa) */}
+          {/* 9. Contratista Propuesto */}
           {data.modalidad === "directa" && data.contratistaNombre && (
             <SectionBlock number="9" title="CONTRATISTA PROPUESTO">
               <Field label="Nombre / Razón Social" value={data.contratistaNombre} />
@@ -440,9 +460,7 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
             <SectionBlock number="11" title="GARANTÍAS">
               {data.garantias.map((garantia, idx) => (
                 <View key={idx} style={[styles.row, { alignItems: "flex-start" }]} wrap={false}>
-                  <Text style={{ color: C.electric, fontSize: 8.5, marginRight: 6, flexShrink: 0 }}>
-                    ▸
-                  </Text>
+                  <Text style={{ color: C.electric, fontSize: 8.5, marginRight: 6, flexShrink: 0 }}>▸</Text>
                   <Text style={styles.value}>{garantia}</Text>
                 </View>
               ))}
@@ -456,16 +474,14 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
             </View>
           </SectionBlock>
 
-          {/* 13. Comité Evaluador (solo convocatoria pública) */}
+          {/* 13. Comité Evaluador */}
           {data.modalidad === "publica" &&
             data.comiteEvaluador &&
             data.comiteEvaluador.length > 0 && (
               <SectionBlock number="13" title="COMITÉ EVALUADOR">
                 {data.comiteEvaluador.map((miembro, idx) => (
                   <View key={idx} style={styles.row} wrap={false}>
-                    <Text style={{ color: C.electric, marginRight: 4, flexShrink: 0, fontSize: 8.5 }}>
-                      ▸
-                    </Text>
+                    <Text style={{ color: C.electric, marginRight: 4, flexShrink: 0, fontSize: 8.5 }}>▸</Text>
                     <Text style={styles.value}>{miembro}</Text>
                   </View>
                 ))}
@@ -477,9 +493,7 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
             <SectionBlock number="15" title="DOCUMENTOS SOPORTE">
               {data.documentosSoporte.map((doc, idx) => (
                 <View key={idx} style={styles.row} wrap={false}>
-                  <Text style={{ color: C.electric, marginRight: 4, flexShrink: 0, fontSize: 8.5 }}>
-                    ▸
-                  </Text>
+                  <Text style={{ color: C.electric, marginRight: 4, flexShrink: 0, fontSize: 8.5 }}>▸</Text>
                   <Text style={styles.value}>{doc}</Text>
                 </View>
               ))}
@@ -491,8 +505,8 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
         {/* ── FIRMAS ── */}
         <View style={styles.signatureSection} wrap={false}>
           {[
-            { role: "ELABORADO POR",  person: data.elaboradoPor },
-            { role: "CONTRATANTE",    person: data.responsableContratacion },
+            { role: "ELABORADO POR", person: data.elaboradoPor },
+            { role: "CONTRATANTE",   person: data.responsableContratacion },
           ].map(({ role, person }, idx) => (
             <View key={idx} style={styles.signatureBox}>
               <View style={styles.signatureLine} />
@@ -504,7 +518,7 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
           ))}
         </View>
 
-        {/* ── FOOTER fijo (igual al original) ── */}
+        {/* ── FOOTER fijo ── */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerLeft}>
             DUBOIS · Grupo Logístico{"\n"}

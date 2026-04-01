@@ -34,42 +34,48 @@ export async function POST(req) {
 
   try {
     const data = await req.json()
-
-    // Zod valida la estructura nueva del formulario
     const v = solicitudProcuraSimpleSchema.parse(data)
 
-    // ── Desajuste 1: fechaReunion → string fecha ──────────────────────────────
+    // ── Fecha ─────────────────────────────────────────────────────────────────
     const fechaStr = `${v.fechaReunion.dd}/${v.fechaReunion.mm}/${v.fechaReunion.aaaa}`
 
-    // ── Desajuste 1: cliente.razonSocial → empresaCliente ────────────────────
-    const empresaCliente  = v.cliente.razonSocial
-    const nombreComercial = v.cliente.nombreComercial ?? null
-    const ciudad          = v.cliente.ciudad          ?? null
-    const direccion       = v.cliente.direccion       ?? null
-    const sectorIndustria = v.cliente.sectorIndustria ?? null
+    // ── Cliente ───────────────────────────────────────────────────────────────
+    const empresaCliente        = v.cliente.razonSocial
+    const nombreComercial       = v.cliente.nombreComercial       ?? null
+    const ciudad                = v.cliente.ciudad                ?? null
+    const direccion             = v.cliente.direccion             ?? null
+    const sectorIndustria       = v.cliente.sectorIndustria       ?? null
     const canalComercializacion = v.cliente.canalComercializacion ?? null
 
-    // ── Desajuste 1: contactos[] unificado → contactoPrincipal + otrosContactos
-    // El primer contacto del array es el principal
+    // ── Contactos ─────────────────────────────────────────────────────────────
     const [contactoPrincipal, ...otrosContactos] = v.contactos
 
-    // ── Desajuste 2: campos de procura ahora viven dentro de cada producto ────
-    // Los extraemos de cada producto para crear las necesidades por separado
+    // ── Objetivo (requerido en Prisma) ────────────────────────────────────────
+    const objetivoReunion = v.proximosPasos.join(' | ') || 'Levantamiento de procura'
+
+    // ── Necesidades extraídas de cada producto ────────────────────────────────
     const necesidades = v.productosCliente.map((p, i) => ({
-      productoRelacionado:  p.nombreProducto,
-      tipoNecesidad:        p.tipoNecesidad,
-      tipoNecesidadOtro:    p.tipoNecesidadOtro    ?? null,
-      frecuenciaRequerida:  p.frecuenciaRequerida  ?? null,
-      cantidadReferencial:  p.cantidadReferencial  ?? null,
-      prioridad:            p.prioridad            ?? null,
-      // descripcion es requerida en Prisma — usamos notasProducto o fallback
-      descripcion:          p.notasProducto?.trim() || p.nombreProducto,
+      productoRelacionado:     p.nombreProducto,
+      tipoNecesidad:           p.tipoNecesidad,
+      tipoNecesidadOtro:       p.tipoNecesidadOtro   ?? null,
+      frecuenciaRequerida:     p.frecuenciaRequerida ?? null,
+      cantidadReferencial:     p.cantidadReferencial ?? null,
+      prioridad:               p.prioridad           ?? null,
+      descripcion:             p.notasProducto?.trim() || p.nombreProducto,
       sortOrder: i,
     }))
 
-    // ── Desajuste 3: campos eliminados del formulario → defaults en Prisma ────
-    // objetivoReunion es requerido en Prisma — usamos un fallback descriptivo
-    const objetivoReunion = v.proximosPasos.join(' | ') || 'Levantamiento de procura'
+    // ── Cotizantes: 3 filas vacías por cada producto ──────────────────────────
+    // productoNombre agrupa las cotizaciones — el usuario completa
+    // proveedor y valor en el formulario de adquisición
+    const cotizantes = v.productosCliente.flatMap((p, pi) =>
+      [0, 1, 2].map((ci) => ({
+        productoNombre: p.nombreProducto,
+        nombre:         '',       // el usuario ingresa el proveedor
+        valor:          '0',
+        sortOrder:      pi * 3 + ci,
+      }))
+    )
 
     const [solicitud, adquisicion] = await prisma.$transaction(async (tx) => {
 
@@ -83,20 +89,16 @@ export async function POST(req) {
           direccion,
           sectorIndustria,
           canalComercializacion,
-
-          // Desajuste 3: campos que ya no vienen del form → defaults vacíos
           objetivoReunion,
           resumenCliente:          null,
           fortalezasDetectadas:    [],
           restriccionesDetectadas: [],
           comentariosFinales:      null,
+          proximosPasos:           v.proximosPasos,
+          elaboradoPorNombre:      v.elaboradoPor.nombre,
+          elaboradoPorCargo:       v.elaboradoPor.cargo ?? null,
+          elaboradoPorFecha:       fechaStr,
 
-          proximosPasos:      v.proximosPasos,
-          elaboradoPorNombre: v.elaboradoPor.nombre,
-          elaboradoPorCargo:  v.elaboradoPor.cargo  ?? null,
-          elaboradoPorFecha:  fechaStr, // el form ya no pide fecha de elaboración
-
-          // Desajuste 1: contactos[] unificado
           contactos: {
             create: [
               {
@@ -116,59 +118,64 @@ export async function POST(req) {
             ],
           },
 
-          // Desajuste 2: productos — solo los campos de ProductoProcura
           productos: {
             create: v.productosCliente.map((p, i) => ({
               nombreProducto:             p.nombreProducto,
-              categoria:                  p.categoria          ?? null,
-              // descripcionGeneral es requerida en Prisma
+              categoria:                  p.categoria              ?? null,
               descripcionGeneral:         p.descripcionTecnica?.trim() || p.nombreProducto,
               caracteristicasPrincipales: p.caracteristicasPrincipales ?? [],
               presentaciones:             [],
-              materiales:                 p.materiales         ?? [],
+              materiales:                 p.materiales             ?? [],
               colores:                    [],
-              dimensiones:                p.dimensiones        ?? null,
+              dimensiones:                p.dimensiones            ?? null,
               peso:                       null,
-              empaque:                    p.empaque            ?? null,
-              marca:                      p.marca              ?? null,
-              referenciaModelo:           p.referenciaModelo   ?? null,
-              paisOrigen:                 p.paisOrigen         ?? null,
+              empaque:                    p.empaque                ?? null,
+              marca:                      p.marca                  ?? null,
+              referenciaModelo:           p.referenciaModelo       ?? null,
+              paisOrigen:                 p.paisOrigen             ?? null,
               usosAplicaciones:           null,
               requerimientosEspeciales:   null,
-              observaciones:              p.notasProducto      ?? null,
+              observaciones:              p.notasProducto          ?? null,
               sortOrder: i,
             })),
           },
 
-          // Desajuste 2: necesidades extraídas de cada producto
-          necesidades: {
-            create: necesidades,
-          },
+          necesidades: { create: necesidades },
         },
       })
 
-      // 2. Crear borrador de SolicitudAdquisicion vinculado
+      // 2. Crear SolicitudAdquisicion vinculada
       const adq = await tx.solicitudAdquisicion.create({
         data: {
-          solicitudProcuraId:   sol.id,
-          status:               'borrador',
-          fecha:                fechaStr,
-          solicitante:          empresaCliente,
-          ccNit:                '',
-          email:                contactoPrincipal.email || '',
-          telCel:               contactoPrincipal.telefono ?? null,
-          descripcionNecesidad: objetivoReunion,
-          pertinencia:          null,
-          descripcionObjeto:    '',
-          obligaciones:         [],
-          modalidad:            'directa',
+          solicitudProcuraId:     sol.id,
+          status:                 'borrador',
+          fecha:                  fechaStr,
+          solicitante:            empresaCliente,
+          ccNit:                  '',
+          email:                  contactoPrincipal.email    || '',
+          telCel:                 contactoPrincipal.telefono ?? null,
+          descripcionNecesidad:   objetivoReunion,
+          pertinencia:            null,
+          descripcionObjeto:      '',
+          obligaciones:           [],
+          modalidad:              'directa',
           justificacionModalidad: '',
-          valorEstimado:        '',
-          plazo:                '',
-          comiteEvaluador:      [],
-          elaboradoPorNombre:   v.elaboradoPor.nombre,
-          elaboradoPorCargo:    v.elaboradoPor.cargo ?? null,
-          elaboradoPorFecha:    fechaStr,
+          valorEstimado:          '',
+          plazo:                  '',
+          comiteEvaluador:        [],
+
+          // Firmas
+          elaboradoPorNombre: v.elaboradoPor.nombre,
+          elaboradoPorCargo:  v.elaboradoPor.cargo ?? null,
+          elaboradoPorFecha:  fechaStr,
+
+          // Contratante = contacto principal del levantamiento
+          contratanteNombre: contactoPrincipal.nombre,
+          contratanteCargo:  contactoPrincipal.cargo ?? null,
+          contratanteFecha:  fechaStr,
+
+          // 3 cotizantes vacíos por cada producto para el estudio de mercado
+          cotizantes: { create: cotizantes },
         },
       })
 

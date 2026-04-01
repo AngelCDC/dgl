@@ -306,12 +306,13 @@ model SolicitudAdquisicion {
 }
 
 model CotizanteAdquisicion {
-  id          String               @id @default(uuid())
-  solicitudId String
-  solicitud   SolicitudAdquisicion @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
-  nombre      String
-  valor       String
-  sortOrder   Int                  @default(0)
+  id             String               @id @default(uuid())
+  solicitudId    String
+  solicitud      SolicitudAdquisicion @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+  productoNombre String?              // ← NUEVO: agrupa cotizaciones por producto
+  nombre         String               // proveedor / cotizante
+  valor          String
+  sortOrder      Int                  @default(0)
 }
 
 model RiesgoAdquisicion {
