@@ -10,21 +10,28 @@ import {
 
 // ─── DUBOIS · Grupo Logístico — Brand System ─────────────────────────────────
 const C = {
-  navy: "#0a1628", // Primario   — Azul marino profundo
-  corp: "#1a3a6b", // Secundario — Azul corporativo
-  electric: "#2563eb", // Acento     — Azul eléctrico frío
-  white: "#ffffff", // Superficie
-  bgSoft: "#f4f6f9", // Fondo suave
-  carbon: "#0d0d0d", // Texto principal
-  steel: "#5a6478", // Texto secundario
-  border: "#dce3ed", // Bordes
-  amber: "#d97706", // Alerta / Tendencia
+  navy:     "#0a1628",
+  corp:     "#1a3a6b",
+  electric: "#2563eb",
+  white:    "#ffffff",
+  bgSoft:   "#f4f6f9",
+  carbon:   "#0d0d0d",
+  steel:    "#5a6478",
+  border:   "#dce3ed",
+  amber:    "#d97706",
 };
 
+const HEADER_HEIGHT = 70;
+const ACCENT_STRIPE_HEIGHT = 3;
+const PAGE_TOP_GAP = 20;
+const PAGE_TOP_OFFSET = HEADER_HEIGHT + ACCENT_STRIPE_HEIGHT + PAGE_TOP_GAP;
+
 const styles = StyleSheet.create({
+
+  // ── Página ──────────────────────────────────────────────────────────────────
   page: {
     backgroundColor: C.white,
-    paddingTop: 0,
+    paddingTop: PAGE_TOP_OFFSET,
     paddingBottom: 60,
     paddingHorizontal: 0,
     fontSize: 12,
@@ -32,21 +39,22 @@ const styles = StyleSheet.create({
     color: C.carbon,
   },
 
+  // ── Header (igual al original — fixed en todas las páginas) ─────────────────
   header: {
     backgroundColor: C.navy,
     paddingVertical: 16,
-    paddingHorizontal: 32,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  headerLeft: {
+    paddingHorizontal: 28,
     flexDirection: "row",
     alignItems: "center",
+    height: HEADER_HEIGHT,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
   },
   monogram: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     border: "1.5pt solid #2563eb",
     alignItems: "center",
     justifyContent: "center",
@@ -54,72 +62,73 @@ const styles = StyleSheet.create({
   },
   monogramText: {
     color: C.white,
-    fontSize: 18,
+    fontSize: 14,
     fontFamily: "Helvetica-Bold",
     letterSpacing: 1,
   },
-  headerTextContainer: {
+  headerTextBlock: {
     flexDirection: "column",
   },
-  companyName: {
-    fontSize: 18,
-    fontFamily: "Helvetica-Bold",
+  headerBrand: {
     color: C.white,
+    fontSize: 15,
+    fontFamily: "Helvetica-Bold",
     letterSpacing: 1.5,
   },
-  documentTitle: {
-    fontSize: 14,
-    fontFamily: "Helvetica-Bold",
-    color: "#a0b8d8",
-    marginTop: 2,
-  },
-  documentSubtitle: {
-    fontSize: 11,
+  headerSlogan: {
     color: "#7a90b0",
+    fontSize: 7.5,
+    fontFamily: "Helvetica",
+    letterSpacing: 2,
     marginTop: 2,
-  },
-  headerRight: {
-    backgroundColor: C.corp,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderLeft: "2pt solid #2563eb",
-    minWidth: 130,
-  },
-  headerRightLabel: {
-    fontSize: 10,
-    color: "#7a90b0",
-    fontFamily: "Helvetica-Bold",
-  },
-  headerRightValue: {
-    fontSize: 13,
-    fontFamily: "Helvetica-Bold",
-    color: C.white,
-    marginBottom: 6,
   },
 
+  // Franja acento eléctrico
   accentStripe: {
-    height: 3,
+    height: ACCENT_STRIPE_HEIGHT,
     backgroundColor: C.electric,
-    marginBottom: 20,
+    position: "absolute",
+    top: HEADER_HEIGHT,
+    left: 0,
+    right: 0,
   },
 
+  // ── Cuerpo ───────────────────────────────────────────────────────────────────
   body: {
     paddingHorizontal: 32,
   },
 
+  // Título del documento
+  docTitle: {
+    fontSize: 15,
+    fontFamily: "Helvetica-Bold",
+    color: C.navy,
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  docTitleUnderline: {
+    height: 2,
+    width: 48,
+    backgroundColor: C.electric,
+    marginBottom: 18,
+  },
+
+  // ── Secciones ────────────────────────────────────────────────────────────────
   section: {
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 11,
     fontFamily: "Helvetica-Bold",
     color: C.white,
     backgroundColor: C.corp,
     paddingVertical: 6,
     paddingHorizontal: 10,
     marginBottom: 8,
+    letterSpacing: 1.2,
   },
 
+  // ── Filas de datos ───────────────────────────────────────────────────────────
   row: {
     flexDirection: "row",
     marginBottom: 6,
@@ -128,18 +137,18 @@ const styles = StyleSheet.create({
   },
   label: {
     width: 140,
-    fontSize: 11,
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
     color: C.steel,
     flexShrink: 0,
   },
   value: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 9,
     color: C.carbon,
   },
 
-  // ── Tablas — anchos absolutos (react-pdf no soporta % confiablemente) ────────
+  // ── Tablas ───────────────────────────────────────────────────────────────────
   table: {
     marginTop: 6,
     marginBottom: 8,
@@ -152,7 +161,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   tableHeaderCell: {
-    fontSize: 11,
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
     color: C.white,
   },
@@ -170,13 +179,12 @@ const styles = StyleSheet.create({
     backgroundColor: C.bgSoft,
   },
   tableCell: {
-    fontSize: 11,
+    fontSize: 9,
     color: C.carbon,
   },
-  // A4 body = 595 - 2×32 (body padding) - 2×10 (table margin) - 2×8 (cell padding) = 495pt
-  col1: { width: 370 }, // proveedor (75%)
-  col3: { width: 125, textAlign: "right" }, // valor (25%)
-  colRisk: { width: 165 }, // 3 columnas × 165 = 495
+  col1:    { width: 370 },
+  col3:    { width: 125, textAlign: "right" },
+  colRisk: { width: 165 },
 
   // ── Firmas ───────────────────────────────────────────────────────────────────
   signatureSection: {
@@ -185,11 +193,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     gap: 40,
-  },
-
-  signatureBox: {
-    width: "40%",
-    alignItems: "center",
   },
   signatureBox: {
     width: "30%",
@@ -202,40 +205,42 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   signatureRole: {
-    fontSize: 11,
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
     color: C.electric,
     textAlign: "center",
   },
   signatureName: {
-    fontSize: 12,
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
     textAlign: "center",
   },
   signatureMeta: {
-    fontSize: 10,
+    fontSize: 8,
     color: C.steel,
     textAlign: "center",
   },
 
-  // ── Footer ───────────────────────────────────────────────────────────────────
+  // ── Footer (igual al original) ────────────────────────────────────────────────
   footer: {
     position: "absolute",
     bottom: 20,
-    left: 32,
-    right: 32,
+    left: 28,
+    right: 28,
     borderTop: `1pt solid ${C.border}`,
-    paddingTop: 8,
+    paddingTop: 6,
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
   },
   footerLeft: {
-    fontSize: 10,
     color: C.steel,
+    fontSize: 7,
+    letterSpacing: 0.8,
   },
   footerRight: {
-    fontSize: 10,
     color: C.steel,
+    fontSize: 7,
   },
   footerAccent: {
     color: C.electric,
@@ -259,9 +264,10 @@ const formatMoneda = (valor) => {
 };
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
+
 const SectionBlock = ({ number, title, children }) => (
-  <View style={styles.section}>
-    <Text style={styles.sectionTitle}>
+  <View style={styles.section} wrap>
+    <Text style={styles.sectionTitle} wrap={false}>
       {number}. {title}
     </Text>
     {children}
@@ -269,7 +275,7 @@ const SectionBlock = ({ number, title, children }) => (
 );
 
 const Field = ({ label, value }) => (
-  <View style={styles.row}>
+  <View style={styles.row} wrap={false}>
     <Text style={styles.label}>{label}:</Text>
     <Text style={styles.value}>{value || "—"}</Text>
   </View>
@@ -286,92 +292,62 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
-        {/* ── HEADER ─────────────────────────────────────────────────────────── */}
-        <View style={styles.header}>
-          {/* Izquierda: monograma + nombre */}
-          <View style={styles.headerLeft}>
-            {logoUrl ? (
-              <Image
-                src={logoUrl}
-                style={{ width: 40, height: 40, marginRight: 14 }}
-              />
-            ) : (
-              <View style={styles.monogram}>
-                <Text style={styles.monogramText}>DGL</Text>
-              </View>
-            )}
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.companyName}>GRUPO DUBOIS</Text>
-              <Text style={styles.documentTitle}>ESTUDIO DE MERCADO</Text>
-              <Text style={styles.documentSubtitle}>
-                GLOBAL TRADE INTELLIGENCE
-              </Text>
-            </View>
-          </View>
+      <Page size="A4" style={styles.page} wrap>
 
-          {/* Derecha: tipo + fecha */}
-          <View style={styles.headerRight}>
-            <Text style={styles.headerRightLabel}>TIPO</Text>
-            <Text style={styles.headerRightValue}>
-              {data.tipoDocumento || "N/A"}
-            </Text>
-            <Text style={styles.headerRightLabel}>FECHA</Text>
-            <Text style={[styles.headerRightValue, { marginBottom: 0 }]}>
-              {fechaDocumento}
-            </Text>
+        {/* ── HEADER fijo (igual al original) ── */}
+        <View style={styles.header} fixed>
+          <View style={styles.monogram}>
+            {logoUrl ? (
+              <Image src={logoUrl} style={{ width: 38, height: 38 }} />
+            ) : (
+              <Text style={styles.monogramText}>DG</Text>
+            )}
+          </View>
+          <View style={styles.headerTextBlock}>
+            <Text style={styles.headerBrand}>DUBOIS · Grupo Logístico</Text>
+            <Text style={styles.headerSlogan}>GLOBAL TRADE INTELLIGENCE</Text>
           </View>
         </View>
 
-        {/* Franja acento eléctrico */}
-        <View style={styles.accentStripe} />
+        {/* Franja acento eléctrico fija */}
+        <View style={styles.accentStripe} fixed />
 
-        {/* ── CUERPO ─────────────────────────────────────────────────────────── */}
+        {/* ── CUERPO ── */}
         <View style={styles.body}>
+
+          {/* Título del documento */}
+          <Text style={styles.docTitle}>Estudio de Mercado</Text>
+          <View style={styles.docTitleUnderline} />
+
           {/* 1. Información General */}
           <SectionBlock number="1" title="INFORMACIÓN GENERAL">
-            <Field label="Solicitante" value={data.solicitante} />
-            <Field label="CC / NIT" value={data.ccNit} />
+            <Field label="Solicitante"       value={data.solicitante} />
+            <Field label="CC / NIT"          value={data.ccNit} />
             <Field
               label="Teléfono / Celular"
-              value={
-                data.ext ? `${data.telCel}  Ext: ${data.ext}` : data.telCel
-              }
+              value={data.ext ? `${data.telCel}  Ext: ${data.ext}` : data.telCel}
             />
-            <Field label="Email" value={data.email} />
+            <Field label="Email"             value={data.email} />
           </SectionBlock>
 
           {/* 2. Justificación */}
           <SectionBlock number="2" title="JUSTIFICACIÓN">
-            <Field
-              label="Descripción de la Necesidad"
-              value={data.descripcionNecesidad}
-            />
-            <Field label="Pertinencia" value={data.pertinencia} />
+            <Field label="Descripción de la Necesidad" value={data.descripcionNecesidad} />
+            <Field label="Pertinencia"                 value={data.pertinencia} />
           </SectionBlock>
 
-          {/* 3. Objeto */}
+          {/* 3. Objeto a Contratar */}
           <SectionBlock number="3" title="OBJETO A CONTRATAR">
-            <Field label="Descripción" value={data.descripcionObjeto} />
+            <Field label="Descripción"      value={data.descripcionObjeto} />
             <Field label="Especificaciones" value={data.especificaciones} />
             <Field label="Requiere Permisos" value={data.requierePermisos} />
           </SectionBlock>
 
-          {/* 4. Obligaciones */}
+          {/* 4. Obligaciones del Contratista */}
           <SectionBlock number="4" title="OBLIGACIONES DEL CONTRATISTA">
             {data.obligaciones.map((obligacion, idx) => (
-              <View
-                key={idx}
-                style={[styles.row, { alignItems: "flex-start" }]}
-              >
-                <Text
-                  style={{
-                    color: C.electric,
-                    fontSize: 8.5,
-                    marginRight: 6,
-                    flexShrink: 0,
-                  }}
-                >
+              <View key={idx} style={[styles.row, { alignItems: "flex-start" }]} wrap={false}>
+                <Text style={{ color: C.electric, fontSize: 8.5, marginRight: 6, flexShrink: 0 }}>
                   ▸
                 </Text>
                 <Text style={styles.value}>{obligacion}</Text>
@@ -379,15 +355,11 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
             ))}
           </SectionBlock>
 
-          {/* 5. Modalidad */}
+          {/* 5. Modalidad de Selección */}
           <SectionBlock number="5" title="MODALIDAD DE SELECCIÓN">
             <Field
               label="Modalidad"
-              value={
-                data.modalidad === "directa"
-                  ? "Contratación Directa"
-                  : "Convocatoria Pública"
-              }
+              value={data.modalidad === "directa" ? "Contratación Directa" : "Convocatoria Pública"}
             />
             <Field label="Justificación" value={data.justificacionModalidad} />
           </SectionBlock>
@@ -396,75 +368,46 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
           <SectionBlock number="6" title="FORMA DE PAGO">
             <Field
               label="Forma de Pago"
-              value={
-                data.formaPago === "unico" ? "Pago Único" : "Pagos Parciales"
-              }
+              value={data.formaPago === "unico" ? "Pago Único" : "Pagos Parciales"}
             />
-            {data.detallePago && (
-              <Field label="Detalle" value={data.detallePago} />
-            )}
+            {data.detallePago && <Field label="Detalle" value={data.detallePago} />}
           </SectionBlock>
-
-          <View break={true} style={{ marginTop: 8 }} />
 
           {/* 7. Criterios de Selección */}
           <SectionBlock number="7" title="CRITERIOS DE SELECCIÓN">
-            <Field
-              label="Menor Precio"
-              value={data.criterioMenorPrecio ? "SÍ" : "NO"}
-            />
-            {data.criterioOtro && (
-              <Field label="Otro Criterio" value={data.criterioOtro} />
-            )}
+            <Field label="Menor Precio" value={data.criterioMenorPrecio ? "SÍ" : "NO"} />
+            {data.criterioOtro && <Field label="Otro Criterio" value={data.criterioOtro} />}
           </SectionBlock>
 
           {/* 8. Estudio de Mercado */}
           <SectionBlock number="8" title="ESTUDIO DE MERCADO">
             <View style={styles.table}>
-              <View style={styles.tableHeader}>
-                <Text style={[styles.tableHeaderCell, { width: 370 }]}>
-                  COTIZANTE / PROVEEDOR
-                </Text>
-                <Text
-                  style={[
-                    styles.tableHeaderCell,
-                    { width: 125, textAlign: "right" },
-                  ]}
-                >
-                  VALOR
-                </Text>
+              <View style={styles.tableHeader} wrap={false}>
+                <Text style={[styles.tableHeaderCell, { width: 370 }]}>COTIZANTE / PROVEEDOR</Text>
+                <Text style={[styles.tableHeaderCell, { width: 125, textAlign: "right" }]}>VALOR</Text>
               </View>
               {data.cotizantes?.map((cotizante, idx) => (
                 <View
                   key={idx}
                   style={idx % 2 === 0 ? styles.tableRow : styles.tableRowAlt}
+                  wrap={false}
                 >
-                  <Text style={[styles.tableCell, styles.col1]}>
-                    {cotizante.nombre}
-                  </Text>
-                  <Text style={[styles.tableCell, styles.col3]}>
-                    {formatMoneda(cotizante.valor)}
-                  </Text>
+                  <Text style={[styles.tableCell, styles.col1]}>{cotizante.nombre}</Text>
+                  <Text style={[styles.tableCell, styles.col3]}>{formatMoneda(cotizante.valor)}</Text>
                 </View>
               ))}
             </View>
-            <Field
-              label="Valor Estimado"
-              value={formatMoneda(data.valorEstimado)}
-            />
+            <Field label="Valor Estimado" value={formatMoneda(data.valorEstimado)} />
           </SectionBlock>
 
-          {/* 9. Contratista (solo contratación directa) */}
+          {/* 9. Contratista Propuesto (solo contratación directa) */}
           {data.modalidad === "directa" && data.contratistaNombre && (
             <SectionBlock number="9" title="CONTRATISTA PROPUESTO">
-              <Field
-                label="Nombre / Razón Social"
-                value={data.contratistaNombre}
-              />
-              <Field label="CC / NIT" value={data.contratistaCcNit} />
-              <Field label="Email" value={data.contratistaEmail} />
-              <Field label="Ciudad" value={data.contratistaCiudad} />
-              <Field label="Teléfono" value={data.contratistaTelefono} />
+              <Field label="Nombre / Razón Social" value={data.contratistaNombre} />
+              <Field label="CC / NIT"              value={data.contratistaCcNit} />
+              <Field label="Email"                 value={data.contratistaEmail} />
+              <Field label="Ciudad"                value={data.contratistaCiudad} />
+              <Field label="Teléfono"              value={data.contratistaTelefono} />
             </SectionBlock>
           )}
 
@@ -472,31 +415,20 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
           {data.riesgos && data.riesgos.length > 0 && (
             <SectionBlock number="10" title="ANÁLISIS DE RIESGOS">
               <View style={styles.table}>
-                <View style={styles.tableHeader}>
-                  <Text style={[styles.tableHeaderCell, styles.colRisk]}>
-                    DESCRIPCIÓN
-                  </Text>
-                  <Text style={[styles.tableHeaderCell, styles.colRisk]}>
-                    MITIGACIÓN
-                  </Text>
-                  <Text style={[styles.tableHeaderCell, styles.colRisk]}>
-                    ASIGNACIÓN
-                  </Text>
+                <View style={styles.tableHeader} wrap={false}>
+                  <Text style={[styles.tableHeaderCell, styles.colRisk]}>DESCRIPCIÓN</Text>
+                  <Text style={[styles.tableHeaderCell, styles.colRisk]}>MITIGACIÓN</Text>
+                  <Text style={[styles.tableHeaderCell, styles.colRisk]}>ASIGNACIÓN</Text>
                 </View>
                 {data.riesgos.map((riesgo, idx) => (
                   <View
                     key={idx}
                     style={idx % 2 === 0 ? styles.tableRow : styles.tableRowAlt}
+                    wrap={false}
                   >
-                    <Text style={[styles.tableCell, styles.colRisk]}>
-                      {riesgo.descripcion}
-                    </Text>
-                    <Text style={[styles.tableCell, styles.colRisk]}>
-                      {riesgo.mitigacion}
-                    </Text>
-                    <Text style={[styles.tableCell, styles.colRisk]}>
-                      {riesgo.asignacion}
-                    </Text>
+                    <Text style={[styles.tableCell, styles.colRisk]}>{riesgo.descripcion}</Text>
+                    <Text style={[styles.tableCell, styles.colRisk]}>{riesgo.mitigacion}</Text>
+                    <Text style={[styles.tableCell, styles.colRisk]}>{riesgo.asignacion}</Text>
                   </View>
                 ))}
               </View>
@@ -507,18 +439,8 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
           {data.garantias && data.garantias.length > 0 && (
             <SectionBlock number="11" title="GARANTÍAS">
               {data.garantias.map((garantia, idx) => (
-                <View
-                  key={idx}
-                  style={[styles.row, { alignItems: "flex-start" }]}
-                >
-                  <Text
-                    style={{
-                      color: C.electric,
-                      fontSize: 8.5,
-                      marginRight: 6,
-                      flexShrink: 0,
-                    }}
-                  >
+                <View key={idx} style={[styles.row, { alignItems: "flex-start" }]} wrap={false}>
+                  <Text style={{ color: C.electric, fontSize: 8.5, marginRight: 6, flexShrink: 0 }}>
                     ▸
                   </Text>
                   <Text style={styles.value}>{garantia}</Text>
@@ -527,9 +449,9 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
             </SectionBlock>
           )}
 
-          {/* 12. Plazo */}
+          {/* 12. Plazo de Ejecución */}
           <SectionBlock number="12" title="PLAZO DE EJECUCIÓN">
-            <View style={styles.row}>
+            <View style={styles.row} wrap={false}>
               <Text style={styles.value}>{data.plazo}</Text>
             </View>
           </SectionBlock>
@@ -540,13 +462,8 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
             data.comiteEvaluador.length > 0 && (
               <SectionBlock number="13" title="COMITÉ EVALUADOR">
                 {data.comiteEvaluador.map((miembro, idx) => (
-                  <View key={idx} style={styles.row}>
-                    <Text
-                      style={[
-                        styles.value,
-                        { color: C.electric, marginRight: 4, flexShrink: 0 },
-                      ]}
-                    >
+                  <View key={idx} style={styles.row} wrap={false}>
+                    <Text style={{ color: C.electric, marginRight: 4, flexShrink: 0, fontSize: 8.5 }}>
                       ▸
                     </Text>
                     <Text style={styles.value}>{miembro}</Text>
@@ -555,31 +472,12 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
               </SectionBlock>
             )}
 
-          {/* 14. Supervisor 
-          <SectionBlock number="14" title="SUPERVISOR DEL CONTRATO">
-            <Field label="Nombre" value={data.supervisorNombre} />
-            {data.supervisorCargo && (
-              <Field label="Cargo" value={data.supervisorCargo} />
-            )}
-            {data.supervisorCorreo && (
-              <Field label="Correo" value={data.supervisorCorreo} />
-            )}
-            {data.supervisorCelular && (
-              <Field label="Celular" value={data.supervisorCelular} />
-            )}
-          </SectionBlock>*/}
-
           {/* 15. Documentos Soporte */}
           {data.documentosSoporte && data.documentosSoporte.length > 0 && (
             <SectionBlock number="15" title="DOCUMENTOS SOPORTE">
               {data.documentosSoporte.map((doc, idx) => (
-                <View key={idx} style={styles.row}>
-                  <Text
-                    style={[
-                      styles.value,
-                      { color: C.electric, marginRight: 4, flexShrink: 0 },
-                    ]}
-                  >
+                <View key={idx} style={styles.row} wrap={false}>
+                  <Text style={{ color: C.electric, marginRight: 4, flexShrink: 0, fontSize: 8.5 }}>
                     ▸
                   </Text>
                   <Text style={styles.value}>{doc}</Text>
@@ -587,16 +485,14 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
               ))}
             </SectionBlock>
           )}
+
         </View>
 
-        {/* ── FIRMAS ─────────────────────────────────────────────────────────── */}
-        <View style={styles.signatureSection}>
+        {/* ── FIRMAS ── */}
+        <View style={styles.signatureSection} wrap={false}>
           {[
-            { role: "ELABORADO POR", person: data.elaboradoPor },
-            {
-              role: "CONTRATANTE",
-              person: data.responsableContratacion,
-            },
+            { role: "ELABORADO POR",  person: data.elaboradoPor },
+            { role: "CONTRATANTE",    person: data.responsableContratacion },
           ].map(({ role, person }, idx) => (
             <View key={idx} style={styles.signatureBox}>
               <View style={styles.signatureLine} />
@@ -608,14 +504,18 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
           ))}
         </View>
 
-        {/* ── FOOTER ─────────────────────────────────────────────────────────── */}
-        <View style={styles.footer}>
+        {/* ── FOOTER fijo (igual al original) ── */}
+        <View style={styles.footer} fixed>
           <Text style={styles.footerLeft}>
-            DUBOIS · Grupo Logístico <Text style={styles.footerAccent}>·</Text>{" "}
-            Documento confidencial — uso interno
+            DUBOIS · Grupo Logístico{"\n"}
+            <Text style={{ color: C.border }}>Global Trade Intelligence</Text>
           </Text>
-          <Text style={styles.footerRight}>Generado el {fechaGeneracion}</Text>
+          <Text style={styles.footerRight}>
+            Documento confidencial — uso interno{" "}
+            <Text style={styles.footerAccent}>·</Text>
+          </Text>
         </View>
+
       </Page>
     </Document>
   );

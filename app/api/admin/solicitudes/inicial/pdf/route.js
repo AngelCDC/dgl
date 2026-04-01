@@ -7,16 +7,15 @@ import { solicitudProcuraSimpleSchema } from '../../../../../lib/schemas/solicit
 export async function POST(request) {
   try {
     const data = await request.json();
-
     const validatedData = solicitudProcuraSimpleSchema.parse(data);
 
-    const empresa = validatedData.empresaCliente
-      ? validatedData.empresaCliente
-          .toLowerCase()
-          .trim()
-          .replace(/\s+/g, '-')
-          .replace(/[^a-z0-9-_]/g, '')
-      : Date.now();
+    const empresaBase = validatedData.cliente?.razonSocial || String(Date.now());
+
+    const empresa = empresaBase
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-_]/g, '');
 
     const buffer = await renderToBuffer(
       createElement(SolicitudLevantamientoProcuraPDF, { data: validatedData })
