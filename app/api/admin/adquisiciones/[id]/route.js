@@ -53,10 +53,11 @@ export async function PATCH(req, { params }) {
         if (cotizantes.length > 0) {
           await tx.cotizanteAdquisicion.createMany({
             data: cotizantes.map((c, i) => ({
-              solicitudId: id,
-              nombre:    c.nombre,
-              valor:     c.valor,
-              sortOrder: i,
+              solicitudId:    id,
+              productoNombre: c.productoNombre ?? null, // ← fix
+              nombre:         c.nombre,
+              valor:          c.valor,
+              sortOrder:      i,
             })),
           })
         }

@@ -16,7 +16,6 @@ export async function GET(req, { params }) {
   const { id } = await params
 
   try {
-    // 1. Cargar adquisición completa desde DB
     const s = await prisma.solicitudAdquisicion.findUnique({
       where: { id },
       include: {
@@ -27,16 +26,15 @@ export async function GET(req, { params }) {
 
     if (!s) return NextResponse.json({ error: 'No encontrada' }, { status: 404 })
 
-    // 2. Mapear al shape que espera SolicitudPDF
     const data = {
-      fecha:            parseFecha(s.fecha),
-      tipoDocumento:    s.tipoDocumento,
+      fecha:             parseFecha(s.fecha),
+      tipoDocumento:     s.tipoDocumento,
       tipoDocumentoOtro: s.tipoDocumentoOtro,
-      solicitante:      s.solicitante,
-      ccNit:            s.ccNit,
-      telCel:           s.telCel,
-      ext:              s.ext,
-      email:            s.email,
+      solicitante:       s.solicitante,
+      ccNit:             s.ccNit,
+      telCel:            s.telCel,
+      ext:               s.ext,
+      email:             s.email,
 
       descripcionNecesidad: s.descripcionNecesidad,
       pertinencia:          s.pertinencia,
@@ -50,7 +48,12 @@ export async function GET(req, { params }) {
       modalidad:              s.modalidad,
       justificacionModalidad: s.justificacionModalidad,
 
-      cotizantes:    s.cotizantes.map(c => ({ nombre: c.nombre, valor: c.valor })),
+      // ← fix: incluir productoNombre para que el PDF agrupe por producto
+      cotizantes: s.cotizantes.map(c => ({
+        productoNombre: c.productoNombre ?? null,
+        nombre:         c.nombre,
+        valor:          c.valor,
+      })),
       valorEstimado: s.valorEstimado,
 
       formaPago:           s.formaPago,
@@ -70,43 +73,35 @@ export async function GET(req, { params }) {
         asignacion:  r.asignacion,
       })),
 
-      garantias:       [],
-      plazo:           s.plazo,
-      comiteEvaluador: s.comiteEvaluador ?? [],
+      garantias:        [],
+      plazo:            s.plazo,
+      comiteEvaluador:  s.comiteEvaluador ?? [],
       documentosSoporte: [],
-
-      supervisorNombre:  null,
-      supervisorCargo:   null,
-      supervisorCorreo:  null,
-      supervisorCelular: null,
 
       elaboradoPor: {
         nombre: s.elaboradoPorNombre,
         cargo:  s.elaboradoPorCargo,
         fecha:  s.elaboradoPorFecha,
       },
-      ordenadorGasto: {
+      responsableContratacion: {
         nombre: s.contratanteNombre,
         cargo:  s.contratanteCargo,
         fecha:  s.contratanteFecha,
       },
     }
 
-    // 3. Generar PDF
     const buffer = await renderToBuffer(
       createElement(SolicitudPDF, { data })
     )
 
-    // 4. Nombre del archivo
-    const nombre = s.solicitante?.trim().replace(/s+/g, '_') || 'cliente'
+    const nombre = s.solicitante?.trim().replace(/\s+/g, '_') || 'cliente'
     const fecha  = s.fecha?.replace(/\//g, '-') || 'sin-fecha'
-    const folio  = `${nombre}_${fecha}`
 
     return new NextResponse(buffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="adquisicion-${folio}.pdf"`,
+        'Content-Disposition': `attachment; filename="adquisicion-${nombre}_${fecha}.pdf"`,
       },
     })
 
@@ -116,7 +111,6 @@ export async function GET(req, { params }) {
   }
 }
 
-// ── Convierte "DD/MM/AAAA" → { dd, mm, aaaa } que espera SolicitudPDF ─────────
 function parseFecha(fechaStr) {
   if (!fechaStr) return { dd: '--', mm: '--', aaaa: '----' }
   const [dd, mm, aaaa] = fechaStr.split('/')
