@@ -10,6 +10,9 @@ export async function POST(req) {
 
   const data = await req.json()
 
+  console.log('session.user.id:', session.user.id)
+  console.log('data.authorId:', data.authorId)
+
   const article = await prisma.article.create({
     data: {
       title: data.title,
