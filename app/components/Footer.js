@@ -1,5 +1,18 @@
 import Link from 'next/link'
 
+const seccionesLinks = [
+  { label: 'Proveedores Globales', href: '/proveedores' },
+  { label: 'Artículos', href: '/articulos' },
+  { label: 'Directorio', href: '/directorio' },
+]
+
+const empresaLinks = [
+  { label: 'Nosotros', href: '/nosotros' },
+  { label: 'Directorio', href: '/directorio' },
+  { label: 'Contacto', href: '/contacto' },
+  { label: 'Política Editorial', href: '/politica-editorial' },
+]
+
 export default function Footer() {
   return (
     <footer style={{ background: 'var(--navy)', padding: '48px 32px 32px' }}>
@@ -23,18 +36,18 @@ export default function Footer() {
 
           <div>
             <div style={{ fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px' }}>Secciones</div>
-            {['Proveedores Globales', 'Logística Internacional', 'Auditorías', 'Directorio', 'Eventos'].map(item => (
-              <div key={item} style={{ marginBottom: '10px' }}>
-                <span style={{ fontFamily: 'var(--font-dm)', fontSize: '13px', color: 'rgba(255,255,255,0.45)', cursor: 'pointer' }}>{item}</span>
+            {seccionesLinks.map(item => (
+              <div key={item.href} style={{ marginBottom: '10px' }}>
+                <Link href={item.href} style={{ fontFamily: 'var(--font-dm)', fontSize: '13px', color: 'rgba(255,255,255,0.45)' }}>{item.label}</Link>
               </div>
             ))}
           </div>
 
           <div>
             <div style={{ fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px' }}>Empresa</div>
-            {['Nosotros', 'Directorio', 'Contacto', 'Política Editorial'].map(item => (
-              <div key={item} style={{ marginBottom: '10px' }}>
-                <span style={{ fontFamily: 'var(--font-dm)', fontSize: '13px', color: 'rgba(255,255,255,0.45)', cursor: 'pointer' }}>{item}</span>
+            {empresaLinks.map(item => (
+              <div key={item.href} style={{ marginBottom: '10px' }}>
+                <Link href={item.href} style={{ fontFamily: 'var(--font-dm)', fontSize: '13px', color: 'rgba(255,255,255,0.45)' }}>{item.label}</Link>
               </div>
             ))}
           </div>
