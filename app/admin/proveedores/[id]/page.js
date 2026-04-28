@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+import prisma from '../../../lib/prisma'
 import ProveedorForm from '../ProveedorForm'
-
-const prisma = new PrismaClient()
 
 export default async function EditarProveedorPage({ params }) {
   const { id } = await params

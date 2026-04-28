@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from '../../../lib/prisma'
 import { notFound } from "next/navigation";
 import Link from "next/link";
-
-const prisma = new PrismaClient();
 
 export default async function SolicitudDetallePage({ params }) {
   const { id } = await params;

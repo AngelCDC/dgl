@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client'
+import prisma from '../../../lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../api/auth/[...nextauth]/route'
 import ArticuloEditor from '../ArticuloEditor'
-
-const prisma = new PrismaClient()
 
 export default async function EditarArticuloPage({ params }) {
   const { id } = await params

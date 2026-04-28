@@ -1,13 +1,11 @@
+import prisma from '../../../../../lib/prisma'
 // app/api/admin/adquisiciones/[id]/pdf/route.js
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../../auth/[...nextauth]/route'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { createElement } from 'react'
 import SolicitudPDF from '../../../../../components/SolicitudPDF'
-
-const prisma = new PrismaClient()
 
 export async function GET(req, { params }) {
   const session = await getServerSession(authOptions)

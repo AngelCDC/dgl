@@ -1,10 +1,8 @@
+import prisma from '../../../../lib/prisma'
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../auth/[...nextauth]/route'
 import { solicitudProcuraSimpleSchema } from '../../../../lib/schemas/solicitud-levantamiento-procura'
-
-const prisma = new PrismaClient()
 
 export async function GET(req) {
   const session = await getServerSession(authOptions)

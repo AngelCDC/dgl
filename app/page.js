@@ -1,10 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from './lib/prisma'
 import Link from "next/link";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Sidebar from "./components/Sidebar";
-
-const prisma = new PrismaClient();
 
 export default async function HomePage() {
   const [articulos, proveedores] = await Promise.all([

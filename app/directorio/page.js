@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client'
+import prisma from '../lib/prisma'
 import Link from 'next/link'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-
-const prisma = new PrismaClient()
 
 export const metadata = {
   title: 'Directorio de Proveedores — DUBOIS Global Trade Intelligence',

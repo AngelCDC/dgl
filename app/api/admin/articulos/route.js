@@ -1,17 +1,12 @@
-import { PrismaClient } from '@prisma/client'
+import prisma from '../../../lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]/route'
-
-const prisma = new PrismaClient()
 
 export async function POST(req) {
   const session = await getServerSession(authOptions)
   if (!session) return Response.json({ error: 'No autorizado' }, { status: 401 })
 
   const data = await req.json()
-
-  console.log('session.user.id:', session.user.id)
-  console.log('data.authorId:', data.authorId)
 
   const article = await prisma.article.create({
     data: {

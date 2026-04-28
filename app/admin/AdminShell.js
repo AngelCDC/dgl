@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 
 export default function AdminShell({ children, userName }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -150,15 +151,26 @@ export default function AdminShell({ children, userName }) {
           />
         </div>
 
-        <div
-          style={{
-            padding: "16px",
-            borderTop: "1px solid #eee",
-            fontSize: "13px",
-            color: "#888",
-          }}
-        >
-          {userName || "Usuario"}
+        <div style={{ padding: "12px 16px", borderTop: "1px solid #eee" }}>
+          <div style={{ fontSize: "12px", color: "#aaa", marginBottom: "8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {userName || "Usuario"}
+          </div>
+          <button
+            onClick={() => signOut({ callbackUrl: '/login' })}
+            style={{
+              width: "100%",
+              padding: "8px 12px",
+              fontSize: "13px",
+              color: "#666",
+              background: "transparent",
+              border: "1px solid #e5e5e5",
+              borderRadius: "6px",
+              cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            Cerrar sesión
+          </button>
         </div>
       </aside>
 
@@ -202,15 +214,26 @@ function SidebarContent({ pathname, userName }) {
         <SidebarNav pathname={pathname} />
       </div>
 
-      <div
-        style={{
-          padding: "16px",
-          borderTop: "1px solid #eee",
-          fontSize: "13px",
-          color: "#888",
-        }}
-      >
-        {userName || "Usuario"}
+      <div style={{ padding: "12px 16px", borderTop: "1px solid #eee" }}>
+        <div style={{ fontSize: "12px", color: "#aaa", marginBottom: "8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {userName || "Usuario"}
+        </div>
+        <button
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          style={{
+            width: "100%",
+            padding: "8px 12px",
+            fontSize: "13px",
+            color: "#666",
+            background: "transparent",
+            border: "1px solid #e5e5e5",
+            borderRadius: "6px",
+            cursor: "pointer",
+            textAlign: "left",
+          }}
+        >
+          Cerrar sesión
+        </button>
       </div>
     </>
   );
@@ -251,6 +274,9 @@ function SidebarNav({ pathname, onNavigate }) {
       <SectionTitle>Sistema</SectionTitle>
       <NavLink href="/admin/equipo" pathname={pathname} onNavigate={onNavigate}>
         Equipo
+      </NavLink>
+      <NavLink href="/admin/contactos" pathname={pathname} onNavigate={onNavigate}>
+        Mensajes
       </NavLink>
     </nav>
   );

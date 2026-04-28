@@ -1,11 +1,9 @@
-import { PrismaClient } from '@prisma/client'
+import prisma from '../../lib/prisma'
 import { notFound } from 'next/navigation'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import Sidebar from '../../components/Sidebar'
 import ArticuloContent from './ArticuloContent'
-
-const prisma = new PrismaClient()
 
 export async function generateMetadata({ params }) {
   const { slug } = await params

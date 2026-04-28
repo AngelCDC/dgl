@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client'
+import prisma from '../lib/prisma'
 import Link from 'next/link'
 import Navbar from '../components/Navbar'
-
-const prisma = new PrismaClient()
 
 export default async function ArticulosPage() {
   const articulos = await prisma.article.findMany({
