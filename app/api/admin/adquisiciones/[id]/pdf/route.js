@@ -17,36 +17,38 @@ export async function GET(req, { params }) {
     const s = await prisma.solicitudAdquisicion.findUnique({
       where: { id },
       include: {
-        cotizantes: { orderBy: { sortOrder: 'asc' } },
-        riesgos:    { orderBy: { sortOrder: 'asc' } },
+        cotizantes:      { orderBy: { sortOrder: 'asc' } },
+        riesgos:         { orderBy: { sortOrder: 'asc' } },
+        solicitudProcura: { include: { productos: true } },
       },
     })
 
     if (!s) return NextResponse.json({ error: 'No encontrada' }, { status: 404 })
 
     const data = {
-      fecha:             parseFecha(s.fecha),
-      tipoDocumento:     s.tipoDocumento,
-      tipoDocumentoOtro: s.tipoDocumentoOtro,
-      solicitante:       s.solicitante,
-      ccNit:             s.ccNit,
-      telCel:            s.telCel,
-      ext:               s.ext,
-      email:             s.email,
+      // 1. General
+      fecha:       parseFecha(s.fecha),
+      solicitante: s.solicitante,
+      ccNit:       s.ccNit,
+      telCel:      s.telCel,
+      ext:         s.ext,
+      email:       s.email,
 
-      descripcionNecesidad: s.descripcionNecesidad,
-      pertinencia:          s.pertinencia,
+      // 2. Justificación (fusionada)
+      justificacion: s.descripcionNecesidad,
 
-      descripcionObjeto: s.descripcionObjeto,
-      especificaciones:  s.especificaciones,
-      requierePermisos:  s.requierePermisos,
+      // 3. Objeto — descripción + productos especificados en la solicitud de procura
+      descripcionObjeto:   s.descripcionObjeto,
+      requierePermisos:    s.requierePermisos,
+      productosVinculados: s.solicitudProcura?.productos ?? [],
 
+      // 4. Obligaciones
       obligaciones: s.obligaciones ?? [],
 
-      modalidad:              s.modalidad,
-      justificacionModalidad: s.justificacionModalidad,
+      // 5. Plazo de Ejecución
+      plazo: s.plazo || '4 Meses',
 
-      // ← fix: incluir productoNombre para que el PDF agrupe por producto
+      // 6. Estudio de Mercado
       cotizantes: s.cotizantes.map(c => ({
         productoNombre: c.productoNombre ?? null,
         nombre:         c.nombre,
@@ -54,31 +56,17 @@ export async function GET(req, { params }) {
       })),
       valorEstimado: s.valorEstimado,
 
-      formaPago:           s.formaPago,
-      detallePago:         s.detallePago,
-      criterioMenorPrecio: s.criterioMenorPrecio,
-      criterioOtro:        s.criterioOtro,
-
-      contratistaNombre:   s.contratistaNombre,
-      contratistaCcNit:    s.contratistaCcNit,
-      contratistaEmail:    s.contratistaEmail,
-      contratistaCiudad:   s.contratistaCiudad,
-      contratistaTelefono: s.contratistaTelefono,
-
+      // 7. Riesgos
       riesgos: s.riesgos.map(r => ({
         descripcion: r.descripcion,
         mitigacion:  r.mitigacion,
         asignacion:  r.asignacion,
       })),
 
-      garantias:        [],
-      plazo:            s.plazo,
-      comiteEvaluador:  s.comiteEvaluador ?? [],
-      documentosSoporte: [],
-
+      // 8. Firmas
       elaboradoPor: {
-        nombre: s.elaboradoPorNombre,
-        cargo:  s.elaboradoPorCargo,
+        nombre: s.elaboradoPorNombre || 'Angel Dubois',
+        cargo:  s.elaboradoPorCargo  || 'FOUNDER - CEO',
         fecha:  s.elaboradoPorFecha,
       },
       responsableContratacion: {

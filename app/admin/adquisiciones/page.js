@@ -1,5 +1,6 @@
 import prisma from '../../lib/prisma'
 import Link from 'next/link'
+import DeleteButton from '../../components/admin/DeleteButton'
 
 export default async function AdquisicionesPage() {
   const solicitudes = await prisma.solicitudAdquisicion.findMany({
@@ -51,9 +52,13 @@ export default async function AdquisicionesPage() {
               <Link href={`/admin/adquisiciones/${s.id}`} style={{ fontSize: '13px', color: '#555', padding: '6px 12px', border: '1px solid #eee', borderRadius: '6px' }}>
                 Ver
               </Link>
-              <a href={`/api/admin/solicitudes/pdf?id=${s.id}`} target="_blank" style={{ fontSize: '13px', color: '#2563eb', padding: '6px 12px', border: '1px solid #2563eb', borderRadius: '6px' }}>
+              <a href={`/api/admin/adquisiciones/${s.id}/pdf`} target="_blank" style={{ fontSize: '13px', color: '#2563eb', padding: '6px 12px', border: '1px solid #2563eb', borderRadius: '6px' }}>
                 PDF
               </a>
+              <DeleteButton
+                apiPath={`/api/admin/adquisiciones/${s.id}`}
+                confirmMsg={`¿Eliminar el estudio de mercado de "${s.solicitante}"? Esta acción no se puede deshacer.`}
+              />
             </div>
           </div>
         ))}

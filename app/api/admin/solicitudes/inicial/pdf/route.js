@@ -32,10 +32,11 @@ export async function POST(request) {
     console.error('Error generando PDF inicial:', error);
 
     if (error.name === 'ZodError') {
+      const issues = error.issues ?? error.errors ?? [];
       return NextResponse.json(
         {
           error: 'Datos inválidos',
-          details: error.errors.map((err) => ({
+          details: issues.map((err) => ({
             path: err.path.join('.'),
             message: err.message,
           })),

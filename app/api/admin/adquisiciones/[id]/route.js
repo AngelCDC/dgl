@@ -13,8 +13,9 @@ export async function GET(req, { params }) {
   const adquisicion = await prisma.solicitudAdquisicion.findUnique({
     where: { id },
     include: {
-      cotizantes: { orderBy: { sortOrder: 'asc' } },
-      riesgos:    { orderBy: { sortOrder: 'asc' } },
+      cotizantes:      { orderBy: { sortOrder: 'asc' } },
+      riesgos:         { orderBy: { sortOrder: 'asc' } },
+      solicitudProcura: { include: { productos: true } },
     },
   })
 
@@ -88,6 +89,22 @@ export async function PATCH(req, { params }) {
   }
 }
 
+// ── DELETE — eliminar adquisición ────────────────────────────────────────────
+export async function DELETE(req, { params }) {
+  const session = await getServerSession(authOptions)
+  if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
+  const { id } = await params
+
+  try {
+    await prisma.solicitudAdquisicion.delete({ where: { id } })
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error('Error eliminando adquisición:', error)
+    return NextResponse.json({ error: 'Error al eliminar' }, { status: 500 })
+  }
+}
+
 // ── POST /emitir — cambiar status a finalizado ────────────────────────────────
 export async function POST(req, { params }) {
   const session = await getServerSession(authOptions)
@@ -99,9 +116,18 @@ export async function POST(req, { params }) {
     const { action } = await req.json()
 
     if (action === 'emitir') {
+      const hoy = new Date().toISOString().split('T')[0]
+      const current = await prisma.solicitudAdquisicion.findUnique({ where: { id }, select: { elaboradoPorFecha: true, contratanteFecha: true } })
       await prisma.solicitudAdquisicion.update({
         where: { id },
-        data: { status: 'finalizado', updatedAt: new Date() },
+        data: {
+          status: 'finalizado',
+          updatedAt: new Date(),
+          elaboradoPorNombre: 'Angel Dubois',
+          elaboradoPorCargo:  'FOUNDER - CEO',
+          ...(!current?.elaboradoPorFecha && { elaboradoPorFecha: hoy }),
+          ...(!current?.contratanteFecha  && { contratanteFecha:  hoy }),
+        },
       })
       return NextResponse.json({ ok: true, status: 'finalizado' })
     }

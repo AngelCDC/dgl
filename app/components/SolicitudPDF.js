@@ -139,7 +139,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginHorizontal: 10,
   },
-  // Sub-título por producto dentro de la sección 8
   productoTableTitle: {
     fontSize: 9,
     fontFamily: "Helvetica-Bold",
@@ -238,7 +237,7 @@ const formatFecha = (fechaObj) => {
 };
 
 const formatMoneda = (valor) => {
-  if (!valor || valor === '0') return "—";
+  if (!valor || valor === "0") return "—";
   const n = parseFloat(valor);
   if (isNaN(n)) return valor;
   return new Intl.NumberFormat("es-CO", {
@@ -267,11 +266,9 @@ const Field = ({ label, value }) => (
 );
 
 // Agrupa cotizantes por productoNombre
-// Entrada: [{ productoNombre, nombre, valor, sortOrder }]
-// Salida:  { [productoNombre]: [{ nombre, valor }] }
 const groupCotizantesByProducto = (cotizantes = []) => {
   return cotizantes.reduce((acc, c) => {
-    const key = c.productoNombre || 'Sin producto';
+    const key = c.productoNombre || "Sin producto";
     if (!acc[key]) acc[key] = [];
     acc[key].push(c);
     return acc;
@@ -280,15 +277,7 @@ const groupCotizantesByProducto = (cotizantes = []) => {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export const SolicitudPDF = ({ data, logoUrl }) => {
-  const fechaGeneracion = new Date().toLocaleDateString("es-CO", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-  const fechaDocumento = formatFecha(data.fecha);
-
-  // Cotizantes agrupados por producto para sección 8
-  const cotizantesPorProducto = groupCotizantesByProducto(data.cotizantes);
+  const cotizantesPorProducto  = groupCotizantesByProducto(data.cotizantes);
   const productosConCotizantes = Object.entries(cotizantesPorProducto);
 
   return (
@@ -298,11 +287,10 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
         {/* ── HEADER fijo ── */}
         <View style={styles.header} fixed>
           <View style={styles.monogram}>
-            {logoUrl ? (
-              <Image src={logoUrl} style={{ width: 38, height: 38 }} />
-            ) : (
-              <Text style={styles.monogramText}>DG</Text>
-            )}
+            {logoUrl
+              ? <Image src={logoUrl} style={{ width: 38, height: 38 }} />
+              : <Text style={styles.monogramText}>DG</Text>
+            }
           </View>
           <View style={styles.headerTextBlock}>
             <Text style={styles.headerBrand}>DUBOIS · Grupo Logístico</Text>
@@ -319,81 +307,93 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
 
           {/* 1. Información General */}
           <SectionBlock number="1" title="INFORMACIÓN GENERAL">
-            <Field label="Solicitante"      value={data.solicitante} />
-            <Field label="CC / NIT"         value={data.ccNit} />
+            <Field label="Solicitante" value={data.solicitante} />
+            <Field label="CC / NIT"    value={data.ccNit} />
             <Field
               label="Teléfono / Celular"
               value={data.ext ? `${data.telCel}  Ext: ${data.ext}` : data.telCel}
             />
-            <Field label="Email"            value={data.email} />
+            <Field label="Email" value={data.email} />
+            <Field label="Fecha" value={formatFecha(data.fecha)} />
           </SectionBlock>
 
           {/* 2. Justificación */}
           <SectionBlock number="2" title="JUSTIFICACIÓN">
-            <Field label="Descripción de la Necesidad" value={data.descripcionNecesidad} />
-            <Field label="Pertinencia"                 value={data.pertinencia} />
+            <View style={[styles.row, { alignItems: "flex-start" }]}>
+              <Text style={styles.value}>{data.justificacion || "—"}</Text>
+            </View>
           </SectionBlock>
 
           {/* 3. Objeto a Contratar */}
           <SectionBlock number="3" title="OBJETO A CONTRATAR">
-            <Field label="Descripción"       value={data.descripcionObjeto} />
-            <Field label="Especificaciones"  value={data.especificaciones} />
-            <Field label="Requiere Permisos" value={data.requierePermisos} />
+            <Field label="Descripción" value={data.descripcionObjeto} />
+            {data.requierePermisos && (
+              <Field label="Requiere Permisos" value={data.requierePermisos} />
+            )}
+
+            {/* Especificaciones de la Solicitud de Procura vinculada */}
+            {data.productosVinculados?.length > 0 && (
+              <View style={{ marginTop: 6 }}>
+                <Text style={[styles.label, { paddingHorizontal: 10, marginBottom: 6 }]}>
+                  Especificaciones:
+                </Text>
+                {data.productosVinculados.map((p, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      marginHorizontal: 10,
+                      marginBottom: 6,
+                      paddingLeft: 8,
+                      paddingVertical: 4,
+                      borderLeft: `2pt solid ${C.electric}`,
+                    }}
+                    wrap={false}
+                  >
+                    <Text style={{ fontSize: 9, fontFamily: "Helvetica-Bold", color: C.navy, marginBottom: 2 }}>
+                      {p.nombreProducto}
+                    </Text>
+                    {(p.descripcionGeneral || p.descripcion) && (
+                      <Text style={{ fontSize: 8.5, color: C.steel, lineHeight: 1.5 }}>
+                        {p.descripcionGeneral || p.descripcion}
+                      </Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+            )}
           </SectionBlock>
 
           {/* 4. Obligaciones del Contratista */}
-          <SectionBlock number="4" title="OBLIGACIONES DEL CONTRATISTA">
-            {data.obligaciones.map((obligacion, idx) => (
-              <View key={idx} style={[styles.row, { alignItems: "flex-start" }]} wrap={false}>
-                <Text style={{ color: C.electric, fontSize: 8.5, marginRight: 6, flexShrink: 0 }}>▸</Text>
-                <Text style={styles.value}>{obligacion}</Text>
-              </View>
-            ))}
+          {data.obligaciones?.length > 0 && (
+            <SectionBlock number="4" title="OBLIGACIONES DEL CONTRATISTA">
+              {data.obligaciones.map((obligacion, idx) => (
+                <View key={idx} style={[styles.row, { alignItems: "flex-start" }]} wrap={false}>
+                  <Text style={{ color: C.electric, fontSize: 8.5, marginRight: 6, flexShrink: 0 }}>▸</Text>
+                  <Text style={styles.value}>{obligacion}</Text>
+                </View>
+              ))}
+            </SectionBlock>
+          )}
+
+          {/* 5. Plazo de Ejecución */}
+          <SectionBlock number="5" title="PLAZO DE EJECUCIÓN">
+            <View style={[styles.row, { alignItems: "flex-start" }]} wrap={false}>
+              <Text style={styles.value}>{data.plazo || "—"}</Text>
+            </View>
           </SectionBlock>
 
-          {/* 5. Modalidad de Selección */}
-          <SectionBlock number="5" title="MODALIDAD DE SELECCIÓN">
-            <Field
-              label="Modalidad"
-              value={data.modalidad === "directa" ? "Contratación Directa" : "Convocatoria Pública"}
-            />
-            <Field label="Justificación" value={data.justificacionModalidad} />
-          </SectionBlock>
-
-          {/* 6. Forma de Pago */}
-          <SectionBlock number="6" title="FORMA DE PAGO">
-            <Field
-              label="Forma de Pago"
-              value={data.formaPago === "unico" ? "Pago Único" : "Pagos Parciales"}
-            />
-            {data.detallePago && <Field label="Detalle" value={data.detallePago} />}
-          </SectionBlock>
-
-          {/* 7. Criterios de Selección */}
-          <SectionBlock number="7" title="CRITERIOS DE SELECCIÓN">
-            <Field label="Menor Precio" value={data.criterioMenorPrecio ? "SÍ" : "NO"} />
-            {data.criterioOtro && <Field label="Otro Criterio" value={data.criterioOtro} />}
-          </SectionBlock>
-
-          {/* 8. Estudio de Mercado — una tabla por producto */}
-          <SectionBlock number="8" title="ESTUDIO DE MERCADO">
+          {/* 6. Estudio de Mercado — una tabla por producto */}
+          <SectionBlock number="6" title="ESTUDIO DE MERCADO">
             {productosConCotizantes.length > 0 ? (
               productosConCotizantes.map(([productoNombre, cotizantes], pIdx) => (
                 <View key={pIdx} wrap>
-                  {/* Sub-título del producto */}
                   <Text style={styles.productoTableTitle} wrap={false}>
                     {productoNombre}
                   </Text>
-
-                  {/* Tabla de cotizantes para este producto */}
                   <View style={styles.table}>
                     <View style={styles.tableHeader} wrap={false}>
-                      <Text style={[styles.tableHeaderCell, { width: 370 }]}>
-                        COTIZANTE / PROVEEDOR
-                      </Text>
-                      <Text style={[styles.tableHeaderCell, { width: 125, textAlign: "right" }]}>
-                        VALOR
-                      </Text>
+                      <Text style={[styles.tableHeaderCell, { width: 370 }]}>COTIZANTE / PROVEEDOR</Text>
+                      <Text style={[styles.tableHeaderCell, { width: 125, textAlign: "right" }]}>VALOR</Text>
                     </View>
                     {cotizantes.map((cotizante, cIdx) => (
                       <View
@@ -401,39 +401,22 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
                         style={cIdx % 2 === 0 ? styles.tableRow : styles.tableRowAlt}
                         wrap={false}
                       >
-                        <Text style={[styles.tableCell, styles.col1]}>
-                          {cotizante.nombre || '—'}
-                        </Text>
-                        <Text style={[styles.tableCell, styles.col3]}>
-                          {formatMoneda(cotizante.valor)}
-                        </Text>
+                        <Text style={[styles.tableCell, styles.col1]}>{cotizante.nombre || "—"}</Text>
+                        <Text style={[styles.tableCell, styles.col3]}>{formatMoneda(cotizante.valor)}</Text>
                       </View>
                     ))}
                   </View>
                 </View>
               ))
             ) : (
-              <Field label="Sin cotizantes" value="—" />
+              <Field label="Sin cotizantes registrados" value="—" />
             )}
-
-            {/* Valor estimado global al final */}
             <Field label="Valor Estimado Total" value={formatMoneda(data.valorEstimado)} />
           </SectionBlock>
 
-          {/* 9. Contratista Propuesto */}
-          {data.modalidad === "directa" && data.contratistaNombre && (
-            <SectionBlock number="9" title="CONTRATISTA PROPUESTO">
-              <Field label="Nombre / Razón Social" value={data.contratistaNombre} />
-              <Field label="CC / NIT"              value={data.contratistaCcNit} />
-              <Field label="Email"                 value={data.contratistaEmail} />
-              <Field label="Ciudad"                value={data.contratistaCiudad} />
-              <Field label="Teléfono"              value={data.contratistaTelefono} />
-            </SectionBlock>
-          )}
-
-          {/* 10. Análisis de Riesgos */}
-          {data.riesgos && data.riesgos.length > 0 && (
-            <SectionBlock number="10" title="ANÁLISIS DE RIESGOS">
+          {/* 7. Análisis de Riesgos */}
+          {data.riesgos?.length > 0 && (
+            <SectionBlock number="7" title="ANÁLISIS DE RIESGOS">
               <View style={styles.table}>
                 <View style={styles.tableHeader} wrap={false}>
                   <Text style={[styles.tableHeaderCell, styles.colRisk]}>DESCRIPCIÓN</Text>
@@ -447,56 +430,11 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
                     wrap={false}
                   >
                     <Text style={[styles.tableCell, styles.colRisk]}>{riesgo.descripcion}</Text>
-                    <Text style={[styles.tableCell, styles.colRisk]}>{riesgo.mitigacion}</Text>
+                    <Text style={[styles.tableCell, styles.colRisk]}>{riesgo.mitigacion || "—"}</Text>
                     <Text style={[styles.tableCell, styles.colRisk]}>{riesgo.asignacion}</Text>
                   </View>
                 ))}
               </View>
-            </SectionBlock>
-          )}
-
-          {/* 11. Garantías */}
-          {data.garantias && data.garantias.length > 0 && (
-            <SectionBlock number="11" title="GARANTÍAS">
-              {data.garantias.map((garantia, idx) => (
-                <View key={idx} style={[styles.row, { alignItems: "flex-start" }]} wrap={false}>
-                  <Text style={{ color: C.electric, fontSize: 8.5, marginRight: 6, flexShrink: 0 }}>▸</Text>
-                  <Text style={styles.value}>{garantia}</Text>
-                </View>
-              ))}
-            </SectionBlock>
-          )}
-
-          {/* 12. Plazo de Ejecución */}
-          <SectionBlock number="12" title="PLAZO DE EJECUCIÓN">
-            <View style={styles.row} wrap={false}>
-              <Text style={styles.value}>{data.plazo}</Text>
-            </View>
-          </SectionBlock>
-
-          {/* 13. Comité Evaluador */}
-          {data.modalidad === "publica" &&
-            data.comiteEvaluador &&
-            data.comiteEvaluador.length > 0 && (
-              <SectionBlock number="13" title="COMITÉ EVALUADOR">
-                {data.comiteEvaluador.map((miembro, idx) => (
-                  <View key={idx} style={styles.row} wrap={false}>
-                    <Text style={{ color: C.electric, marginRight: 4, flexShrink: 0, fontSize: 8.5 }}>▸</Text>
-                    <Text style={styles.value}>{miembro}</Text>
-                  </View>
-                ))}
-              </SectionBlock>
-            )}
-
-          {/* 15. Documentos Soporte */}
-          {data.documentosSoporte && data.documentosSoporte.length > 0 && (
-            <SectionBlock number="15" title="DOCUMENTOS SOPORTE">
-              {data.documentosSoporte.map((doc, idx) => (
-                <View key={idx} style={styles.row} wrap={false}>
-                  <Text style={{ color: C.electric, marginRight: 4, flexShrink: 0, fontSize: 8.5 }}>▸</Text>
-                  <Text style={styles.value}>{doc}</Text>
-                </View>
-              ))}
             </SectionBlock>
           )}
 
@@ -511,9 +449,11 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
             <View key={idx} style={styles.signatureBox}>
               <View style={styles.signatureLine} />
               <Text style={styles.signatureRole}>{role}</Text>
-              <Text style={styles.signatureName}>{person?.nombre}</Text>
-              <Text style={styles.signatureMeta}>{person?.cargo}</Text>
-              <Text style={styles.signatureMeta}>Fecha: {person?.fecha}</Text>
+              <Text style={styles.signatureName}>{person?.nombre || "—"}</Text>
+              <Text style={styles.signatureMeta}>{person?.cargo || ""}</Text>
+              {person?.fecha && (
+                <Text style={styles.signatureMeta}>Fecha: {person.fecha}</Text>
+              )}
             </View>
           ))}
         </View>

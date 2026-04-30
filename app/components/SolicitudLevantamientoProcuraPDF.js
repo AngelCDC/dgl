@@ -391,7 +391,6 @@ export default function SolicitudLevantamientoProcuraPDF({ data }) {
           {/* 1. Información general */}
           <SectionBlock title="01 — Información General">
             <Field label="Razón social" value={cliente.razonSocial} />
-            <Field label="Nombre comercial" value={cliente.nombreComercial} />
             <Field label="Fecha" value={fechaStr} />
             <Field label="Ciudad" value={cliente.ciudad} />
             <Field label="Dirección" value={cliente.direccion} />
@@ -447,29 +446,12 @@ export default function SolicitudLevantamientoProcuraPDF({ data }) {
                   </View>
 
                   <SubField label="Categoría" value={producto.categoria} />
-                  <SubField label="Descripción" value={producto.descripcionTecnica} />
-                  <SubField
-                    label="Características"
-                    value={
-                      producto.caracteristicasPrincipales?.length
-                        ? producto.caracteristicasPrincipales.join(' · ')
-                        : undefined
-                    }
-                  />
-                  <SubField
-                    label="Materiales"
-                    value={
-                      producto.materiales?.length
-                        ? producto.materiales.join(' · ')
-                        : undefined
-                    }
-                  />
+                  <SubField label="Descripción" value={producto.descripcion} />
                   <SubField label="Dimensiones" value={producto.dimensiones} />
                   <SubField label="Empaque" value={producto.empaque} />
                   <SubField label="Marca" value={producto.marca} />
                   <SubField label="Modelo" value={producto.referenciaModelo} />
                   <SubField label="País de origen" value={producto.paisOrigen} />
-                  <SubField label="Notas" value={producto.notasProducto} />
                   <SubField
                     label="Tipo necesidad"
                     value={formatTipoNecesidad(producto.tipoNecesidad, producto.tipoNecesidadOtro)}

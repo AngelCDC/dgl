@@ -39,7 +39,7 @@ export async function POST(req) {
 
     // ── Cliente ───────────────────────────────────────────────────────────────
     const empresaCliente        = v.cliente.razonSocial
-    const nombreComercial       = v.cliente.nombreComercial       ?? null
+    const nombreComercial       = null   // eliminado del formulario simplificado
     const ciudad                = v.cliente.ciudad                ?? null
     const direccion             = v.cliente.direccion             ?? null
     const sectorIndustria       = v.cliente.sectorIndustria       ?? null
@@ -59,7 +59,7 @@ export async function POST(req) {
       frecuenciaRequerida:     p.frecuenciaRequerida ?? null,
       cantidadReferencial:     p.cantidadReferencial ?? null,
       prioridad:               p.prioridad           ?? null,
-      descripcion:             p.notasProducto?.trim() || p.nombreProducto,
+      descripcion:             p.descripcion?.trim() || p.nombreProducto,
       sortOrder: i,
     }))
 
@@ -119,21 +119,21 @@ export async function POST(req) {
           productos: {
             create: v.productosCliente.map((p, i) => ({
               nombreProducto:             p.nombreProducto,
-              categoria:                  p.categoria              ?? null,
-              descripcionGeneral:         p.descripcionTecnica?.trim() || p.nombreProducto,
-              caracteristicasPrincipales: p.caracteristicasPrincipales ?? [],
+              categoria:                  p.categoria      ?? null,
+              descripcionGeneral:         p.descripcion?.trim() || p.nombreProducto,
+              caracteristicasPrincipales: [],
               presentaciones:             [],
-              materiales:                 p.materiales             ?? [],
+              materiales:                 [],
               colores:                    [],
-              dimensiones:                p.dimensiones            ?? null,
+              dimensiones:                p.dimensiones    ?? null,
               peso:                       null,
-              empaque:                    p.empaque                ?? null,
-              marca:                      p.marca                  ?? null,
-              referenciaModelo:           p.referenciaModelo       ?? null,
-              paisOrigen:                 p.paisOrigen             ?? null,
+              empaque:                    p.empaque        ?? null,
+              marca:                      p.marca          ?? null,
+              referenciaModelo:           p.referenciaModelo ?? null,
+              paisOrigen:                 p.paisOrigen     ?? null,
               usosAplicaciones:           null,
               requerimientosEspeciales:   null,
-              observaciones:              p.notasProducto          ?? null,
+              observaciones:              p.descripcion    ?? null,
               sortOrder: i,
             })),
           },
@@ -193,7 +193,7 @@ export async function POST(req) {
       return NextResponse.json(
         {
           error: 'Datos inválidos',
-          details: error.errors.map((e) => ({
+          details: (error.issues ?? error.errors ?? []).map((e) => ({
             path:    e.path.join('.'),
             message: e.message,
           })),

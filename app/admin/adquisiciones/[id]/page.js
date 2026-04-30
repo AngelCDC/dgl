@@ -251,7 +251,9 @@ export default function AdquisicionDetallePage({ params }) {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'emitir' }),
       })
-      setData(prev => ({ ...prev, status: 'finalizado' }))
+      // Refrescar para obtener fechas y datos auto-poblados
+      const updated = await fetch(`/api/admin/adquisiciones/${id}`).then(r => r.json())
+      setData(updated)
     } catch { alert('Error al emitir.') }
     finally { setEmitting(false) }
   }
@@ -317,8 +319,7 @@ export default function AdquisicionDetallePage({ params }) {
         title="1. Información General"
         editing={editing.general}
         onEdit={() => startEdit('general', {
-          fecha: data.fecha, tipoDocumento: data.tipoDocumento,
-          tipoDocumentoOtro: data.tipoDocumentoOtro, solicitante: data.solicitante,
+          fecha: data.fecha, solicitante: data.solicitante,
           ccNit: data.ccNit, telCel: data.telCel, ext: data.ext, email: data.email,
         })}
         onSave={() => saveSection('general', d.general)}
@@ -329,71 +330,70 @@ export default function AdquisicionDetallePage({ params }) {
           <>
             <Grid2>
               <div><Label>Solicitante</Label><Inp value={d.general?.solicitante} onChange={v => setDraft('general', 'solicitante', v)} /></div>
-              <div>
-                <Label>Tipo de Documento</Label>
-                <select value={d.general?.tipoDocumento ?? ''} onChange={e => setDraft('general', 'tipoDocumento', e.target.value)}
-                  style={{ width: '100%', border: `1px solid ${C.border}`, borderRadius: 6, padding: '7px 10px', fontSize: 13, fontFamily: 'inherit' }}>
-                  <option value="">Seleccionar...</option>
-                  {['SC1','SCP','SDS','SDC','SCM','SDV','otro'].map(v => <option key={v} value={v}>{v}</option>)}
-                </select>
-                {d.general?.tipoDocumento === 'otro' && (
-                  <Inp style={{ marginTop: 6 }} value={d.general?.tipoDocumentoOtro} placeholder="Especifique..." onChange={v => setDraft('general', 'tipoDocumentoOtro', v)} />
-                )}
-              </div>
-            </Grid2>
-            <Grid2>
-              <div><Label>C.C. / NIT</Label><Inp value={d.general?.ccNit} onChange={v => setDraft('general', 'ccNit', v)} /></div>
               <div><Label>Email</Label><Inp value={d.general?.email} type="email" onChange={v => setDraft('general', 'email', v)} /></div>
             </Grid2>
             <Grid3>
+              <div><Label>C.C. / NIT</Label><Inp value={d.general?.ccNit} onChange={v => setDraft('general', 'ccNit', v)} /></div>
               <div><Label>Teléfono / Celular</Label><Inp value={d.general?.telCel} onChange={v => setDraft('general', 'telCel', v)} /></div>
               <div><Label>Ext.</Label><Inp value={d.general?.ext} onChange={v => setDraft('general', 'ext', v)} /></div>
-              <div><Label>Fecha</Label><Inp value={d.general?.fecha} onChange={v => setDraft('general', 'fecha', v)} /></div>
             </Grid3>
+            <div style={{ maxWidth: 200 }}><Label>Fecha</Label><Inp value={d.general?.fecha} onChange={v => setDraft('general', 'fecha', v)} /></div>
           </>
         ) : (
           <Grid2>
-            <ReadField label="Solicitante" value={data.solicitante} />
-            <ReadField label="Tipo de Documento" value={data.tipoDocumento === 'otro' ? data.tipoDocumentoOtro : data.tipoDocumento} />
-            <ReadField label="C.C. / NIT" value={data.ccNit} />
-            <ReadField label="Email" value={data.email} />
-            <ReadField label="Teléfono" value={data.telCel} />
-            <ReadField label="Fecha" value={data.fecha} />
+            <ReadField label="Solicitante"      value={data.solicitante} />
+            <ReadField label="Email"            value={data.email} />
+            <ReadField label="C.C. / NIT"       value={data.ccNit} />
+            <ReadField label="Teléfono"         value={data.telCel} />
+            <ReadField label="Ext."             value={data.ext} />
+            <ReadField label="Fecha"            value={data.fecha} />
           </Grid2>
         )}
       </SectionCard>
 
       {/* ── 2. JUSTIFICACIÓN ── */}
       <SectionCard title="2. Justificación" editing={editing.justificacion}
-        onEdit={() => startEdit('justificacion', { descripcionNecesidad: data.descripcionNecesidad, pertinencia: data.pertinencia })}
-        onSave={() => saveSection('justificacion', d.justificacion)}
+        onEdit={() => startEdit('justificacion', {
+          descripcionNecesidad: [data.descripcionNecesidad, data.pertinencia].filter(Boolean).join('\n\n'),
+        })}
+        onSave={() => saveSection('justificacion', { descripcionNecesidad: d.justificacion?.descripcionNecesidad, pertinencia: '' })}
         onCancel={() => cancelEdit('justificacion')}
         saving={saving.justificacion} finalizado={finalizado}
       >
         {editing.justificacion ? (
-          <>
-            <div style={{ marginBottom: 10 }}><Label>Descripción de la Necesidad</Label><Inp rows={4} value={d.justificacion?.descripcionNecesidad} onChange={v => setDraft('justificacion', 'descripcionNecesidad', v)} /></div>
-            <div><Label>Pertinencia</Label><Inp rows={3} value={d.justificacion?.pertinencia} onChange={v => setDraft('justificacion', 'pertinencia', v)} /></div>
-          </>
+          <div><Label>Justificación</Label><Inp rows={5} value={d.justificacion?.descripcionNecesidad} onChange={v => setDraft('justificacion', 'descripcionNecesidad', v)} /></div>
         ) : (
-          <>
-            <ReadField label="Descripción de la Necesidad" value={data.descripcionNecesidad} />
-            <ReadField label="Pertinencia" value={data.pertinencia} />
-          </>
+          <ReadField label="Justificación" value={data.descripcionNecesidad} />
         )}
       </SectionCard>
 
       {/* ── 3. OBJETO ── */}
       <SectionCard title="3. Objeto a Contratar" editing={editing.objeto}
-        onEdit={() => startEdit('objeto', { descripcionObjeto: data.descripcionObjeto, especificaciones: data.especificaciones, requierePermisos: data.requierePermisos })}
+        onEdit={() => startEdit('objeto', { descripcionObjeto: data.descripcionObjeto, requierePermisos: data.requierePermisos })}
         onSave={() => saveSection('objeto', d.objeto)}
         onCancel={() => cancelEdit('objeto')}
         saving={saving.objeto} finalizado={finalizado}
       >
+        {/* Productos de la solicitud de procura vinculada — siempre visible, solo lectura */}
+        {data.solicitudProcura?.productos?.length > 0 && (
+          <div style={{ marginBottom: 14, background: C.bgSoft, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px' }}>
+            <div style={{ fontSize: 10, color: C.steel, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8, fontWeight: 700 }}>
+              Especificaciones — Solicitud de Procura vinculada
+            </div>
+            {data.solicitudProcura.productos.map((p, i) => (
+              <div key={p.id} style={{ paddingTop: i > 0 ? 8 : 0, marginTop: i > 0 ? 8 : 0, borderTop: i > 0 ? `1px solid ${C.border}` : 'none' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 2 }}>{p.nombreProducto}</div>
+                {(p.descripcionGeneral || p.descripcion) && (
+                  <div style={{ fontSize: 12, color: C.steel, lineHeight: 1.55 }}>{p.descripcionGeneral || p.descripcion}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         {editing.objeto ? (
           <>
             <div style={{ marginBottom: 10 }}><Label>Descripción del Objeto</Label><Inp rows={3} value={d.objeto?.descripcionObjeto} onChange={v => setDraft('objeto', 'descripcionObjeto', v)} /></div>
-            <div style={{ marginBottom: 10 }}><Label>Especificaciones</Label><Inp rows={3} value={d.objeto?.especificaciones} onChange={v => setDraft('objeto', 'especificaciones', v)} /></div>
             <div>
               <Label>¿Requiere Permisos?</Label>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -409,7 +409,6 @@ export default function AdquisicionDetallePage({ params }) {
         ) : (
           <>
             <ReadField label="Descripción" value={data.descripcionObjeto} />
-            <ReadField label="Especificaciones" value={data.especificaciones} />
             <ReadField label="Requiere Permisos" value={data.requierePermisos} />
           </>
         )}
@@ -451,35 +450,20 @@ export default function AdquisicionDetallePage({ params }) {
         )}
       </SectionCard>
 
-      {/* ── 5. MODALIDAD ── */}
-      <SectionCard title="5. Modalidad de Selección" editing={editing.modalidad}
-        onEdit={() => startEdit('modalidad', { modalidad: data.modalidad, justificacionModalidad: data.justificacionModalidad, plazo: data.plazo })}
-        onSave={() => saveSection('modalidad', d.modalidad)}
+      {/* ── 5. PLAZO DE EJECUCIÓN ── */}
+      <SectionCard title="5. Plazo de Ejecución" editing={editing.modalidad}
+        onEdit={() => startEdit('modalidad', { plazo: data.plazo || '4 Meses' })}
+        onSave={() => saveSection('modalidad', { plazo: d.modalidad?.plazo })}
         onCancel={() => cancelEdit('modalidad')}
         saving={saving.modalidad} finalizado={finalizado}
       >
         {editing.modalidad ? (
-          <>
-            <div style={{ marginBottom: 10 }}>
-              <Label>Modalidad</Label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {[{ v: 'directa', l: 'Contratación Directa' }, { v: 'publica', l: 'Convocatoria Pública' }].map(op => (
-                  <button key={op.v} type="button" onClick={() => setDraft('modalidad', 'modalidad', op.v)}
-                    style={{ padding: '6px 14px', border: `1px solid ${d.modalidad?.modalidad === op.v ? C.electric : C.border}`, borderRadius: 6, background: d.modalidad?.modalidad === op.v ? C.electric : C.white, color: d.modalidad?.modalidad === op.v ? C.white : C.steel, cursor: 'pointer', fontSize: 12 }}>
-                    {op.l}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div style={{ marginBottom: 10 }}><Label>Justificación</Label><Inp rows={3} value={d.modalidad?.justificacionModalidad} onChange={v => setDraft('modalidad', 'justificacionModalidad', v)} /></div>
-            <div><Label>Plazo</Label><Inp value={d.modalidad?.plazo} placeholder="Ej: 3 meses" onChange={v => setDraft('modalidad', 'plazo', v)} /></div>
-          </>
+          <div style={{ maxWidth: 240 }}>
+            <Label>Plazo</Label>
+            <Inp value={d.modalidad?.plazo} placeholder="Ej: 4 Meses" onChange={v => setDraft('modalidad', 'plazo', v)} />
+          </div>
         ) : (
-          <>
-            <ReadField label="Modalidad" value={data.modalidad === 'directa' ? 'Contratación Directa' : 'Convocatoria Pública'} />
-            <ReadField label="Justificación" value={data.justificacionModalidad} />
-            <ReadField label="Plazo" value={data.plazo} />
-          </>
+          <ReadField label="Plazo" value={data.plazo || '4 Meses'} />
         )}
       </SectionCard>
 
@@ -610,81 +594,10 @@ export default function AdquisicionDetallePage({ params }) {
         )}
       </SectionCard>
 
-      {/* ── 7. FORMA DE PAGO ── */}
-      <SectionCard title="7. Forma de Pago" editing={editing.pago}
-        onEdit={() => startEdit('pago', { formaPago: data.formaPago, detallePago: data.detallePago, criterioMenorPrecio: data.criterioMenorPrecio, criterioOtro: data.criterioOtro })}
-        onSave={() => saveSection('pago', d.pago)}
-        onCancel={() => cancelEdit('pago')}
-        saving={saving.pago} finalizado={finalizado}
-      >
-        {editing.pago ? (
-          <>
-            <div style={{ marginBottom: 10 }}>
-              <Label>Forma de Pago</Label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {[{ v: 'unico', l: 'Pago Único' }, { v: 'parciales', l: 'Pagos Parciales' }].map(op => (
-                  <button key={op.v} type="button" onClick={() => setDraft('pago', 'formaPago', op.v)}
-                    style={{ padding: '6px 14px', border: `1px solid ${d.pago?.formaPago === op.v ? C.electric : C.border}`, borderRadius: 6, background: d.pago?.formaPago === op.v ? C.electric : C.white, color: d.pago?.formaPago === op.v ? C.white : C.steel, cursor: 'pointer', fontSize: 12 }}>
-                    {op.l}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div style={{ marginBottom: 10 }}><Label>Detalle de Pago</Label><Inp rows={2} value={d.pago?.detallePago} onChange={v => setDraft('pago', 'detallePago', v)} /></div>
-            <div>
-              <Label>Criterio de Selección</Label>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                {[{ v: true, l: 'Menor Precio' }, { v: false, l: 'Otro' }].map(op => (
-                  <button key={String(op.v)} type="button" onClick={() => setDraft('pago', 'criterioMenorPrecio', op.v)}
-                    style={{ padding: '6px 14px', border: `1px solid ${d.pago?.criterioMenorPrecio === op.v ? C.electric : C.border}`, borderRadius: 6, background: d.pago?.criterioMenorPrecio === op.v ? C.electric : C.white, color: d.pago?.criterioMenorPrecio === op.v ? C.white : C.steel, cursor: 'pointer', fontSize: 12 }}>
-                    {op.l}
-                  </button>
-                ))}
-              </div>
-              {!d.pago?.criterioMenorPrecio && <Inp value={d.pago?.criterioOtro} placeholder="Especifique el criterio..." onChange={v => setDraft('pago', 'criterioOtro', v)} />}
-            </div>
-          </>
-        ) : (
-          <>
-            <ReadField label="Forma de Pago" value={data.formaPago === 'unico' ? 'Pago Único' : data.formaPago === 'parciales' ? 'Pagos Parciales' : data.formaPago} />
-            <ReadField label="Detalle" value={data.detallePago} />
-            <ReadField label="Criterio de Selección" value={data.criterioMenorPrecio ? 'Menor Precio' : data.criterioOtro} />
-          </>
-        )}
-      </SectionCard>
 
-      {/* ── 8. CONTRATISTA ── */}
-      <SectionCard title="8. Contratista Propuesto" editing={editing.contratista}
-        onEdit={() => startEdit('contratista', {
-          contratistaNombre: data.contratistaNombre, contratistaCcNit: data.contratistaCcNit,
-          contratistaEmail: data.contratistaEmail, contratistaCiudad: data.contratistaCiudad,
-          contratistaTelefono: data.contratistaTelefono,
-        })}
-        onSave={() => saveSection('contratista', d.contratista)}
-        onCancel={() => cancelEdit('contratista')}
-        saving={saving.contratista} finalizado={finalizado}
-      >
-        {editing.contratista ? (
-          <Grid2>
-            <div><Label>Nombre / Razón Social</Label><Inp value={d.contratista?.contratistaNombre} onChange={v => setDraft('contratista', 'contratistaNombre', v)} /></div>
-            <div><Label>C.C. / NIT</Label><Inp value={d.contratista?.contratistaCcNit} onChange={v => setDraft('contratista', 'contratistaCcNit', v)} /></div>
-            <div><Label>Email</Label><Inp value={d.contratista?.contratistaEmail} type="email" onChange={v => setDraft('contratista', 'contratistaEmail', v)} /></div>
-            <div><Label>Ciudad</Label><Inp value={d.contratista?.contratistaCiudad} onChange={v => setDraft('contratista', 'contratistaCiudad', v)} /></div>
-            <div><Label>Teléfono</Label><Inp value={d.contratista?.contratistaTelefono} onChange={v => setDraft('contratista', 'contratistaTelefono', v)} /></div>
-          </Grid2>
-        ) : (
-          <Grid2>
-            <ReadField label="Nombre / Razón Social" value={data.contratistaNombre} />
-            <ReadField label="C.C. / NIT" value={data.contratistaCcNit} />
-            <ReadField label="Email" value={data.contratistaEmail} />
-            <ReadField label="Ciudad" value={data.contratistaCiudad} />
-            <ReadField label="Teléfono" value={data.contratistaTelefono} />
-          </Grid2>
-        )}
-      </SectionCard>
 
-      {/* ── 9. RIESGOS ── */}
-      <SectionCard title="9. Análisis de Riesgos" editing={editing.riesgos}
+      {/* ── 7. RIESGOS ── */}
+      <SectionCard title="7. Análisis de Riesgos" editing={editing.riesgos}
         onEdit={() => startEdit('riesgos', {
           riesgos: data.riesgos?.length
             ? data.riesgos.map(r => ({ descripcion: r.descripcion, mitigacion: r.mitigacion ?? '', asignacion: r.asignacion ?? 'Contratante' }))
@@ -746,24 +659,36 @@ export default function AdquisicionDetallePage({ params }) {
         )}
       </SectionCard>
 
-      {/* ── 10. FIRMAS ── */}
-      <SectionCard title="10. Firmas y Aprobaciones" editing={editing.firmas}
+      {/* ── 8. FIRMAS ── */}
+      <SectionCard title="8. Firmas y Aprobaciones" editing={editing.firmas}
         onEdit={() => startEdit('firmas', {
-          elaboradoPorNombre: data.elaboradoPorNombre, elaboradoPorCargo: data.elaboradoPorCargo, elaboradoPorFecha: data.elaboradoPorFecha,
+          elaboradoPorFecha: data.elaboradoPorFecha,
           contratanteNombre: data.contratanteNombre, contratanteCargo: data.contratanteCargo, contratanteFecha: data.contratanteFecha,
         })}
-        onSave={() => saveSection('firmas', d.firmas)}
+        onSave={() => saveSection('firmas', {
+          ...d.firmas,
+          elaboradoPorNombre: 'Angel Dubois',
+          elaboradoPorCargo:  'FOUNDER - CEO',
+        })}
         onCancel={() => cancelEdit('firmas')}
         saving={saving.firmas} finalizado={finalizado}
       >
         {editing.firmas ? (
           <Grid2>
+            {/* Elaborado por — solo lectura */}
             <div style={{ background: C.bgSoft, padding: 14, borderRadius: 8 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.corp, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Elaborado por</div>
-              <div style={{ marginBottom: 8 }}><Label>Nombre</Label><Inp value={d.firmas?.elaboradoPorNombre} onChange={v => setDraft('firmas', 'elaboradoPorNombre', v)} /></div>
-              <div style={{ marginBottom: 8 }}><Label>Cargo</Label><Inp value={d.firmas?.elaboradoPorCargo} onChange={v => setDraft('firmas', 'elaboradoPorCargo', v)} /></div>
+              <div style={{ marginBottom: 8 }}>
+                <Label>Nombre</Label>
+                <div style={{ fontSize: 13, color: C.carbon, padding: '7px 10px', background: '#f0f0f0', borderRadius: 6, border: `1px solid ${C.border}` }}>Angel Dubois</div>
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <Label>Cargo</Label>
+                <div style={{ fontSize: 13, color: C.carbon, padding: '7px 10px', background: '#f0f0f0', borderRadius: 6, border: `1px solid ${C.border}` }}>FOUNDER - CEO</div>
+              </div>
               <div><Label>Fecha</Label><Inp value={d.firmas?.elaboradoPorFecha} type="date" onChange={v => setDraft('firmas', 'elaboradoPorFecha', v)} /></div>
             </div>
+            {/* Contratante — editable */}
             <div style={{ background: C.bgSoft, padding: 14, borderRadius: 8 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.corp, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Contratante</div>
               <div style={{ marginBottom: 8 }}><Label>Nombre</Label><Inp value={d.firmas?.contratanteNombre} onChange={v => setDraft('firmas', 'contratanteNombre', v)} /></div>
@@ -775,15 +700,15 @@ export default function AdquisicionDetallePage({ params }) {
           <Grid2>
             <div style={{ background: C.bgSoft, padding: 14, borderRadius: 8 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.corp, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Elaborado por</div>
-              <ReadField label="Nombre" value={data.elaboradoPorNombre} />
-              <ReadField label="Cargo" value={data.elaboradoPorCargo} />
-              <ReadField label="Fecha" value={data.elaboradoPorFecha} />
+              <ReadField label="Nombre" value={data.elaboradoPorNombre || 'Angel Dubois'} />
+              <ReadField label="Cargo"  value={data.elaboradoPorCargo  || 'FOUNDER - CEO'} />
+              <ReadField label="Fecha"  value={data.elaboradoPorFecha} />
             </div>
             <div style={{ background: C.bgSoft, padding: 14, borderRadius: 8 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.corp, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Contratante</div>
               <ReadField label="Nombre" value={data.contratanteNombre} />
-              <ReadField label="Cargo" value={data.contratanteCargo} />
-              <ReadField label="Fecha" value={data.contratanteFecha} />
+              <ReadField label="Cargo"  value={data.contratanteCargo} />
+              <ReadField label="Fecha"  value={data.contratanteFecha} />
             </div>
           </Grid2>
         )}

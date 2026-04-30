@@ -1,5 +1,6 @@
 import prisma from '../../lib/prisma'
 import Link from 'next/link'
+import DeleteButton from '../../components/admin/DeleteButton'
 
 export default async function SolicitudesPage() {
   const solicitudes = await prisma.solicitudProcura.findMany({
@@ -54,6 +55,10 @@ export default async function SolicitudesPage() {
               <a href={`/api/admin/solicitudes/inicial/${s.id}/pdf`} target="_blank" style={{ fontSize: '13px', color: '#2563eb', padding: '6px 12px', border: '1px solid #2563eb', borderRadius: '6px' }}>
                 PDF
               </a>
+              <DeleteButton
+                apiPath={`/api/admin/solicitudes/${s.id}`}
+                confirmMsg={`¿Eliminar la solicitud de "${s.empresaCliente}"? Se eliminará también el estudio de mercado vinculado. Esta acción no se puede deshacer.`}
+              />
             </div>
           </div>
         ))}

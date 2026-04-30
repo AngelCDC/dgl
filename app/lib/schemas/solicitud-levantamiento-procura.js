@@ -54,21 +54,14 @@ const contactoSchema = z.object({
 const productoSchema = z.object({
   nombreProducto: textoRequerido,
   categoria: textoOpcional,
-  descripcionTecnica: textoOpcional,
-
-  caracteristicasPrincipales: z
-    .array(z.string().trim().min(1, 'La característica no puede ir vacía'))
-    .min(1, 'Debe agregar al menos una característica'),
-
-  materiales: z.array(z.string().trim().min(1)).optional(),
+  // Campo unificado: descripción técnica + características + materiales + notas
+  descripcion: textoOpcional,
   dimensiones: textoOpcional,
   empaque: textoOpcional,
   marca: textoOpcional,
   referenciaModelo: textoOpcional,
   paisOrigen: textoOpcional,
-  notasProducto: textoOpcional,
 
-  // antes estaban en necesidadesProcura
   tipoNecesidad: z.enum([
     'materia_prima',
     'producto_terminado',
@@ -91,7 +84,6 @@ export const solicitudProcuraSimpleSchema = z
 
     cliente: z.object({
       razonSocial: textoRequerido,
-      nombreComercial: textoOpcional,
       ciudad: textoOpcional,
       direccion: textoOpcional,
       sectorIndustria: textoOpcional,
