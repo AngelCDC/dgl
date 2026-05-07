@@ -324,3 +324,28 @@ model RiesgoAdquisicion {
   asignacion  String               @default("Contratante")
   sortOrder   Int                  @default(0)
 }
+
+// ─── Catálogo de Productos de Proveedores ──────────────────────────────────────
+model ProductoCatalogo {
+  id           String   @id @default(uuid())
+  proveedor    String
+  archivoPdf   String?
+  nombre       String
+  rubro        String?  // Agrupación global (nivel 1)
+  categoria    String?  // Nivel 2
+  subcategoria String?  // Nivel 3
+  descripcion  String?
+  codigo       String?
+  unidad       String?
+  precio       String?
+  material     String?
+  medidas      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([proveedor])
+  @@index([rubro])
+  @@index([categoria])
+  @@index([subcategoria])
+  @@index([codigo])
+}

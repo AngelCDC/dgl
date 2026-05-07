@@ -5,11 +5,10 @@ import Search from './Search'
 
 const NAV_LINKS = [
   { label: 'Inicio', href: '/' },
+  { label: 'Noticias', href: '/articulos' },
   { label: 'Proveedores Globales', href: '/proveedores' },
   { label: 'Productos en Tendencia', href: '/productos' },
-  { label: 'Logística Internacional', href: '/articulos' },
   { label: 'Auditorías', href: '/auditorias' },
-  { label: 'Directorio', href: '/directorio' },
 ]
 
 export default function NavbarClient() {

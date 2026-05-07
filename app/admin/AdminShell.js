@@ -270,6 +270,9 @@ function SidebarNav({ pathname, onNavigate }) {
       <NavLink href="/admin/planes" pathname={pathname} onNavigate={onNavigate}>
         Planes
       </NavLink>
+      <NavLink href="/admin/catalogo" pathname={pathname} onNavigate={onNavigate}>
+        Catálogo de Productos
+      </NavLink>
 
       <SectionTitle>Sistema</SectionTitle>
       <NavLink href="/admin/equipo" pathname={pathname} onNavigate={onNavigate}>
