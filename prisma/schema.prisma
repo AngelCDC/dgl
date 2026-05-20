@@ -148,6 +148,11 @@ model SolicitudProcura {
   ciudad          String?
   direccion       String?
 
+  // Cliente vinculado (por cédula/RIF)
+  cedulaRif String?
+  clienteId String?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id])
+
   // 3. Contexto
   objetivoReunion       String
   resumenCliente        String?
@@ -178,6 +183,30 @@ model SolicitudProcura {
   updatedAt DateTime @updatedAt
 
   adquisicion SolicitudAdquisicion? // relación inversa
+}
+
+// ─── Base de datos de clientes ────────────────────────────────────────────────
+model Cliente {
+  id                    String   @id @default(uuid())
+  cedulaRif             String   @unique  // Cédula o RIF del cliente
+  razonSocial           String
+  ciudad                String?
+  direccion             String?
+  sectorIndustria       String?
+  canalComercializacion String?
+
+  // Contacto principal registrado en la primera solicitud
+  contactoNombre   String?
+  contactoCargo    String?
+  contactoTelefono String?
+  contactoEmail    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  solicitudes SolicitudProcura[]
+
+  @@index([cedulaRif])
 }
 
 model ContactoProcura {
@@ -278,7 +307,8 @@ model SolicitudAdquisicion {
   contratistaTelefono String?
 
   // 13. Plazo
-  plazo String
+  plazo            String
+  cronogramaChina  Json?   // [{etapa, tiempo, observaciones}]
 
   // 14. Comité
   comiteEvaluador String[]

@@ -25,11 +25,14 @@ export async function GET(req, { params }) {
 
     if (!s) return NextResponse.json({ error: 'No encontrada' }, { status: 404 })
 
+    // Cédula/RIF: tomar de la solicitud de procura vinculada (o fallback al ccNit)
+    const cedulaRif = s.solicitudProcura?.cedulaRif || s.ccNit || null
+
     const data = {
       // 1. General
       fecha:       parseFecha(s.fecha),
       solicitante: s.solicitante,
-      ccNit:       s.ccNit,
+      cedulaRif,
       telCel:      s.telCel,
       ext:         s.ext,
       email:       s.email,
@@ -45,8 +48,9 @@ export async function GET(req, { params }) {
       // 4. Obligaciones
       obligaciones: s.obligaciones ?? [],
 
-      // 5. Plazo de Ejecución
-      plazo: s.plazo || '4 Meses',
+      // 5. Plazo de Ejecución + cronograma China
+      plazo:           s.plazo || '',
+      cronogramaChina: Array.isArray(s.cronogramaChina) ? s.cronogramaChina : [],
 
       // 6. Estudio de Mercado
       cotizantes: s.cotizantes.map(c => ({

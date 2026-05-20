@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 const TIPOS_NECESIDAD = [
@@ -156,6 +156,215 @@ function ValidationBanner({ errors, onClose }) {
   );
 }
 
+// ─── ProductoRow — fila de producto con búsqueda en catálogo ─────────────────
+function ProductoRow({ index, p, onField, onRemove, canRemove, touched, touch }) {
+  const [drop, setDrop] = useState({ open: false, results: [], loading: false });
+  const debRef   = useRef(null);
+  const wrapRef  = useRef(null);
+
+  // Cierre al hacer click fuera
+  useEffect(() => {
+    const fn = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target))
+        setDrop(d => ({ ...d, open: false }));
+    };
+    document.addEventListener('mousedown', fn);
+    return () => document.removeEventListener('mousedown', fn);
+  }, []);
+
+  const handleNombreChange = (val) => {
+    onField('nombreProducto', val);
+    clearTimeout(debRef.current);
+    if (!val.trim()) { setDrop({ open: false, results: [], loading: false }); return; }
+    setDrop(d => ({ ...d, loading: true, open: true }));
+    debRef.current = setTimeout(async () => {
+      try {
+        const res  = await fetch(`/api/admin/catalogo?q=${encodeURIComponent(val)}&limit=10`);
+        const data = await res.json();
+        setDrop({ open: true, results: data.productos ?? [], loading: false });
+      } catch {
+        setDrop(d => ({ ...d, loading: false }));
+      }
+    }, 300);
+  };
+
+  const selectFromCatalog = (prod) => {
+    onField('nombreProducto', prod.nombre);
+    onField('categoria',       prod.subcategoria || prod.categoria || '');
+    const desc = [prod.descripcion, prod.material].filter(Boolean).join(' · ');
+    onField('descripcion',     desc);
+    onField('dimensiones',     prod.medidas   || '');
+    onField('referenciaModelo',prod.codigo    || '');
+    onField('marca',           prod.proveedor || '');
+    setDrop({ open: false, results: [], loading: false });
+  };
+
+  const i = index;
+  return (
+    <div className="sol-card-block">
+      <div className="sol-card-top">
+        <span className="sol-card-title">Producto #{i + 1}</span>
+        {canRemove && (
+          <button type="button" className="sol-btn-remove" onClick={onRemove}>Eliminar</button>
+        )}
+      </div>
+
+      <div className="sol-grid-2">
+        {/* Nombre con dropdown de catálogo */}
+        <Field
+          label="Nombre del Producto" required
+          error={touched[`p${i}_nombre`] && !p.nombreProducto.trim() ? 'Campo requerido' : ''}
+        >
+          <div ref={wrapRef} style={{ position: 'relative' }}>
+            <input
+              className={`sol-input${touched[`p${i}_nombre`] && !p.nombreProducto.trim() ? ' sol-input-error' : ''}`}
+              value={p.nombreProducto}
+              placeholder="Escribe para buscar en catálogo…"
+              onChange={e => handleNombreChange(e.target.value)}
+              onFocus={() => { if (p.nombreProducto.trim() && drop.results.length) setDrop(d => ({ ...d, open: true })); }}
+              onBlur={() => touch(`p${i}_nombre`)}
+              autoComplete="off"
+            />
+
+            {/* Spinner */}
+            {drop.loading && (
+              <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: '#94a3b8' }}>
+                ⏳
+              </span>
+            )}
+
+            {/* Dropdown */}
+            {drop.open && !drop.loading && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+                background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10,
+                boxShadow: '0 8px 24px rgba(0,0,0,.10)', zIndex: 200,
+                maxHeight: 280, overflowY: 'auto',
+              }}>
+                {drop.results.length === 0 ? (
+                  <div style={{ padding: '12px 14px', fontSize: 13, color: '#94a3b8' }}>
+                    Sin coincidencias — se registrará como producto nuevo
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ padding: '7px 14px 5px', fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', borderBottom: '1px solid #f1f5f9' }}>
+                      {drop.results.length} producto{drop.results.length > 1 ? 's' : ''} en catálogo
+                    </div>
+                    {drop.results.map(prod => (
+                      <button
+                        key={prod.id}
+                        type="button"
+                        onMouseDown={e => { e.preventDefault(); selectFromCatalog(prod); }}
+                        style={{
+                          display: 'block', width: '100%', textAlign: 'left',
+                          padding: '9px 14px', background: 'none', border: 'none',
+                          cursor: 'pointer', borderBottom: '1px solid #f8fafc',
+                          transition: 'background .1s',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                        onMouseLeave={e => e.currentTarget.style.background = ''}
+                      >
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#1e293b' }}>{prod.nombre}</div>
+                        <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
+                          {[prod.proveedor, prod.categoria, prod.codigo].filter(Boolean).join(' · ')}
+                        </div>
+                      </button>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </Field>
+
+        <Field label="Categoría">
+          <input className="sol-input" value={p.categoria}
+            onChange={e => onField('categoria', e.target.value)} />
+        </Field>
+      </div>
+
+      <Field label="Descripción del Producto">
+        <textarea
+          className="sol-textarea"
+          rows={4}
+          placeholder="Incluye características técnicas, materiales, especificaciones relevantes…"
+          value={p.descripcion}
+          onChange={e => onField('descripcion', e.target.value)}
+        />
+      </Field>
+
+      <div className="sol-grid-3">
+        <Field label="Marca / Proveedor">
+          <input className="sol-input" value={p.marca}
+            onChange={e => onField('marca', e.target.value)} />
+        </Field>
+        <Field label="Referencia / Modelo">
+          <input className="sol-input" value={p.referenciaModelo}
+            onChange={e => onField('referenciaModelo', e.target.value)} />
+        </Field>
+        <Field label="País de Origen">
+          <input className="sol-input" value={p.paisOrigen}
+            onChange={e => onField('paisOrigen', e.target.value)} />
+        </Field>
+      </div>
+
+      <div className="sol-grid-2">
+        <Field label="Dimensiones / Medidas">
+          <input className="sol-input" value={p.dimensiones}
+            onChange={e => onField('dimensiones', e.target.value)} />
+        </Field>
+        <Field label="Empaque">
+          <input className="sol-input" value={p.empaque}
+            onChange={e => onField('empaque', e.target.value)} />
+        </Field>
+      </div>
+
+      <div className="sol-grid-2">
+        <Field
+          label="Tipo de necesidad" required
+          error={touched[`p${i}_tipo`] && !p.tipoNecesidad ? 'Selecciona un tipo' : ''}
+        >
+          <Chips
+            options={TIPOS_NECESIDAD}
+            value={p.tipoNecesidad}
+            hasError={touched[`p${i}_tipo`] && !p.tipoNecesidad}
+            onChange={val => { onField('tipoNecesidad', val); touch(`p${i}_tipo`); }}
+          />
+          {p.tipoNecesidad === 'otro' && (
+            <input className="sol-input" style={{ marginTop: 8 }}
+              placeholder="Especifique…"
+              value={p.tipoNecesidadOtro}
+              onChange={e => onField('tipoNecesidadOtro', e.target.value)} />
+          )}
+        </Field>
+
+        <Field
+          label="Prioridad" required
+          error={touched[`p${i}_prio`] && !p.prioridad ? 'Selecciona una prioridad' : ''}
+        >
+          <Chips
+            options={PRIORIDADES.map(v => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }))}
+            value={p.prioridad}
+            hasError={touched[`p${i}_prio`] && !p.prioridad}
+            onChange={val => { onField('prioridad', val); touch(`p${i}_prio`); }}
+          />
+        </Field>
+      </div>
+
+      <div className="sol-grid-2">
+        <Field label="Frecuencia requerida">
+          <input className="sol-input" value={p.frecuenciaRequerida}
+            onChange={e => onField('frecuenciaRequerida', e.target.value)} />
+        </Field>
+        <Field label="Cantidad referencial">
+          <input className="sol-input" value={p.cantidadReferencial}
+            onChange={e => onField('cantidadReferencial', e.target.value)} />
+        </Field>
+      </div>
+    </div>
+  );
+}
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 export default function NuevaSolicitudInicialPage() {
   const router = useRouter();
@@ -163,6 +372,7 @@ export default function NuevaSolicitudInicialPage() {
   const [form, setForm] = useState({
     fechaReunion: HOY,
     cliente: {
+      cedulaRif:             '',
       razonSocial:           '',
       ciudad:                '',
       direccion:             '',
@@ -184,6 +394,62 @@ export default function NuevaSolicitudInicialPage() {
   const [validErrors,  setValidErrors]  = useState([]);
   // mapa de campos tocados para mostrar errores inline
   const [touched,      setTouched]      = useState({});
+  // lookup de cédula/RIF
+  // null | 'loading' | { found: true, cliente: {...} } | { found: false }
+  const [clienteLookup, setClienteLookup] = useState(null);
+  const lookupTimer = useRef(null);
+
+  // ── Lookup de Cédula/RIF con debounce ─────────────────────────────────────
+  useEffect(() => {
+    const raw = form.cliente.cedulaRif?.trim() ?? '';
+    if (!raw) { setClienteLookup(null); return; }
+
+    clearTimeout(lookupTimer.current);
+    setClienteLookup('loading');
+
+    lookupTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/admin/clientes?cedula=${encodeURIComponent(raw)}`);
+        if (!res.ok) { setClienteLookup({ found: false }); return; }
+        const data = await res.json();
+
+        if (data.cliente) {
+          const c = data.cliente;
+          // Auto-fill campos del cliente
+          setForm(prev => ({
+            ...prev,
+            cliente: {
+              ...prev.cliente,
+              razonSocial:           c.razonSocial           || prev.cliente.razonSocial,
+              ciudad:                c.ciudad                || prev.cliente.ciudad,
+              direccion:             c.direccion             || prev.cliente.direccion,
+              sectorIndustria:       c.sectorIndustria       || prev.cliente.sectorIndustria,
+              canalComercializacion: c.canalComercializacion || prev.cliente.canalComercializacion,
+            },
+            // Auto-fill contacto principal desde la DB del cliente
+            contactos: prev.contactos.map((ct, i) => {
+              if (i !== 0) return ct;
+              return {
+                ...ct,
+                nombre:   c.contactoNombre   || ct.nombre,
+                cargo:    c.contactoCargo    || ct.cargo,
+                telefono: c.contactoTelefono || ct.telefono,
+                email:    c.contactoEmail    || ct.email,
+              };
+            }),
+          }));
+          setClienteLookup({ found: true, cliente: data.cliente });
+        } else {
+          setClienteLookup({ found: false });
+        }
+      } catch {
+        setClienteLookup({ found: false });
+      }
+    }, 400);
+
+    return () => clearTimeout(lookupTimer.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.cliente.cedulaRif]);
 
   // ── helpers de estado ──────────────────────────────────────────────────────
   const set         = (f, v) => setForm(p => ({ ...p, [f]: v }));
@@ -304,16 +570,50 @@ export default function NuevaSolicitudInicialPage() {
         <div className="sol-section">
           <SectionTitle n="1" title="Información General de la Reunión" />
 
+          {/* Cédula / RIF + Razón Social en la misma fila */}
           <div className="sol-grid-3">
-            <Field label="Fecha">
-              <div className="sol-date-row">
-                <input className="sol-input sol-input-xs" value={form.fechaReunion.dd} readOnly />
-                <span className="sol-date-sep">/</span>
-                <input className="sol-input sol-input-xs" value={form.fechaReunion.mm} readOnly />
-                <span className="sol-date-sep">/</span>
-                <input className="sol-input sol-input-sm" value={form.fechaReunion.aaaa} readOnly />
+            <Field label="Cédula / RIF del Cliente">
+              <div style={{ position: 'relative' }}>
+                <input
+                  className="sol-input"
+                  placeholder="V-12345678 · J-123456789"
+                  value={form.cliente.cedulaRif}
+                  onChange={e => {
+                    setNested('cliente', 'cedulaRif', e.target.value);
+                    setClienteLookup(null);
+                  }}
+                  style={{ paddingRight: clienteLookup === 'loading' ? '32px' : undefined }}
+                />
+                {clienteLookup === 'loading' && (
+                  <span style={{
+                    position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+                    fontSize: '13px', color: '#94a3b8',
+                  }}>⏳</span>
+                )}
               </div>
-              <span className="sol-date-hint">Fecha actual (automática)</span>
+              {clienteLookup?.found === true && (
+                <div style={{
+                  marginTop: '6px', padding: '6px 10px', borderRadius: '6px',
+                  background: '#f0fdf4', border: '1px solid #86efac',
+                  fontSize: '12px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px',
+                }}>
+                  <span>✓</span>
+                  <span>
+                    Cliente registrado ·{' '}
+                    {clienteLookup.cliente._count?.solicitudes ?? 0} solicitud(es) previa(s) — campos completados
+                  </span>
+                </div>
+              )}
+              {clienteLookup?.found === false && form.cliente.cedulaRif.trim() && (
+                <div style={{
+                  marginTop: '6px', padding: '6px 10px', borderRadius: '6px',
+                  background: '#eff6ff', border: '1px solid #93c5fd',
+                  fontSize: '12px', color: '#1e40af', display: 'flex', alignItems: 'center', gap: '6px',
+                }}>
+                  <span>🆕</span>
+                  <span>Cliente nuevo — se registrará automáticamente al guardar</span>
+                </div>
+              )}
             </Field>
 
             <div style={{ gridColumn: 'span 2' }}>
@@ -330,6 +630,20 @@ export default function NuevaSolicitudInicialPage() {
                 />
               </Field>
             </div>
+          </div>
+
+          {/* Segunda fila: Fecha */}
+          <div className="sol-grid-3">
+            <Field label="Fecha de la Reunión">
+              <div className="sol-date-row">
+                <input className="sol-input sol-input-xs" value={form.fechaReunion.dd} readOnly />
+                <span className="sol-date-sep">/</span>
+                <input className="sol-input sol-input-xs" value={form.fechaReunion.mm} readOnly />
+                <span className="sol-date-sep">/</span>
+                <input className="sol-input sol-input-sm" value={form.fechaReunion.aaaa} readOnly />
+              </div>
+              <span className="sol-date-hint">Fecha actual (automática)</span>
+            </Field>
           </div>
 
           <div className="sol-grid-3">
@@ -410,111 +724,16 @@ export default function NuevaSolicitudInicialPage() {
           <SectionTitle n="3" title="Productos del Cliente y Necesidad de Procura" />
 
           {form.productosCliente.map((p, i) => (
-            <div key={i} className="sol-card-block">
-              <div className="sol-card-top">
-                <span className="sol-card-title">Producto #{i + 1}</span>
-                {form.productosCliente.length > 1 && (
-                  <button type="button" className="sol-btn-remove" onClick={() => removeProducto(i)}>Eliminar</button>
-                )}
-              </div>
-
-              <div className="sol-grid-2">
-                <Field
-                  label="Nombre del Producto" required
-                  error={touched[`p${i}_nombre`] && !p.nombreProducto.trim() ? 'Campo requerido' : ''}
-                >
-                  <input
-                    className={`sol-input${touched[`p${i}_nombre`] && !p.nombreProducto.trim() ? ' sol-input-error' : ''}`}
-                    value={p.nombreProducto}
-                    onChange={e => setArrNested('productosCliente', i, 'nombreProducto', e.target.value)}
-                    onBlur={() => touch(`p${i}_nombre`)}
-                  />
-                </Field>
-                <Field label="Categoría">
-                  <input className="sol-input" value={p.categoria}
-                    onChange={e => setArrNested('productosCliente', i, 'categoria', e.target.value)} />
-                </Field>
-              </div>
-
-              <Field label="Descripción del Producto">
-                <textarea
-                  className="sol-textarea"
-                  rows={4}
-                  placeholder="Incluye características técnicas, materiales, especificaciones relevantes y cualquier nota adicional…"
-                  value={p.descripcion}
-                  onChange={e => setArrNested('productosCliente', i, 'descripcion', e.target.value)}
-                />
-              </Field>
-
-              <div className="sol-grid-3">
-                <Field label="Marca">
-                  <input className="sol-input" value={p.marca}
-                    onChange={e => setArrNested('productosCliente', i, 'marca', e.target.value)} />
-                </Field>
-                <Field label="Referencia / Modelo">
-                  <input className="sol-input" value={p.referenciaModelo}
-                    onChange={e => setArrNested('productosCliente', i, 'referenciaModelo', e.target.value)} />
-                </Field>
-                <Field label="País de Origen">
-                  <input className="sol-input" value={p.paisOrigen}
-                    onChange={e => setArrNested('productosCliente', i, 'paisOrigen', e.target.value)} />
-                </Field>
-              </div>
-
-              <div className="sol-grid-2">
-                <Field label="Dimensiones">
-                  <input className="sol-input" value={p.dimensiones}
-                    onChange={e => setArrNested('productosCliente', i, 'dimensiones', e.target.value)} />
-                </Field>
-                <Field label="Empaque">
-                  <input className="sol-input" value={p.empaque}
-                    onChange={e => setArrNested('productosCliente', i, 'empaque', e.target.value)} />
-                </Field>
-              </div>
-
-              <div className="sol-grid-2">
-                <Field
-                  label="Tipo de necesidad" required
-                  error={touched[`p${i}_tipo`] && !p.tipoNecesidad ? 'Selecciona un tipo' : ''}
-                >
-                  <Chips
-                    options={TIPOS_NECESIDAD}
-                    value={p.tipoNecesidad}
-                    hasError={touched[`p${i}_tipo`] && !p.tipoNecesidad}
-                    onChange={val => { setArrNested('productosCliente', i, 'tipoNecesidad', val); touch(`p${i}_tipo`); }}
-                  />
-                  {p.tipoNecesidad === 'otro' && (
-                    <input className="sol-input" style={{ marginTop: 8 }}
-                      placeholder="Especifique…"
-                      value={p.tipoNecesidadOtro}
-                      onChange={e => setArrNested('productosCliente', i, 'tipoNecesidadOtro', e.target.value)} />
-                  )}
-                </Field>
-
-                <Field
-                  label="Prioridad" required
-                  error={touched[`p${i}_prio`] && !p.prioridad ? 'Selecciona una prioridad' : ''}
-                >
-                  <Chips
-                    options={PRIORIDADES.map(v => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }))}
-                    value={p.prioridad}
-                    hasError={touched[`p${i}_prio`] && !p.prioridad}
-                    onChange={val => { setArrNested('productosCliente', i, 'prioridad', val); touch(`p${i}_prio`); }}
-                  />
-                </Field>
-              </div>
-
-              <div className="sol-grid-2">
-                <Field label="Frecuencia requerida">
-                  <input className="sol-input" value={p.frecuenciaRequerida}
-                    onChange={e => setArrNested('productosCliente', i, 'frecuenciaRequerida', e.target.value)} />
-                </Field>
-                <Field label="Cantidad referencial">
-                  <input className="sol-input" value={p.cantidadReferencial}
-                    onChange={e => setArrNested('productosCliente', i, 'cantidadReferencial', e.target.value)} />
-                </Field>
-              </div>
-            </div>
+            <ProductoRow
+              key={i}
+              index={i}
+              p={p}
+              onField={(k, v) => setArrNested('productosCliente', i, k, v)}
+              onRemove={() => removeProducto(i)}
+              canRemove={form.productosCliente.length > 1}
+              touched={touched}
+              touch={touch}
+            />
           ))}
 
           <button type="button" className="sol-btn-add" onClick={addProducto}>+ Agregar producto</button>

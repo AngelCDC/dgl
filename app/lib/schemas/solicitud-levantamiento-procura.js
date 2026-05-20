@@ -83,6 +83,7 @@ export const solicitudProcuraSimpleSchema = z
     fechaReunion: fechaSchema,
 
     cliente: z.object({
+      cedulaRif: textoOpcional,          // ← Cédula / RIF (opcional en el schema, validado en UI)
       razonSocial: textoRequerido,
       ciudad: textoOpcional,
       direccion: textoOpcional,

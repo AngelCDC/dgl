@@ -38,6 +38,7 @@ export async function POST(req) {
     const fechaStr = `${v.fechaReunion.dd}/${v.fechaReunion.mm}/${v.fechaReunion.aaaa}`
 
     // ── Cliente ───────────────────────────────────────────────────────────────
+    const cedulaRif             = v.cliente.cedulaRif?.trim()     || null
     const empresaCliente        = v.cliente.razonSocial
     const nombreComercial       = null   // eliminado del formulario simplificado
     const ciudad                = v.cliente.ciudad                ?? null
@@ -75,109 +76,136 @@ export async function POST(req) {
       }))
     )
 
-    const [solicitud, adquisicion] = await prisma.$transaction(async (tx) => {
-
-      // 1. Crear SolicitudProcura
-      const sol = await tx.solicitudProcura.create({
-        data: {
-          fecha:                fechaStr,
-          empresaCliente,
-          nombreComercial,
+    // ── 1. Upsert Cliente (fuera de transaction — Neon pooler no soporta tx interactivas largas) ──
+    let clienteId = null
+    if (cedulaRif) {
+      const cli = await prisma.cliente.upsert({
+        where:  { cedulaRif },
+        update: {
+          razonSocial:           empresaCliente,
           ciudad,
           direccion,
           sectorIndustria,
           canalComercializacion,
-          objetivoReunion,
-          resumenCliente:          null,
-          fortalezasDetectadas:    [],
-          restriccionesDetectadas: [],
-          comentariosFinales:      null,
-          proximosPasos:           v.proximosPasos,
-          elaboradoPorNombre:      v.elaboradoPor.nombre,
-          elaboradoPorCargo:       v.elaboradoPor.cargo ?? null,
-          elaboradoPorFecha:       fechaStr,
+          contactoNombre:   contactoPrincipal.nombre   ?? null,
+          contactoCargo:    contactoPrincipal.cargo    ?? null,
+          contactoTelefono: contactoPrincipal.telefono ?? null,
+          contactoEmail:    contactoPrincipal.email    || null,
+          updatedAt:        new Date(),
+        },
+        create: {
+          cedulaRif,
+          razonSocial:           empresaCliente,
+          ciudad,
+          direccion,
+          sectorIndustria,
+          canalComercializacion,
+          contactoNombre:   contactoPrincipal.nombre   ?? null,
+          contactoCargo:    contactoPrincipal.cargo    ?? null,
+          contactoTelefono: contactoPrincipal.telefono ?? null,
+          contactoEmail:    contactoPrincipal.email    || null,
+        },
+      })
+      clienteId = cli.id
+    }
 
-          contactos: {
-            create: [
-              {
-                esPrincipal: true,
-                nombre:   contactoPrincipal.nombre,
-                cargo:    contactoPrincipal.cargo    ?? null,
-                telefono: contactoPrincipal.telefono ?? null,
-                email:    contactoPrincipal.email    || null,
-              },
-              ...otrosContactos.map((c) => ({
-                esPrincipal: false,
-                nombre:   c.nombre,
-                cargo:    c.cargo    ?? null,
-                telefono: c.telefono ?? null,
-                email:    c.email    || null,
-              })),
-            ],
-          },
+    // ── 2. Crear SolicitudProcura con sus relaciones anidadas ────────────────
+    const solicitud = await prisma.solicitudProcura.create({
+      data: {
+        fecha:                fechaStr,
+        cedulaRif,
+        clienteId,
+        empresaCliente,
+        nombreComercial,
+        ciudad,
+        direccion,
+        sectorIndustria,
+        canalComercializacion,
+        objetivoReunion,
+        resumenCliente:          null,
+        fortalezasDetectadas:    [],
+        restriccionesDetectadas: [],
+        comentariosFinales:      null,
+        proximosPasos:           v.proximosPasos,
+        elaboradoPorNombre:      v.elaboradoPor.nombre,
+        elaboradoPorCargo:       v.elaboradoPor.cargo ?? null,
+        elaboradoPorFecha:       fechaStr,
 
-          productos: {
-            create: v.productosCliente.map((p, i) => ({
-              nombreProducto:             p.nombreProducto,
-              categoria:                  p.categoria      ?? null,
-              descripcionGeneral:         p.descripcion?.trim() || p.nombreProducto,
-              caracteristicasPrincipales: [],
-              presentaciones:             [],
-              materiales:                 [],
-              colores:                    [],
-              dimensiones:                p.dimensiones    ?? null,
-              peso:                       null,
-              empaque:                    p.empaque        ?? null,
-              marca:                      p.marca          ?? null,
-              referenciaModelo:           p.referenciaModelo ?? null,
-              paisOrigen:                 p.paisOrigen     ?? null,
-              usosAplicaciones:           null,
-              requerimientosEspeciales:   null,
-              observaciones:              p.descripcion    ?? null,
-              sortOrder: i,
+        contactos: {
+          create: [
+            {
+              esPrincipal: true,
+              nombre:   contactoPrincipal.nombre,
+              cargo:    contactoPrincipal.cargo    ?? null,
+              telefono: contactoPrincipal.telefono ?? null,
+              email:    contactoPrincipal.email    || null,
+            },
+            ...otrosContactos.map((c) => ({
+              esPrincipal: false,
+              nombre:   c.nombre,
+              cargo:    c.cargo    ?? null,
+              telefono: c.telefono ?? null,
+              email:    c.email    || null,
             })),
-          },
-
-          necesidades: { create: necesidades },
+          ],
         },
-      })
 
-      // 2. Crear SolicitudAdquisicion vinculada
-      const adq = await tx.solicitudAdquisicion.create({
-        data: {
-          solicitudProcuraId:     sol.id,
-          status:                 'borrador',
-          fecha:                  fechaStr,
-          solicitante:            empresaCliente,
-          ccNit:                  '',
-          email:                  contactoPrincipal.email    || '',
-          telCel:                 contactoPrincipal.telefono ?? null,
-          descripcionNecesidad:   objetivoReunion,
-          pertinencia:            null,
-          descripcionObjeto:      '',
-          obligaciones:           [],
-          modalidad:              'directa',
-          justificacionModalidad: '',
-          valorEstimado:          '',
-          plazo:                  '',
-          comiteEvaluador:        [],
-
-          // Firmas
-          elaboradoPorNombre: v.elaboradoPor.nombre,
-          elaboradoPorCargo:  v.elaboradoPor.cargo ?? null,
-          elaboradoPorFecha:  fechaStr,
-
-          // Contratante = contacto principal del levantamiento
-          contratanteNombre: contactoPrincipal.nombre,
-          contratanteCargo:  contactoPrincipal.cargo ?? null,
-          contratanteFecha:  fechaStr,
-
-          // 3 cotizantes vacíos por cada producto para el estudio de mercado
-          cotizantes: { create: cotizantes },
+        productos: {
+          create: v.productosCliente.map((p, i) => ({
+            nombreProducto:             p.nombreProducto,
+            categoria:                  p.categoria        ?? null,
+            descripcionGeneral:         p.descripcion?.trim() || p.nombreProducto,
+            caracteristicasPrincipales: [],
+            presentaciones:             [],
+            materiales:                 [],
+            colores:                    [],
+            dimensiones:                p.dimensiones      ?? null,
+            peso:                       null,
+            empaque:                    p.empaque          ?? null,
+            marca:                      p.marca            ?? null,
+            referenciaModelo:           p.referenciaModelo ?? null,
+            paisOrigen:                 p.paisOrigen       ?? null,
+            usosAplicaciones:           null,
+            requerimientosEspeciales:   null,
+            observaciones:              p.descripcion      ?? null,
+            sortOrder: i,
+          })),
         },
-      })
 
-      return [sol, adq]
+        necesidades: { create: necesidades },
+      },
+    })
+
+    // ── 3. Crear SolicitudAdquisicion vinculada ──────────────────────────────
+    const adquisicion = await prisma.solicitudAdquisicion.create({
+      data: {
+        solicitudProcuraId:     solicitud.id,
+        status:                 'borrador',
+        fecha:                  fechaStr,
+        solicitante:            empresaCliente,
+        ccNit:                  '',
+        email:                  contactoPrincipal.email    || '',
+        telCel:                 contactoPrincipal.telefono ?? null,
+        descripcionNecesidad:   objetivoReunion,
+        pertinencia:            null,
+        descripcionObjeto:      '',
+        obligaciones:           [],
+        modalidad:              'directa',
+        justificacionModalidad: '',
+        valorEstimado:          '',
+        plazo:                  '',
+        comiteEvaluador:        [],
+
+        elaboradoPorNombre: v.elaboradoPor.nombre,
+        elaboradoPorCargo:  v.elaboradoPor.cargo ?? null,
+        elaboradoPorFecha:  fechaStr,
+
+        contratanteNombre: contactoPrincipal.nombre,
+        contratanteCargo:  contactoPrincipal.cargo ?? null,
+        contratanteFecha:  fechaStr,
+
+        cotizantes: { create: cotizantes },
+      },
     })
 
     return NextResponse.json({

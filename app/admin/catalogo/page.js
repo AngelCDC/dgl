@@ -2,33 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 
-// ─── Constantes de estilo ─────────────────────────────────────────────────────
-const S = {
-  page:    { padding: '32px' },
-  title:   { fontSize: '22px', fontWeight: '600', marginBottom: '4px' },
-  sub:     { fontSize: '13px', color: '#888', marginBottom: '24px' },
-  card:    { background: 'white', border: '1px solid #eee', borderRadius: '10px', overflow: 'hidden' },
-  label:   { fontSize: '11px', color: '#888', marginBottom: '4px' },
-  stat:    { fontSize: '28px', fontWeight: '700', color: '#111', letterSpacing: '-0.02em' },
-  statSub: { fontSize: '12px', color: '#888', marginTop: '2px' },
-  btn: (color = '#111', bg = 'white') => ({
-    padding: '7px 14px', fontSize: '13px',
-    border: `1px solid ${bg !== 'white' ? color : (color === 'white' ? '#ddd' : color)}`,
-    borderRadius: '8px',
-    background: bg !== 'white' ? color : 'white',
-    color: bg !== 'white' ? 'white' : color,
-    cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
-  }),
-  tag: (bg = '#eee', color = '#555') => ({
-    display: 'inline-block', fontSize: '11px', padding: '2px 8px', borderRadius: '20px',
-    background: bg, color, fontWeight: '500', whiteSpace: 'nowrap',
-  }),
-  select: {
-    padding: '10px 12px', fontSize: '13px', border: '1px solid #ddd',
-    borderRadius: '8px', fontFamily: 'inherit', background: 'white', minWidth: '150px',
-  },
-}
-
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function CatalogoPage() {
   const [query,        setQuery]        = useState('')
@@ -134,268 +107,456 @@ export default function CatalogoPage() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div style={S.page}>
+    <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '28px 32px' }}>
 
-      {/* Cabecera ─────────────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', gap: '16px', flexWrap: 'wrap' }}>
+      {/* ── Cabecera ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px', gap: '16px', flexWrap: 'wrap' }}>
         <div>
-          <h1 style={S.title}>Catálogo de Productos</h1>
-          <p style={S.sub}>
+          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#111', marginBottom: '4px', letterSpacing: '-0.01em' }}>
+            Catálogo de Productos
+          </h1>
+          <p style={{ fontSize: '13px', color: '#888', margin: 0 }}>
             {stats
               ? `${stats.total.toLocaleString()} productos · ${stats.porProveedor.length} proveedores · ${stats.porRubro.length} rubros · ${stats.porCategoria.length} categorías`
               : 'Base de datos personal de productos ofertados por proveedores'}
           </p>
         </div>
-        <button style={S.btn('#111', '#111')} onClick={() => setImportUI(v => !v)}>
+        <button
+          onClick={() => setImportUI(v => !v)}
+          style={{
+            height: '36px',
+            padding: '0 16px',
+            background: importUI ? '#f4f4f5' : '#111',
+            color: importUI ? '#555' : 'white',
+            border: importUI ? '1px solid #e0e0e0' : 'none',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: '500',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            whiteSpace: 'nowrap',
+          }}
+        >
           {importUI ? '✕ Cerrar importador' : '⬆ Importar Excel'}
         </button>
       </div>
 
-      {/* Importador ───────────────────────────────────────────────────────── */}
+      {/* ── Importador ── */}
       {importUI && (
         <ImportPanel onDone={() => { setImportUI(false); fetchStats(); search() }} />
       )}
 
-      {/* Stats ────────────────────────────────────────────────────────────── */}
+      {/* ── Stats ── */}
       {stats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))', gap: '12px', marginBottom: '24px' }}>
-          <StatCard label="Productos totales"  value={stats.total.toLocaleString()} />
-          <StatCard label="Rubros"             value={stats.porRubro.length} />
-          <StatCard label="Categorías"         value={stats.porCategoria.length} />
-          <StatCard label="Proveedores"        value={stats.porProveedor.length} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+          <StatCard
+            label="Productos totales"
+            value={stats.total.toLocaleString()}
+            color="#0d9488"
+            icon="📦"
+          />
+          <StatCard
+            label="Rubros"
+            value={stats.porRubro.length}
+            color="#7c3aed"
+            icon="🏷"
+          />
+          <StatCard
+            label="Categorías"
+            value={stats.porCategoria.length}
+            color="#2563eb"
+            icon="📂"
+          />
+          <StatCard
+            label="Proveedores"
+            value={stats.porProveedor.length}
+            color="#0891b2"
+            icon="🏢"
+          />
           {stats.porProveedor[0] && (
             <StatCard
               label="Mayor catálogo"
               value={stats.porProveedor[0]._count.id}
               sub={stats.porProveedor[0].proveedor.split(' ').slice(0, 2).join(' ')}
+              color="#64748b"
+              icon="⭐"
             />
           )}
         </div>
       )}
 
-      {/* Búsqueda + filtros ───────────────────────────────────────────────── */}
-      <div style={{ ...S.card, marginBottom: '20px', padding: '20px' }}>
-
-        {/* Fila 1: input libre */}
-        <div style={{ position: 'relative', marginBottom: '12px' }}>
-          <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px', pointerEvents: 'none' }}>🔍</span>
-          <input
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Buscar por nombre, código, material, descripción…"
-            style={{ width: '100%', padding: '11px 40px 11px 40px', fontSize: '14px', border: '1px solid #ddd', borderRadius: '8px', fontFamily: 'inherit', outline: 'none' }}
-            autoFocus
-          />
-          {query && (
-            <button
-              onClick={() => setQuery('')}
-              style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', cursor: 'pointer', fontSize: '16px', color: '#aaa' }}
-            >✕</button>
-          )}
+      {/* ── Búsqueda + filtros ── */}
+      <div style={{
+        background: 'white',
+        border: '1px solid #e8e8e8',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        marginBottom: '20px',
+      }}>
+        {/* Search input row */}
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f0f0' }}>
+          <div style={{ position: 'relative' }}>
+            <span style={{
+              position: 'absolute', left: '14px', top: '50%',
+              transform: 'translateY(-50%)', fontSize: '15px', pointerEvents: 'none', color: '#aaa',
+            }}>🔍</span>
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Buscar por nombre, código, material, descripción…"
+              style={{
+                width: '100%',
+                height: '42px',
+                padding: '0 40px 0 42px',
+                fontSize: '14px',
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                fontFamily: 'inherit',
+                outline: 'none',
+                boxSizing: 'border-box',
+                background: '#fafafa',
+                transition: 'border-color 0.15s, background 0.15s',
+              }}
+              onFocus={e => { e.target.style.borderColor = '#2563eb'; e.target.style.background = 'white'; }}
+              onBlur={e => { e.target.style.borderColor = '#e0e0e0'; e.target.style.background = '#fafafa'; }}
+              autoFocus
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                style={{
+                  position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                  border: 'none', background: 'none', cursor: 'pointer', fontSize: '15px', color: '#aaa', padding: '0',
+                }}
+              >✕</button>
+            )}
+          </div>
         </div>
 
-        {/* Fila 2: filtros en cascada — Rubro → Categoría → Subcategoría + Proveedor */}
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-
-          {/* Rubro (nivel 1) */}
+        {/* Filter selects row */}
+        <div style={{ padding: '14px 20px', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end', background: '#fafbfc' }}>
           {rubros.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Rubro</span>
-              <select value={rubro} onChange={e => setRubro(e.target.value)} style={S.select}>
-                <option value="">Todos los rubros</option>
-                {rubros.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
+            <FilterSelect
+              label="Rubro"
+              value={rubro}
+              onChange={e => setRubro(e.target.value)}
+              options={rubros.map(r => ({ value: r, label: r }))}
+              placeholder="Todos los rubros"
+            />
           )}
-
-          {/* Categoría (nivel 2) */}
           {categorias.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Categoría</span>
-              <select value={categoria} onChange={e => setCategoria(e.target.value)} style={S.select}>
-                <option value="">Todas</option>
-                {categorias.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
+            <FilterSelect
+              label="Categoría"
+              value={categoria}
+              onChange={e => setCategoria(e.target.value)}
+              options={categorias.map(c => ({ value: c, label: c }))}
+              placeholder="Todas"
+            />
           )}
-
-          {/* Subcategoría (nivel 3) — solo si hay categoría seleccionada */}
           {subcategorias.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Subcategoría</span>
-              <select value={subcategoria} onChange={e => setSubcategoria(e.target.value)} style={S.select}>
-                <option value="">Todas</option>
-                {subcategorias.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
+            <FilterSelect
+              label="Subcategoría"
+              value={subcategoria}
+              onChange={e => setSubcategoria(e.target.value)}
+              options={subcategorias.map(s => ({ value: s, label: s }))}
+              placeholder="Todas"
+            />
           )}
-
-          {/* Proveedor */}
           {proveedores.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Proveedor</span>
-              <select value={proveedor} onChange={e => setProveedor(e.target.value)} style={{ ...S.select, minWidth: '190px' }}>
-                <option value="">Todos</option>
-                {proveedores.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
+            <FilterSelect
+              label="Proveedor"
+              value={proveedor}
+              onChange={e => setProveedor(e.target.value)}
+              options={proveedores.map(p => ({ value: p, label: p }))}
+              placeholder="Todos"
+              minWidth="190px"
+            />
           )}
-
           {hayFiltros && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span style={{ fontSize: '10px', color: 'transparent', letterSpacing: '0.06em' }}>_</span>
-              <button onClick={reset} style={S.btn('#888')}>✕ Limpiar</button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '11px', color: 'transparent', letterSpacing: '0.06em', userSelect: 'none' }}>_</span>
+              <button
+                onClick={reset}
+                style={{
+                  height: '34px',
+                  padding: '0 12px',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  background: 'white',
+                  fontSize: '12px',
+                  color: '#888',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                ✕ Limpiar
+              </button>
             </div>
           )}
         </div>
 
-        {/* Contador de resultados */}
+        {/* Results counter */}
         {result && (
-          <div style={{ marginTop: '12px', fontSize: '13px', color: '#888', borderTop: '1px solid #f5f5f5', paddingTop: '12px' }}>
-            {loading ? '⏳ Buscando…' : (
-              result.total === 0
-                ? <span style={{ color: '#ef4444', fontWeight: '600' }}>⚠ No se encontraron productos con esos criterios</span>
-                : <>
-                    <strong style={{ color: '#111', fontSize: '14px' }}>{result.total.toLocaleString()}</strong>
-                    {' '}resultado{result.total !== 1 ? 's' : ''}
-                    {hayFiltros && <span style={{ color: '#aaa' }}> — filtrado</span>}
-                  </>
+          <div style={{
+            padding: '10px 20px',
+            fontSize: '12px',
+            color: '#888',
+            borderTop: '1px solid #f0f0f0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}>
+            {loading ? (
+              <span style={{ color: '#aaa' }}>Buscando…</span>
+            ) : result.total === 0 ? (
+              <span style={{ color: '#ef4444', fontWeight: '600' }}>Sin resultados para los criterios aplicados</span>
+            ) : (
+              <>
+                <strong style={{ color: '#111', fontSize: '13px' }}>{result.total.toLocaleString()}</strong>
+                <span>resultado{result.total !== 1 ? 's' : ''}</span>
+                {hayFiltros && <span style={{ color: '#ccc' }}>— filtrado</span>}
+              </>
             )}
           </div>
         )}
       </div>
 
-      {/* Tabla de resultados ──────────────────────────────────────────────── */}
+      {/* ── Tabla de resultados ── */}
       {result && result.productos.length > 0 && (
-        <div style={S.card}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-            <thead>
-              <tr style={{ background: '#fafafa', borderBottom: '1px solid #eee' }}>
-                <Th>Producto</Th>
-                <Th>Código</Th>
-                <Th>Rubro · Categoría</Th>
-                <Th>Material / Medidas</Th>
-                <Th>Precio</Th>
-                <Th>Proveedor</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.productos.map(p => (
-                <tr
-                  key={p.id}
-                  onClick={() => setDetail(p)}
-                  style={{ borderBottom: '1px solid #f5f5f5', cursor: 'pointer' }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#fafafa'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'white'}
-                >
-                  {/* Nombre + descripción */}
-                  <td style={{ padding: '12px 16px', maxWidth: '260px' }}>
-                    <div style={{ fontWeight: '500', color: '#111', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {p.nombre}
-                    </div>
-                    {p.descripcion && (
-                      <div style={{ fontSize: '12px', color: '#aaa', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '240px' }}>
-                        {p.descripcion}
-                      </div>
-                    )}
-                  </td>
-
-                  {/* Código */}
-                  <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
-                    {p.codigo
-                      ? <span style={S.tag('#f4f4f5', '#555')}>{p.codigo}</span>
-                      : <span style={{ color: '#ddd' }}>—</span>}
-                  </td>
-
-                  {/* Rubro · Categoría · Subcategoría */}
-                  <td style={{ padding: '12px 16px', maxWidth: '200px' }}>
-                    {p.rubro && (
-                      <div style={{ fontSize: '11px', fontWeight: '600', color: '#2563eb', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        {p.rubro}
-                      </div>
-                    )}
-                    {p.categoria && (
-                      <div style={{ fontSize: '12px', color: '#555', marginBottom: '1px' }}>{p.categoria}</div>
-                    )}
-                    {p.subcategoria && (
-                      <div style={{ fontSize: '11px', color: '#aaa' }}>{p.subcategoria}</div>
-                    )}
-                  </td>
-
-                  {/* Material / Medidas */}
-                  <td style={{ padding: '12px 16px', maxWidth: '150px' }}>
-                    {p.material && (
-                      <div style={{ fontSize: '12px', color: '#555', marginBottom: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.material}</div>
-                    )}
-                    {p.medidas && (
-                      <div style={{ fontSize: '11px', color: '#aaa', fontFamily: 'monospace' }}>{p.medidas}</div>
-                    )}
-                  </td>
-
-                  {/* Precio */}
-                  <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
-                    {p.precio
-                      ? <span style={S.tag('#f0fdf4', '#166534')}>{p.precio}</span>
-                      : <span style={{ color: '#ddd' }}>—</span>}
-                  </td>
-
-                  {/* Proveedor */}
-                  <td style={{ padding: '12px 16px', maxWidth: '160px' }}>
-                    <div style={{ fontSize: '12px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {p.proveedor}
-                    </div>
-                  </td>
+        <div style={{
+          background: 'white',
+          border: '1px solid #e8e8e8',
+          borderRadius: '12px',
+          overflow: 'hidden',
+        }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{
+              width: '100%',
+              borderCollapse: 'separate',
+              borderSpacing: '0',
+              fontSize: '13px',
+            }}>
+              <thead>
+                <tr style={{ background: '#f8f9fa' }}>
+                  <Th>Producto</Th>
+                  <Th>Código</Th>
+                  <Th>Rubro · Categoría</Th>
+                  <Th>Material / Medidas</Th>
+                  <Th>Precio</Th>
+                  <Th>Proveedor</Th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {result.productos.map(p => (
+                  <tr
+                    key={p.id}
+                    onClick={() => setDetail(p)}
+                    style={{ borderBottom: '1px solid #f3f4f6', cursor: 'pointer' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#f9fafb'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                  >
+                    {/* Nombre + descripción */}
+                    <td style={{ padding: '12px 16px', maxWidth: '260px' }}>
+                      <div style={{ fontWeight: '500', color: '#111', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {p.nombre}
+                      </div>
+                      {p.descripcion && (
+                        <div style={{ fontSize: '12px', color: '#9ca3af', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '240px' }}>
+                          {p.descripcion}
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Código */}
+                    <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                      {p.codigo
+                        ? <span style={{ display: 'inline-block', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: '#f4f4f5', color: '#555', fontWeight: '500' }}>{p.codigo}</span>
+                        : <span style={{ color: '#ddd' }}>—</span>}
+                    </td>
+
+                    {/* Rubro · Categoría */}
+                    <td style={{ padding: '12px 16px', maxWidth: '200px' }}>
+                      {p.rubro && (
+                        <span style={{
+                          display: 'inline-block',
+                          fontSize: '11px',
+                          padding: '2px 8px',
+                          borderRadius: '20px',
+                          background: '#eff6ff',
+                          color: '#1d4ed8',
+                          fontWeight: '600',
+                          letterSpacing: '0.02em',
+                          marginBottom: '4px',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {p.rubro}
+                        </span>
+                      )}
+                      {p.categoria && (
+                        <div style={{ fontSize: '12px', color: '#555', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.categoria}</div>
+                      )}
+                      {p.subcategoria && (
+                        <div style={{ fontSize: '11px', color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.subcategoria}</div>
+                      )}
+                    </td>
+
+                    {/* Material / Medidas */}
+                    <td style={{ padding: '12px 16px', maxWidth: '150px' }}>
+                      {p.material && (
+                        <div style={{ fontSize: '12px', color: '#555', marginBottom: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.material}</div>
+                      )}
+                      {p.medidas && (
+                        <div style={{ fontSize: '11px', color: '#aaa', fontFamily: 'monospace' }}>{p.medidas}</div>
+                      )}
+                    </td>
+
+                    {/* Precio */}
+                    <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                      {p.precio
+                        ? <span style={{ display: 'inline-block', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: '#f0fdf4', color: '#166534', fontWeight: '500' }}>{p.precio}</span>
+                        : <span style={{ color: '#ddd' }}>—</span>}
+                    </td>
+
+                    {/* Proveedor */}
+                    <td style={{ padding: '12px 16px', maxWidth: '160px' }}>
+                      <div style={{ fontSize: '12px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {p.proveedor}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {/* Paginación */}
           {result.pages > 1 && (
-            <div style={{ padding: '14px 20px', borderTop: '1px solid #eee', display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'flex-end' }}>
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={S.btn('#888')}>← Anterior</button>
-              <span style={{ fontSize: '13px', color: '#888' }}>Pág. {page} de {result.pages}</span>
-              <button onClick={() => setPage(p => Math.min(result.pages, p + 1))} disabled={page >= result.pages} style={S.btn('#888')}>Siguiente →</button>
+            <div style={{
+              padding: '14px 20px',
+              borderTop: '1px solid #f0f0f0',
+              display: 'flex',
+              gap: '6px',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+            }}>
+              <PaginBtn
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                ← Anterior
+              </PaginBtn>
+              {Array.from({ length: Math.min(result.pages, 7) }, (_, i) => {
+                const pg = result.pages <= 7
+                  ? i + 1
+                  : page <= 4
+                    ? i + 1
+                    : page >= result.pages - 3
+                      ? result.pages - 6 + i
+                      : page - 3 + i
+                return (
+                  <PaginBtn
+                    key={pg}
+                    onClick={() => setPage(pg)}
+                    active={pg === page}
+                  >
+                    {pg}
+                  </PaginBtn>
+                )
+              })}
+              <PaginBtn
+                onClick={() => setPage(p => Math.min(result.pages, p + 1))}
+                disabled={page >= result.pages}
+              >
+                Siguiente →
+              </PaginBtn>
             </div>
           )}
         </div>
       )}
 
-      {/* Sin resultados ───────────────────────────────────────────────────── */}
+      {/* ── Sin resultados ── */}
       {result && result.productos.length === 0 && !loading && (
-        <div style={{ ...S.card, padding: '48px', textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', marginBottom: '12px' }}>🔍</div>
-          <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '6px', color: '#ef4444' }}>
-            Producto no encontrado en el catálogo
+        <div style={{
+          background: 'white',
+          border: '1px solid #e8e8e8',
+          borderRadius: '12px',
+          padding: '64px 32px',
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: '40px', marginBottom: '16px', opacity: 0.4 }}>🔍</div>
+          <div style={{ fontWeight: '600', fontSize: '16px', color: '#111', marginBottom: '8px' }}>
+            Sin resultados
           </div>
-          <p style={{ fontSize: '13px', color: '#888', maxWidth: '380px', margin: '0 auto' }}>
-            No hay ningún producto que coincida con{' '}
-            <strong>"{query || 'los filtros aplicados'}"</strong>.
+          <p style={{ fontSize: '13px', color: '#9ca3af', maxWidth: '360px', margin: '0 auto 20px', lineHeight: '1.6' }}>
+            No hay productos que coincidan con{' '}
+            <strong style={{ color: '#555' }}>"{query || 'los filtros aplicados'}"</strong>.
             Prueba con otro nombre, código o rubro.
           </p>
           {hayFiltros && (
-            <button onClick={reset} style={{ ...S.btn('#111', '#111'), marginTop: '16px' }}>
+            <button
+              onClick={reset}
+              style={{
+                height: '36px',
+                padding: '0 18px',
+                background: '#111',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
               Limpiar filtros y ver todo
             </button>
           )}
         </div>
       )}
 
-      {/* Catálogo vacío ───────────────────────────────────────────────────── */}
+      {/* ── Catálogo vacío ── */}
       {!result && !loading && stats?.total === 0 && (
-        <div style={{ ...S.card, padding: '48px', textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', marginBottom: '12px' }}>📦</div>
-          <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '6px' }}>El catálogo está vacío</div>
-          <p style={{ fontSize: '13px', color: '#888', maxWidth: '340px', margin: '0 auto 20px' }}>
+        <div style={{
+          background: 'white',
+          border: '1px solid #e8e8e8',
+          borderRadius: '12px',
+          padding: '64px 32px',
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: '40px', marginBottom: '16px', opacity: 0.4 }}>📦</div>
+          <div style={{ fontWeight: '600', fontSize: '16px', color: '#111', marginBottom: '8px' }}>
+            El catálogo está vacío
+          </div>
+          <p style={{ fontSize: '13px', color: '#9ca3af', maxWidth: '320px', margin: '0 auto 24px', lineHeight: '1.6' }}>
             Importa tu primer archivo Excel para empezar a consultar productos.
           </p>
-          <button onClick={() => setImportUI(true)} style={S.btn('#111', '#111')}>
+          <button
+            onClick={() => setImportUI(true)}
+            style={{
+              height: '36px',
+              padding: '0 18px',
+              background: '#111',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
             ⬆ Importar Excel
           </button>
         </div>
       )}
 
-      {/* Modal detalle ────────────────────────────────────────────────────── */}
+      {/* ── Modal detalle ── */}
       {detail && <DetailModal producto={detail} onClose={() => setDetail(null)} />}
     </div>
   )
@@ -426,56 +587,128 @@ function ImportPanel({ onDone }) {
   }
 
   return (
-    <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '10px', padding: '20px', marginBottom: '24px' }}>
-      <div style={{ fontWeight: '600', fontSize: '14px', marginBottom: '4px' }}>📥 Importar archivo Excel</div>
-      <div style={{ fontSize: '12px', color: '#92400e', marginBottom: '14px' }}>
-        Columnas reconocidas: <strong>Proveedor · Nombre_Producto · Rubro · Categoría · Subcategoría · Descripción · Código · Unidad · Precio · Material · Medidas</strong>
+    <div style={{
+      background: 'white',
+      border: '1px solid #e8e8e8',
+      borderRadius: '12px',
+      overflow: 'hidden',
+      marginBottom: '24px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+    }}>
+      {/* Dark header bar */}
+      <div style={{
+        background: '#0b1628',
+        color: 'white',
+        padding: '14px 20px',
+        borderRadius: '10px 10px 0 0',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+      }}>
+        <span style={{ fontSize: '16px' }}>📥</span>
+        <div>
+          <div style={{ fontWeight: '600', fontSize: '14px' }}>Importar archivo Excel</div>
+          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+            Columnas reconocidas: Proveedor · Nombre_Producto · Rubro · Categoría · Subcategoría · Descripción · Código · Unidad · Precio · Material · Medidas
+          </div>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <div>
-          <div style={S.label}>Archivo (.xlsx)</div>
+      {/* Form body */}
+      <div style={{ padding: '20px' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div>
+            <div style={{ fontSize: '11px', color: '#888', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+              Archivo (.xlsx)
+            </div>
+            <button
+              onClick={() => fileRef.current.click()}
+              style={{
+                height: '36px',
+                padding: '0 14px',
+                border: `1px solid ${file ? '#86efac' : '#e0e0e0'}`,
+                borderRadius: '8px',
+                background: file ? '#f0fdf4' : 'white',
+                color: file ? '#166534' : '#555',
+                fontSize: '13px',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              {file ? `📄 ${file.name}` : 'Seleccionar archivo…'}
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".xlsx,.xls"
+              style={{ display: 'none' }}
+              onChange={e => setFile(e.target.files[0] || null)}
+            />
+          </div>
+
+          <div>
+            <div style={{ fontSize: '11px', color: '#888', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+              Modo
+            </div>
+            <select
+              value={modo}
+              onChange={e => setModo(e.target.value)}
+              style={{
+                height: '36px',
+                padding: '0 12px',
+                fontSize: '13px',
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                fontFamily: 'inherit',
+                background: 'white',
+                color: '#111',
+                outline: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <option value="agregar">Agregar (mantiene existentes)</option>
+              <option value="reemplazar">Reemplazar (borra todo primero)</option>
+            </select>
+          </div>
+
           <button
-            onClick={() => fileRef.current.click()}
-            style={{ ...S.btn('#111'), background: file ? '#f0fdf4' : 'white', borderColor: file ? '#86efac' : '#ddd' }}
+            onClick={handleImport}
+            disabled={!file || status === 'loading'}
+            style={{
+              height: '36px',
+              padding: '0 18px',
+              background: '#111',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: '500',
+              cursor: !file || status === 'loading' ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit',
+              opacity: !file || status === 'loading' ? 0.5 : 1,
+            }}
           >
-            {file ? `📄 ${file.name}` : 'Seleccionar archivo…'}
+            {status === 'loading' ? 'Importando…' : 'Importar ahora'}
           </button>
-          <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={e => setFile(e.target.files[0] || null)} />
         </div>
 
-        <div>
-          <div style={S.label}>Modo</div>
-          <select
-            value={modo}
-            onChange={e => setModo(e.target.value)}
-            style={{ padding: '8px 12px', fontSize: '13px', border: '1px solid #ddd', borderRadius: '8px', fontFamily: 'inherit', background: 'white' }}
-          >
-            <option value="agregar">Agregar (mantiene existentes)</option>
-            <option value="reemplazar">Reemplazar (borra todo primero)</option>
-          </select>
-        </div>
-
-        <button
-          onClick={handleImport}
-          disabled={!file || status === 'loading'}
-          style={{ ...S.btn('white', '#111'), opacity: !file || status === 'loading' ? 0.5 : 1 }}
-        >
-          {status === 'loading' ? 'Importando…' : 'Importar ahora'}
-        </button>
+        {status && status !== 'loading' && (
+          <div style={{
+            marginTop: '14px',
+            fontSize: '13px',
+            color: status.ok ? '#166534' : '#dc2626',
+            background: status.ok ? '#f0fdf4' : '#fef2f2',
+            padding: '10px 14px',
+            borderRadius: '8px',
+            border: `1px solid ${status.ok ? '#86efac' : '#fca5a5'}`,
+          }}>
+            {status.msg}
+          </div>
+        )}
       </div>
-
-      {status && status !== 'loading' && (
-        <div style={{
-          marginTop: '12px', fontSize: '13px',
-          color: status.ok ? '#166534' : '#dc2626',
-          background: status.ok ? '#f0fdf4' : '#fef2f2',
-          padding: '10px 14px', borderRadius: '8px',
-          border: `1px solid ${status.ok ? '#86efac' : '#fca5a5'}`,
-        }}>
-          {status.msg}
-        </div>
-      )}
     </div>
   )
 }
@@ -491,11 +724,27 @@ function DetailModal({ producto: p, onClose }) {
   return (
     <div
       onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+      style={{
+        position: 'fixed', inset: 0,
+        background: 'rgba(0,0,0,0.45)',
+        zIndex: 1000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+      }}
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{ background: 'white', borderRadius: '12px', width: '100%', maxWidth: '580px', maxHeight: '82vh', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,0.22)' }}
+        style={{
+          background: 'white',
+          borderRadius: '12px',
+          width: '100%',
+          maxWidth: '580px',
+          maxHeight: '82vh',
+          overflowY: 'auto',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.22)',
+        }}
       >
         {/* Header */}
         <div style={{ padding: '20px 24px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
@@ -538,12 +787,27 @@ function DetailModal({ producto: p, onClose }) {
         {p.descripcion && (
           <div style={{ padding: '0 24px 20px' }}>
             <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Descripción</div>
-            <p style={{ fontSize: '13px', color: '#444', lineHeight: '1.65' }}>{p.descripcion}</p>
+            <p style={{ fontSize: '13px', color: '#444', lineHeight: '1.65', margin: 0 }}>{p.descripcion}</p>
           </div>
         )}
 
         <div style={{ padding: '12px 24px', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={S.btn('#111', '#111')}>Cerrar</button>
+          <button
+            onClick={onClose}
+            style={{
+              height: '34px',
+              padding: '0 18px',
+              background: '#111',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '13px',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            Cerrar
+          </button>
         </div>
       </div>
     </div>
@@ -553,19 +817,124 @@ function DetailModal({ producto: p, onClose }) {
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
 function Th({ children }) {
   return (
-    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', fontWeight: '500', color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
+    <th style={{
+      padding: '10px 16px',
+      textAlign: 'left',
+      fontSize: '11px',
+      fontWeight: '600',
+      color: '#9ca3af',
+      textTransform: 'uppercase',
+      letterSpacing: '0.06em',
+      whiteSpace: 'nowrap',
+      borderBottom: '1px solid #e5e7eb',
+      background: '#f8f9fa',
+    }}>
       {children}
     </th>
   )
 }
 
-function StatCard({ label, value, sub }) {
+function StatCard({ label, value, sub, color, icon }) {
+  const [hovered, setHovered] = useState(false)
   return (
-    <div style={{ background: 'white', border: '1px solid #eee', borderRadius: '10px', padding: '16px 20px' }}>
-      <div style={S.label}>{label}</div>
-      <div style={S.stat}>{value}</div>
-      {sub && <div style={S.statSub}>{sub}</div>}
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: 'white',
+        border: '1px solid #e8e8e8',
+        borderRadius: '10px',
+        padding: '16px 18px',
+        borderTop: hovered ? `3px solid ${color}` : '3px solid transparent',
+        transition: 'border-top-color 0.2s, box-shadow 0.2s',
+        boxShadow: hovered ? '0 4px 12px rgba(0,0,0,0.07)' : 'none',
+        cursor: 'default',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{
+            fontSize: '28px',
+            fontWeight: '700',
+            color: '#111',
+            letterSpacing: '-0.02em',
+            lineHeight: 1,
+            marginBottom: '6px',
+          }}>
+            {value}
+          </div>
+          <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '500' }}>{label}</div>
+          {sub && <div style={{ fontSize: '11px', color: '#aaa', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</div>}
+        </div>
+        <span style={{
+          fontSize: '20px',
+          opacity: hovered ? 1 : 0.4,
+          transition: 'opacity 0.2s',
+          flexShrink: 0,
+        }}>{icon}</span>
+      </div>
     </div>
+  )
+}
+
+function FilterSelect({ label, value, onChange, options, placeholder, minWidth = '150px' }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <span style={{
+        fontSize: '10px',
+        fontWeight: '700',
+        color: '#aaa',
+        letterSpacing: '0.07em',
+        textTransform: 'uppercase',
+      }}>
+        {label}
+      </span>
+      <select
+        value={value}
+        onChange={onChange}
+        style={{
+          height: '34px',
+          padding: '0 10px',
+          fontSize: '13px',
+          border: '1px solid #e0e0e0',
+          borderRadius: '8px',
+          fontFamily: 'inherit',
+          background: 'white',
+          color: '#111',
+          minWidth,
+          outline: 'none',
+          cursor: 'pointer',
+        }}
+      >
+        <option value="">{placeholder}</option>
+        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </div>
+  )
+}
+
+function PaginBtn({ children, onClick, disabled, active }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        height: '32px',
+        minWidth: '32px',
+        padding: '0 10px',
+        border: active ? '1.5px solid #2563eb' : '1px solid #e0e0e0',
+        borderRadius: '8px',
+        background: active ? '#eff6ff' : 'white',
+        color: active ? '#2563eb' : disabled ? '#ccc' : '#555',
+        fontSize: '13px',
+        fontWeight: active ? '600' : '400',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        fontFamily: 'inherit',
+        transition: 'border-color 0.15s, background 0.15s, color 0.15s',
+      }}
+    >
+      {children}
+    </button>
   )
 }
 

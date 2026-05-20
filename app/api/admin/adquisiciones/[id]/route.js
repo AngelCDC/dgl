@@ -13,8 +13,8 @@ export async function GET(req, { params }) {
   const adquisicion = await prisma.solicitudAdquisicion.findUnique({
     where: { id },
     include: {
-      cotizantes:      { orderBy: { sortOrder: 'asc' } },
-      riesgos:         { orderBy: { sortOrder: 'asc' } },
+      cotizantes:       { orderBy: { sortOrder: 'asc' } },
+      riesgos:          { orderBy: { sortOrder: 'asc' } },
       solicitudProcura: { include: { productos: true } },
     },
   })

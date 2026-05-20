@@ -26,7 +26,12 @@ export async function GET(req) {
     ...(subcategoria ? { subcategoria: { equals: subcategoria, mode: 'insensitive' } } : {}),
     ...(q ? {
       OR: [
-        { nombre:      { contains: q, mode: 'insensitive' } },
+        // nombre: solo coincide si la query está al inicio del nombre
+        // o al inicio de una palabra dentro del nombre (separada por espacio o guión)
+        { nombre: { startsWith: q,        mode: 'insensitive' } },
+        { nombre: { contains:   ` ${q}`,  mode: 'insensitive' } },
+        { nombre: { contains:   `-${q}`,  mode: 'insensitive' } },
+        // resto de campos: contains libre (código, descripción, etc.)
         { codigo:      { contains: q, mode: 'insensitive' } },
         { descripcion: { contains: q, mode: 'insensitive' } },
         { material:    { contains: q, mode: 'insensitive' } },

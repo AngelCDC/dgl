@@ -133,12 +133,16 @@ const styles = StyleSheet.create({
     color: C.carbon,
   },
 
-  // ── Tabla de cotizantes ───────────────────────────────────────────────────────
+  // ── Tabla de cotizantes / cronograma ─────────────────────────────────────────
   table: {
     marginTop: 6,
     marginBottom: 8,
     marginHorizontal: 10,
   },
+  // cronograma China
+  cronCol1: { width: 180 },
+  cronCol2: { width: 110 },
+  cronCol3: { flex: 1 },
   productoTableTitle: {
     fontSize: 9,
     fontFamily: "Helvetica-Bold",
@@ -307,8 +311,8 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
 
           {/* 1. Información General */}
           <SectionBlock number="1" title="INFORMACIÓN GENERAL">
-            <Field label="Solicitante" value={data.solicitante} />
-            <Field label="CC / NIT"    value={data.ccNit} />
+            <Field label="Solicitante"   value={data.solicitante} />
+            <Field label="Cédula / RIF"  value={data.cedulaRif} />
             <Field
               label="Teléfono / Celular"
               value={data.ext ? `${data.telCel}  Ext: ${data.ext}` : data.telCel}
@@ -377,9 +381,41 @@ export const SolicitudPDF = ({ data, logoUrl }) => {
 
           {/* 5. Plazo de Ejecución */}
           <SectionBlock number="5" title="PLAZO DE EJECUCIÓN">
-            <View style={[styles.row, { alignItems: "flex-start" }]} wrap={false}>
-              <Text style={styles.value}>{data.plazo || "—"}</Text>
-            </View>
+            {data.plazo ? (
+              <View style={[styles.row, { alignItems: "flex-start" }]} wrap={false}>
+                <Text style={[styles.label, { width: 140 }]}>Plazo estimado:</Text>
+                <Text style={styles.value}>{data.plazo}</Text>
+              </View>
+            ) : null}
+
+            {/* Cronograma de compra en China */}
+            {data.cronogramaChina?.length > 0 && (
+              <View style={{ marginTop: data.plazo ? 10 : 0 }}>
+                <Text style={[styles.label, { paddingHorizontal: 10, marginBottom: 6, fontSize: 9 }]}>
+                  Cronograma estimado de compra en China:
+                </Text>
+                <View style={styles.table}>
+                  {/* thead */}
+                  <View style={[styles.tableHeader, { flexDirection: "row" }]} wrap={false}>
+                    <Text style={[styles.tableHeaderCell, styles.cronCol1]}>ETAPA / ACTIVIDAD</Text>
+                    <Text style={[styles.tableHeaderCell, styles.cronCol2]}>TIEMPO EST.</Text>
+                    <Text style={[styles.tableHeaderCell, styles.cronCol3]}>OBSERVACIONES</Text>
+                  </View>
+                  {/* rows */}
+                  {data.cronogramaChina.map((row, idx) => (
+                    <View
+                      key={idx}
+                      style={idx % 2 === 0 ? styles.tableRow : styles.tableRowAlt}
+                      wrap={false}
+                    >
+                      <Text style={[styles.tableCell, styles.cronCol1]}>{row.etapa || "—"}</Text>
+                      <Text style={[styles.tableCell, styles.cronCol2, { textAlign: "center" }]}>{row.tiempo || "—"}</Text>
+                      <Text style={[styles.tableCell, styles.cronCol3, { color: C.steel }]}>{row.observaciones || ""}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
           </SectionBlock>
 
           {/* 6. Estudio de Mercado — una tabla por producto */}
