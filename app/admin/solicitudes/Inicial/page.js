@@ -159,6 +159,8 @@ function ValidationBanner({ errors, onClose }) {
 // ─── ProductoRow — fila de producto con búsqueda en catálogo ─────────────────
 function ProductoRow({ index, p, onField, onRemove, canRemove, touched, touch }) {
   const [drop, setDrop] = useState({ open: false, results: [], loading: false });
+  const [selectedProduct, setSelectedProduct] = useState(null); // producto del catálogo seleccionado (con variantes)
+  const [selectedVariant, setSelectedVariant] = useState(null); // variante seleccionada
   const debRef   = useRef(null);
   const wrapRef  = useRef(null);
 
@@ -188,15 +190,26 @@ function ProductoRow({ index, p, onField, onRemove, canRemove, touched, touch })
     }, 300);
   };
 
+  // Seleccionar producto del catálogo → auto-filla campos del producto padre
   const selectFromCatalog = (prod) => {
     onField('nombreProducto', prod.nombre);
     onField('categoria',       prod.subcategoria || prod.categoria || '');
     const desc = [prod.descripcion, prod.material].filter(Boolean).join(' · ');
     onField('descripcion',     desc);
-    onField('dimensiones',     prod.medidas   || '');
-    onField('referenciaModelo',prod.codigo    || '');
     onField('marca',           prod.proveedor || '');
+    // Limpiar campos de variante previos
+    onField('referenciaModelo', '');
+    onField('dimensiones',     '');
+    setSelectedProduct(prod);
+    setSelectedVariant(null);
     setDrop({ open: false, results: [], loading: false });
+  };
+
+  // Seleccionar variante → auto-filla campos de variante
+  const selectVariant = (variante) => {
+    onField('referenciaModelo', variante.codigo  || '');
+    onField('dimensiones',      variante.medidas || '');
+    setSelectedVariant(variante);
   };
 
   const i = index;
@@ -250,7 +263,9 @@ function ProductoRow({ index, p, onField, onRemove, canRemove, touched, touch })
                     <div style={{ padding: '7px 14px 5px', fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', borderBottom: '1px solid #f1f5f9' }}>
                       {drop.results.length} producto{drop.results.length > 1 ? 's' : ''} en catálogo
                     </div>
-                    {drop.results.map(prod => (
+                    {drop.results.map(prod => {
+                      const nv = prod.variantes?.length ?? 0
+                      return (
                       <button
                         key={prod.id}
                         type="button"
@@ -266,15 +281,52 @@ function ProductoRow({ index, p, onField, onRemove, canRemove, touched, touch })
                       >
                         <div style={{ fontSize: 13, fontWeight: 600, color: '#1e293b' }}>{prod.nombre}</div>
                         <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
-                          {[prod.proveedor, prod.categoria, prod.codigo].filter(Boolean).join(' · ')}
+                          {[prod.proveedor, prod.categoria, nv > 0 ? `${nv} variante${nv !== 1 ? 's' : ''}` : null].filter(Boolean).join(' · ')}
                         </div>
                       </button>
-                    ))}
+                    )})}
                   </>
                 )}
               </div>
             )}
           </div>
+
+          {/* Selector de variante (aparece tras seleccionar producto del catálogo) */}
+          {selectedProduct && selectedProduct.variantes && selectedProduct.variantes.length > 0 && (
+            <div style={{ marginTop: '10px' }}>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                Seleccionar variante ({selectedProduct.variantes.length} disponible{selectedProduct.variantes.length !== 1 ? 's' : ''})
+              </div>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {selectedProduct.variantes.map(v => {
+                  const isActive = selectedVariant?.id === v.id
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => selectVariant(v)}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        fontFamily: 'inherit',
+                        border: isActive ? '2px solid #2563eb' : '1px solid #e0e0e0',
+                        borderRadius: '8px',
+                        background: isActive ? '#eff6ff' : 'white',
+                        color: isActive ? '#2563eb' : '#555',
+                        cursor: 'pointer',
+                        fontWeight: isActive ? '600' : '400',
+                        transition: 'border-color 0.15s, background 0.15s',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <div style={{ fontFamily: 'monospace', fontSize: '11px' }}>{v.codigo || 'Sin código'}</div>
+                      {v.medidas && <div style={{ fontSize: '10px', color: '#888', marginTop: '2px', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.medidas}</div>}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </Field>
 
         <Field label="Categoría">

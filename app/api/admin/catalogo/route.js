@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]/route'
 
-// ── GET — buscar productos en el catálogo ─────────────────────────────────────
+// ── GET — buscar productos en el catálogo (con variantes) ──────────────────────
 // ?q=texto&rubro=X&proveedor=Y&categoria=Z&subcategoria=W&page=1&limit=30
 export async function GET(req) {
   const session = await getServerSession(authOptions)
@@ -31,15 +31,17 @@ export async function GET(req) {
         { nombre: { startsWith: q,        mode: 'insensitive' } },
         { nombre: { contains:   ` ${q}`,  mode: 'insensitive' } },
         { nombre: { contains:   `-${q}`,  mode: 'insensitive' } },
-        // resto de campos: contains libre (código, descripción, etc.)
-        { codigo:      { contains: q, mode: 'insensitive' } },
+        // resto de campos del producto: contains libre
         { descripcion: { contains: q, mode: 'insensitive' } },
         { material:    { contains: q, mode: 'insensitive' } },
-        { medidas:     { contains: q, mode: 'insensitive' } },
         { proveedor:   { contains: q, mode: 'insensitive' } },
         { rubro:       { contains: q, mode: 'insensitive' } },
         { categoria:   { contains: q, mode: 'insensitive' } },
         { subcategoria:{ contains: q, mode: 'insensitive' } },
+        // búsqueda en variantes: código, medidas, precio
+        { variantes: { some: { codigo:  { contains: q, mode: 'insensitive' } } } },
+        { variantes: { some: { medidas: { contains: q, mode: 'insensitive' } } } },
+        { variantes: { some: { precio:  { contains: q, mode: 'insensitive' } } } },
       ],
     } : {}),
   }
@@ -51,6 +53,11 @@ export async function GET(req) {
       orderBy: [{ rubro: 'asc' }, { proveedor: 'asc' }, { nombre: 'asc' }],
       skip,
       take: limit,
+      include: {
+        variantes: {
+          orderBy: { createdAt: 'asc' },
+        },
+      },
     }),
   ])
 
@@ -62,7 +69,7 @@ export async function GET(req) {
   })
 }
 
-// ── DELETE — eliminar un producto por id ──────────────────────────────────────
+// ── DELETE — eliminar un producto por id (cascade elimina variantes) ───────────
 export async function DELETE(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })

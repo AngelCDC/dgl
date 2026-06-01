@@ -357,25 +357,36 @@ model RiesgoAdquisicion {
 
 // ─── Catálogo de Productos de Proveedores ──────────────────────────────────────
 model ProductoCatalogo {
-  id           String   @id @default(uuid())
+  id           String              @id @default(uuid())
   proveedor    String
   archivoPdf   String?
   nombre       String
-  rubro        String?  // Agrupación global (nivel 1)
-  categoria    String?  // Nivel 2
-  subcategoria String?  // Nivel 3
+  rubro        String?             // Agrupación global (nivel 1)
+  categoria    String?             // Nivel 2
+  subcategoria String?             // Nivel 3
   descripcion  String?
-  codigo       String?
-  unidad       String?
-  precio       String?
   material     String?
-  medidas      String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  variantes    VarianteCatalogo[]
 
   @@index([proveedor])
   @@index([rubro])
   @@index([categoria])
   @@index([subcategoria])
+}
+
+model VarianteCatalogo {
+  id         String           @id @default(uuid())
+  productoId String
+  producto   ProductoCatalogo @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  codigo     String?
+  medidas    String?
+  unidad     String?
+  precio     String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@index([productoId])
   @@index([codigo])
 }

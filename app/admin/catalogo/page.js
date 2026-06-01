@@ -16,6 +16,7 @@ export default function CatalogoPage() {
   const [loading,  setLoading]  = useState(false)
   const [importUI, setImportUI] = useState(false)
   const [detail,   setDetail]   = useState(null)
+  const [expanded, setExpanded] = useState(new Set())  // IDs de productos expandidos
 
   // Listas para selects — cascada: rubro → categoría → subcategoría
   const [rubros,        setRubros]        = useState([])
@@ -103,6 +104,15 @@ export default function CatalogoPage() {
     setQuery(''); setRubro(''); setProveedor(''); setCategoria(''); setSubcategoria(''); setPage(1)
   }
 
+  function toggleExpand(id) {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   const hayFiltros = query || rubro || proveedor || categoria || subcategoria
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -117,8 +127,8 @@ export default function CatalogoPage() {
           </h1>
           <p style={{ fontSize: '13px', color: '#888', margin: 0 }}>
             {stats
-              ? `${stats.total.toLocaleString()} productos · ${stats.porProveedor.length} proveedores · ${stats.porRubro.length} rubros · ${stats.porCategoria.length} categorías`
-              : 'Base de datos personal de productos ofertados por proveedores'}
+              ? `${stats.total.toLocaleString()} productos · ${(stats.totalVariantes ?? 0).toLocaleString()} variantes · ${stats.porProveedor.length} proveedores · ${stats.porRubro.length} rubros`
+              : 'Base de datos de productos ofertados por proveedores con sus variantes'}
           </p>
         </div>
         <button
@@ -153,10 +163,16 @@ export default function CatalogoPage() {
       {stats && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '12px', marginBottom: '24px' }}>
           <StatCard
-            label="Productos totales"
+            label="Productos"
             value={stats.total.toLocaleString()}
             color="#0d9488"
             icon="📦"
+          />
+          <StatCard
+            label="Variantes"
+            value={(stats.totalVariantes ?? 0).toLocaleString()}
+            color="#f59e0b"
+            icon="🔀"
           />
           <StatCard
             label="Rubros"
@@ -206,7 +222,7 @@ export default function CatalogoPage() {
             <input
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder="Buscar por nombre, código, material, descripción…"
+              placeholder="Buscar por nombre, código de variante, material, descripción…"
               style={{
                 width: '100%',
                 height: '42px',
@@ -319,7 +335,7 @@ export default function CatalogoPage() {
             ) : (
               <>
                 <strong style={{ color: '#111', fontSize: '13px' }}>{result.total.toLocaleString()}</strong>
-                <span>resultado{result.total !== 1 ? 's' : ''}</span>
+                <span>producto{result.total !== 1 ? 's' : ''}</span>
                 {hayFiltros && <span style={{ color: '#ccc' }}>— filtrado</span>}
               </>
             )}
@@ -345,91 +361,21 @@ export default function CatalogoPage() {
               <thead>
                 <tr style={{ background: '#f8f9fa' }}>
                   <Th>Producto</Th>
-                  <Th>Código</Th>
                   <Th>Rubro · Categoría</Th>
-                  <Th>Material / Medidas</Th>
-                  <Th>Precio</Th>
+                  <Th>Material</Th>
+                  <Th>Variantes</Th>
                   <Th>Proveedor</Th>
                 </tr>
               </thead>
               <tbody>
                 {result.productos.map(p => (
-                  <tr
+                  <ProductRow
                     key={p.id}
-                    onClick={() => setDetail(p)}
-                    style={{ borderBottom: '1px solid #f3f4f6', cursor: 'pointer' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#f9fafb'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'white'}
-                  >
-                    {/* Nombre + descripción */}
-                    <td style={{ padding: '12px 16px', maxWidth: '260px' }}>
-                      <div style={{ fontWeight: '500', color: '#111', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {p.nombre}
-                      </div>
-                      {p.descripcion && (
-                        <div style={{ fontSize: '12px', color: '#9ca3af', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '240px' }}>
-                          {p.descripcion}
-                        </div>
-                      )}
-                    </td>
-
-                    {/* Código */}
-                    <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
-                      {p.codigo
-                        ? <span style={{ display: 'inline-block', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: '#f4f4f5', color: '#555', fontWeight: '500' }}>{p.codigo}</span>
-                        : <span style={{ color: '#ddd' }}>—</span>}
-                    </td>
-
-                    {/* Rubro · Categoría */}
-                    <td style={{ padding: '12px 16px', maxWidth: '200px' }}>
-                      {p.rubro && (
-                        <span style={{
-                          display: 'inline-block',
-                          fontSize: '11px',
-                          padding: '2px 8px',
-                          borderRadius: '20px',
-                          background: '#eff6ff',
-                          color: '#1d4ed8',
-                          fontWeight: '600',
-                          letterSpacing: '0.02em',
-                          marginBottom: '4px',
-                          whiteSpace: 'nowrap',
-                        }}>
-                          {p.rubro}
-                        </span>
-                      )}
-                      {p.categoria && (
-                        <div style={{ fontSize: '12px', color: '#555', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.categoria}</div>
-                      )}
-                      {p.subcategoria && (
-                        <div style={{ fontSize: '11px', color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.subcategoria}</div>
-                      )}
-                    </td>
-
-                    {/* Material / Medidas */}
-                    <td style={{ padding: '12px 16px', maxWidth: '150px' }}>
-                      {p.material && (
-                        <div style={{ fontSize: '12px', color: '#555', marginBottom: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.material}</div>
-                      )}
-                      {p.medidas && (
-                        <div style={{ fontSize: '11px', color: '#aaa', fontFamily: 'monospace' }}>{p.medidas}</div>
-                      )}
-                    </td>
-
-                    {/* Precio */}
-                    <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
-                      {p.precio
-                        ? <span style={{ display: 'inline-block', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: '#f0fdf4', color: '#166534', fontWeight: '500' }}>{p.precio}</span>
-                        : <span style={{ color: '#ddd' }}>—</span>}
-                    </td>
-
-                    {/* Proveedor */}
-                    <td style={{ padding: '12px 16px', maxWidth: '160px' }}>
-                      <div style={{ fontSize: '12px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {p.proveedor}
-                      </div>
-                    </td>
-                  </tr>
+                    producto={p}
+                    expanded={expanded.has(p.id)}
+                    onToggle={() => toggleExpand(p.id)}
+                    onDetail={() => setDetail(p)}
+                  />
                 ))}
               </tbody>
             </table>
@@ -534,7 +480,7 @@ export default function CatalogoPage() {
             El catálogo está vacío
           </div>
           <p style={{ fontSize: '13px', color: '#9ca3af', maxWidth: '320px', margin: '0 auto 24px', lineHeight: '1.6' }}>
-            Importa tu primer archivo Excel para empezar a consultar productos.
+            Importa tu primer archivo Excel con hojas "Productos" y "Variantes" para empezar.
           </p>
           <button
             onClick={() => setImportUI(true)}
@@ -562,6 +508,165 @@ export default function CatalogoPage() {
   )
 }
 
+// ─── Fila de producto (expandible) ─────────────────────────────────────────────
+function ProductRow({ producto: p, expanded, onToggle, onDetail }) {
+  const numVariantes = p.variantes?.length ?? 0
+
+  return (
+    <>
+      {/* Fila principal del producto */}
+      <tr
+        onClick={onToggle}
+        style={{
+          borderBottom: expanded ? 'none' : '1px solid #f3f4f6',
+          cursor: 'pointer',
+          background: expanded ? '#f8fafc' : 'white',
+          transition: 'background 0.1s',
+        }}
+        onMouseEnter={e => { if (!expanded) e.currentTarget.style.background = '#f9fafb' }}
+        onMouseLeave={e => { if (!expanded) e.currentTarget.style.background = 'white' }}
+      >
+        {/* Nombre + descripción */}
+        <td style={{ padding: '12px 16px', maxWidth: '300px' }}>
+          <div style={{ fontWeight: '500', color: '#111', marginBottom: '2px' }}>
+            {expanded ? '▾ ' : '▸ '}
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'inline-block', maxWidth: '260px', verticalAlign: 'middle' }}>
+              {p.nombre}
+            </span>
+          </div>
+          {p.descripcion && (
+            <div style={{ fontSize: '12px', color: '#9ca3af', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '280px', marginLeft: '18px' }}>
+              {p.descripcion}
+            </div>
+          )}
+        </td>
+
+        {/* Rubro · Categoría */}
+        <td style={{ padding: '12px 16px', maxWidth: '200px' }}>
+          {p.rubro && (
+            <span style={{
+              display: 'inline-block',
+              fontSize: '11px',
+              padding: '2px 8px',
+              borderRadius: '20px',
+              background: '#eff6ff',
+              color: '#1d4ed8',
+              fontWeight: '600',
+              letterSpacing: '0.02em',
+              marginBottom: '4px',
+              whiteSpace: 'nowrap',
+            }}>
+              {p.rubro}
+            </span>
+          )}
+          {p.categoria && (
+            <div style={{ fontSize: '12px', color: '#555', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.categoria}</div>
+          )}
+          {p.subcategoria && (
+            <div style={{ fontSize: '11px', color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.subcategoria}</div>
+          )}
+        </td>
+
+        {/* Material */}
+        <td style={{ padding: '12px 16px', maxWidth: '140px' }}>
+          {p.material
+            ? <span style={{ fontSize: '12px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{p.material}</span>
+            : <span style={{ color: '#ddd' }}>—</span>}
+        </td>
+
+        {/* Variantes badge */}
+        <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+          {numVariantes > 0 ? (
+            <span
+              onClick={e => { e.stopPropagation(); onDetail() }}
+              title="Ver detalle completo"
+              style={{
+                display: 'inline-block',
+                fontSize: '12px',
+                padding: '3px 10px',
+                borderRadius: '20px',
+                background: '#fef3c7',
+                color: '#92400e',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#fde68a'}
+              onMouseLeave={e => e.currentTarget.style.background = '#fef3c7'}
+            >
+              +{numVariantes} variante{numVariantes !== 1 ? 's' : ''}
+            </span>
+          ) : (
+            <span style={{ color: '#ddd', fontSize: '12px' }}>Sin variantes</span>
+          )}
+        </td>
+
+        {/* Proveedor */}
+        <td style={{ padding: '12px 16px', maxWidth: '180px' }}>
+          <div style={{ fontSize: '12px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {p.proveedor}
+          </div>
+        </td>
+      </tr>
+
+      {/* Sub-tabla de variantes (expandida) */}
+      {expanded && numVariantes > 0 && (
+        <tr key={`var-${p.id}`} style={{ background: '#fafbfc' }}>
+          <td colSpan={5} style={{ padding: '0 16px 12px 40px', borderBottom: '1px solid #e5e7eb' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+              <thead>
+                <tr>
+                  <th style={{ ...varThStyle, textAlign: 'left', paddingLeft: '12px' }}>Código</th>
+                  <th style={{ ...varThStyle, textAlign: 'left' }}>Medidas</th>
+                  <th style={{ ...varThStyle, textAlign: 'left' }}>Unidad</th>
+                  <th style={{ ...varThStyle, textAlign: 'left' }}>Precio</th>
+                </tr>
+              </thead>
+              <tbody>
+                {p.variantes.map((v, i) => (
+                  <tr key={v.id} style={{ borderBottom: i < p.variantes.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+                    <td style={{ padding: '7px 16px 7px 12px', fontFamily: 'monospace', fontSize: '12px', color: '#111' }}>
+                      {v.codigo || '—'}
+                    </td>
+                    <td style={{ padding: '7px 16px', fontFamily: 'monospace', fontSize: '11px', color: '#555', maxWidth: '260px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {v.medidas || '—'}
+                    </td>
+                    <td style={{ padding: '7px 16px', fontSize: '12px', color: '#555' }}>
+                      {v.unidad || '—'}
+                    </td>
+                    <td style={{ padding: '7px 16px', fontSize: '12px', color: '#111', fontWeight: '500' }}>
+                      {v.precio || '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      )}
+
+      {/* Fila expandida pero sin variantes */}
+      {expanded && numVariantes === 0 && (
+        <tr key={`empty-${p.id}`} style={{ background: '#fafbfc' }}>
+          <td colSpan={5} style={{ padding: '12px 16px 12px 40px', borderBottom: '1px solid #e5e7eb', fontSize: '12px', color: '#9ca3af' }}>
+            Este producto no tiene variantes registradas.
+          </td>
+        </tr>
+      )}
+    </>
+  )
+}
+
+const varThStyle = {
+  padding: '6px 16px',
+  fontSize: '10px',
+  fontWeight: '600',
+  color: '#9ca3af',
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+  borderBottom: '1px solid #e5e7eb',
+}
+
 // ─── Panel de importación ─────────────────────────────────────────────────────
 function ImportPanel({ onDone }) {
   const [file,   setFile]   = useState(null)
@@ -578,9 +683,8 @@ function ImportPanel({ onDone }) {
       const r = await fetch(`/api/admin/catalogo/importar?modo=${modo}`, { method: 'POST', body: fd })
       const d = await r.json()
       if (!r.ok) { setStatus({ ok: false, msg: d.error ?? 'Error al importar' }); return }
-      const ruboAviso = !d.tieneRubro ? ' · Este archivo no tenía columna Rubro — puedes añadirla para mejores filtros.' : ''
-      setStatus({ ok: true, msg: `✅ ${d.insertados.toLocaleString()} productos importados (modo: ${d.modo}).${ruboAviso}` })
-      setTimeout(onDone, 2200)
+      setStatus({ ok: true, msg: `✅ ${d.totalProductos.toLocaleString()} productos y ${d.totalVariantes.toLocaleString()} variantes importados (modo: ${d.modo}).` })
+      setTimeout(onDone, 2500)
     } catch (e) {
       setStatus({ ok: false, msg: e.message })
     }
@@ -609,7 +713,7 @@ function ImportPanel({ onDone }) {
         <div>
           <div style={{ fontWeight: '600', fontSize: '14px' }}>Importar archivo Excel</div>
           <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
-            Columnas reconocidas: Proveedor · Nombre_Producto · Rubro · Categoría · Subcategoría · Descripción · Código · Unidad · Precio · Material · Medidas
+            El archivo debe tener 2 hojas: <strong>Productos</strong> (Proveedor · Nombre_Producto · Rubro · Categoría · Subcategoría · Descripción · Material) y <strong>Variantes</strong> (ID_Producto · Código · Medidas · Unidad · Precio)
           </div>
         </div>
       </div>
@@ -721,6 +825,8 @@ function DetailModal({ producto: p, onClose }) {
     return () => document.removeEventListener('keydown', h)
   }, [onClose])
 
+  const numVariantes = p.variantes?.length ?? 0
+
   return (
     <div
       onClick={onClose}
@@ -740,8 +846,8 @@ function DetailModal({ producto: p, onClose }) {
           background: 'white',
           borderRadius: '12px',
           width: '100%',
-          maxWidth: '580px',
-          maxHeight: '82vh',
+          maxWidth: '640px',
+          maxHeight: '85vh',
           overflowY: 'auto',
           boxShadow: '0 24px 64px rgba(0,0,0,0.22)',
         }}
@@ -774,22 +880,53 @@ function DetailModal({ producto: p, onClose }) {
           </div>
         )}
 
-        {/* Campos */}
-        <div style={{ padding: '20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          <Field label="Código"      value={p.codigo}  mono />
-          <Field label="Unidad"      value={p.unidad} />
-          <Field label="Precio"      value={p.precio} />
-          <Field label="Material"    value={p.material} />
-          <Field label="Medidas"     value={p.medidas}  mono />
+        {/* Campos del producto */}
+        <div style={{ padding: '20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', borderBottom: '1px solid #f5f5f5' }}>
+          <Field label="Material" value={p.material} />
           {p.archivoPdf && <Field label="Archivo PDF" value={p.archivoPdf} />}
         </div>
 
         {p.descripcion && (
-          <div style={{ padding: '0 24px 20px' }}>
+          <div style={{ padding: '16px 24px', borderBottom: '1px solid #f5f5f5' }}>
             <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Descripción</div>
             <p style={{ fontSize: '13px', color: '#444', lineHeight: '1.65', margin: 0 }}>{p.descripcion}</p>
           </div>
         )}
+
+        {/* Variantes */}
+        <div style={{ padding: '16px 24px' }}>
+          <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '600' }}>
+            Variantes ({numVariantes})
+          </div>
+          {numVariantes > 0 ? (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: '#f9fafb' }}>
+                    <th style={detailThStyle}>#</th>
+                    <th style={detailThStyle}>Código</th>
+                    <th style={detailThStyle}>Medidas</th>
+                    <th style={detailThStyle}>Unidad</th>
+                    <th style={detailThStyle}>Precio</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {p.variantes.map((v, i) => (
+                    <tr key={v.id} style={{ borderBottom: i < numVariantes - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                      <td style={{ padding: '8px 12px', color: '#aaa', fontSize: '11px' }}>{i + 1}</td>
+                      <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: '12px', color: '#111' }}>{v.codigo || '—'}</td>
+                      <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: '11px', color: '#555', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.medidas || '—'}</td>
+                      <td style={{ padding: '8px 12px', fontSize: '12px', color: '#555' }}>{v.unidad || '—'}</td>
+                      <td style={{ padding: '8px 12px', fontSize: '12px', color: '#111', fontWeight: '500' }}>{v.precio || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>Este producto no tiene variantes registradas.</p>
+          )}
+        </div>
 
         <div style={{ padding: '12px 24px', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'flex-end' }}>
           <button
@@ -812,6 +949,17 @@ function DetailModal({ producto: p, onClose }) {
       </div>
     </div>
   )
+}
+
+const detailThStyle = {
+  padding: '7px 12px',
+  textAlign: 'left',
+  fontSize: '11px',
+  fontWeight: '600',
+  color: '#9ca3af',
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+  borderBottom: '1px solid #e5e7eb',
 }
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────

@@ -4,10 +4,14 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../auth/[...nextauth]/route'
 import * as XLSX from 'xlsx'
 
-// ── POST — importar productos desde un archivo Excel ──────────────────────────
+// ── POST — importar productos y variantes desde un archivo Excel (2 hojas) ─────
 // Body: FormData con campo "file" (xlsx)
 // ?modo=reemplazar → borra todo antes de importar
 // ?modo=agregar    → agrega sin borrar (default)
+//
+// El Excel debe tener 2 hojas:
+//   "Productos": ID_Producto | Proveedor | Archivo_PDF | Nombre_Producto | Rubro | Categoría | Subcategoría | Descripción | Material
+//   "Variantes": ID_Variante | ID_Producto | Código | Medidas | Unidad | Precio
 export async function POST(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
@@ -25,90 +29,180 @@ export async function POST(req) {
 
     const buffer    = Buffer.from(await file.arrayBuffer())
     const workbook  = XLSX.read(buffer, { type: 'buffer' })
-    const sheetName = workbook.SheetNames[0]
-    const sheet     = workbook.Sheets[sheetName]
-    const rows      = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null })
 
-    if (rows.length < 2) {
-      return NextResponse.json({ error: 'El archivo está vacío o no tiene datos' }, { status: 400 })
+    // ── Leer hoja "Productos" ──────────────────────────────────────────────────
+    const sheetProd = workbook.Sheets['Productos']
+    if (!sheetProd) {
+      return NextResponse.json({ error: 'No se encontró la hoja "Productos" en el archivo' }, { status: 400 })
+    }
+    const rowsProd  = XLSX.utils.sheet_to_json(sheetProd, { header: 1, defval: null })
+    if (rowsProd.length < 2) {
+      return NextResponse.json({ error: 'La hoja "Productos" está vacía' }, { status: 400 })
     }
 
-    // Detectar columnas por encabezado (tolerante a variaciones de nombre)
-    const headers = rows[0].map(h => (h ?? '').toString().trim().toLowerCase())
+    // ── Leer hoja "Variantes" ──────────────────────────────────────────────────
+    const sheetVar = workbook.Sheets['Variantes']
+    if (!sheetVar) {
+      return NextResponse.json({ error: 'No se encontró la hoja "Variantes" en el archivo' }, { status: 400 })
+    }
+    const rowsVar  = XLSX.utils.sheet_to_json(sheetVar, { header: 1, defval: null })
+    if (rowsVar.length < 2) {
+      return NextResponse.json({ error: 'La hoja "Variantes" está vacía' }, { status: 400 })
+    }
 
-    const col = (...nombres) => {
+    // ── Detectar columnas en Productos ─────────────────────────────────────────
+    const hProd = rowsProd[0].map(h => (h ?? '').toString().trim().toLowerCase())
+
+    const colProd = (...nombres) => {
       for (const n of nombres) {
-        const i = headers.findIndex(h => h.includes(n))
+        const i = hProd.findIndex(h => h.includes(n))
         if (i !== -1) return i
       }
       return -1
     }
 
-    const iProveedor    = col('proveedor')
-    const iPdf          = col('pdf', 'archivo')
-    const iNombre       = col('nombre_producto', 'nombre')
-    const iRubro        = col('rubro')                            // ← NUEVO (nivel 1)
-    const iCategoria    = col('categor')                          // nivel 2
-    const iSubcategoria = col('subcategor')                       // nivel 3
-    const iDescripcion  = col('descrip')
-    const iCodigo       = col('código', 'codigo', 'code')
-    const iUnidad       = col('unidad', 'unit')
-    const iPrecio       = col('precio', 'price')
-    const iMaterial     = col('material')
-    const iMedidas      = col('medidas', 'dimension', 'size')
+    const iProdId        = colProd('id_producto')
+    const iProdProveedor = colProd('proveedor')
+    const iProdPdf       = colProd('pdf', 'archivo')
+    const iProdNombre    = colProd('nombre_producto', 'nombre')
+    const iProdRubro     = colProd('rubro')
+    const iProdCategoria = colProd('categor')          // "categoría" o "categoria"
+    const iProdSubcat    = colProd('subcategor')       // "subcategoría" o "subcategoria"
+    const iProdDesc      = colProd('descrip')
+    const iProdMaterial  = colProd('material')
 
-    if (iNombre === -1 || iProveedor === -1) {
+    if (iProdNombre === -1 || iProdProveedor === -1) {
       return NextResponse.json({
-        error: 'No se encontraron las columnas obligatorias: Proveedor y Nombre_Producto',
+        error: 'No se encontraron las columnas obligatorias en "Productos": Proveedor y Nombre_Producto',
       }, { status: 400 })
     }
 
-    const str = (v) => (v ?? '').toString().trim() || null
+    // ── Detectar columnas en Variantes ─────────────────────────────────────────
+    const hVar = rowsVar[0].map(h => (h ?? '').toString().trim().toLowerCase())
 
-    const registros = rows.slice(1)
-      .filter(r => r[iProveedor] || r[iNombre])
-      .map(r => ({
-        proveedor:    (r[iProveedor] ?? '').toString().trim(),
-        archivoPdf:   iPdf          >= 0 ? str(r[iPdf])          : null,
-        nombre:       (r[iNombre]   ?? '').toString().trim(),
-        rubro:        iRubro        >= 0 ? str(r[iRubro])        : null,
-        categoria:    iCategoria    >= 0 ? str(r[iCategoria])    : null,
-        subcategoria: iSubcategoria >= 0 ? str(r[iSubcategoria]) : null,
-        descripcion:  iDescripcion  >= 0 ? str(r[iDescripcion])  : null,
-        codigo:       iCodigo       >= 0 ? str(r[iCodigo])       : null,
-        unidad:       iUnidad       >= 0 ? str(r[iUnidad])       : null,
-        precio:       iPrecio       >= 0 ? str(r[iPrecio])       : null,
-        material:     iMaterial     >= 0 ? str(r[iMaterial])     : null,
-        medidas:      iMedidas      >= 0 ? str(r[iMedidas])      : null,
-      }))
-      .filter(r => r.nombre && r.proveedor)
-
-    if (registros.length === 0) {
-      return NextResponse.json({ error: 'No se encontraron filas válidas en el archivo' }, { status: 400 })
+    const colVar = (...nombres) => {
+      for (const n of nombres) {
+        const i = hVar.findIndex(h => h.includes(n))
+        if (i !== -1) return i
+      }
+      return -1
     }
 
-    // Detectar si el archivo tiene columna Rubro para informar al usuario
-    const tieneRubro = iRubro >= 0
+    const iVarIdProd  = colVar('id_producto')
+    const iVarCodigo  = colVar('código', 'codigo', 'code')
+    const iVarMedidas = colVar('medidas', 'dimension', 'size')
+    const iVarUnidad  = colVar('unidad', 'unit')
+    const iVarPrecio  = colVar('precio', 'price')
 
-    let insertados = 0
+    if (iVarIdProd === -1) {
+      return NextResponse.json({
+        error: 'No se encontró la columna "ID_Producto" en la hoja "Variantes"',
+      }, { status: 400 })
+    }
+
+    // ── Parsear productos ──────────────────────────────────────────────────────
+    const str = (v) => (v ?? '').toString().trim() || null
+
+    const productos = rowsProd.slice(1)
+      .filter(r => r[iProdProveedor] || r[iProdNombre])
+      .map(r => ({
+        idExcel:     iProdId >= 0 ? parseInt(r[iProdId]) : null,  // ID original del Excel
+        proveedor:   (r[iProdProveedor] ?? '').toString().trim(),
+        archivoPdf:  iProdPdf       >= 0 ? str(r[iProdPdf])       : null,
+        nombre:      (r[iProdNombre] ?? '').toString().trim(),
+        rubro:       iProdRubro     >= 0 ? str(r[iProdRubro])     : null,
+        categoria:   iProdCategoria >= 0 ? str(r[iProdCategoria]) : null,
+        subcategoria:iProdSubcat    >= 0 ? str(r[iProdSubcat])    : null,
+        descripcion: iProdDesc      >= 0 ? str(r[iProdDesc])      : null,
+        material:    iProdMaterial  >= 0 ? str(r[iProdMaterial])  : null,
+        // Reservamos espacio para el UUID que asignará la BD
+        _variantes: [],
+      }))
+      .filter(p => p.nombre && p.proveedor)
+
+    if (productos.length === 0) {
+      return NextResponse.json({ error: 'No se encontraron productos válidos en el archivo' }, { status: 400 })
+    }
+
+    // ── Parsear variantes y agruparlas por ID_Producto ─────────────────────────
+    const variantesRaw = rowsVar.slice(1)
+      .filter(r => r[iVarIdProd] != null)
+      .map(r => ({
+        idProductoExcel: parseInt(r[iVarIdProd]),
+        codigo:          iVarCodigo  >= 0 ? str(r[iVarCodigo])  : null,
+        medidas:         iVarMedidas >= 0 ? str(r[iVarMedidas]) : null,
+        unidad:          iVarUnidad  >= 0 ? str(r[iVarUnidad])  : null,
+        precio:          iVarPrecio  >= 0 ? str(r[iVarPrecio])  : null,
+      }))
+
+    // Indexar variantes por ID_Producto del Excel
+    const variantesPorProducto = new Map()
+    for (const v of variantesRaw) {
+      if (!variantesPorProducto.has(v.idProductoExcel)) {
+        variantesPorProducto.set(v.idProductoExcel, [])
+      }
+      variantesPorProducto.get(v.idProductoExcel).push({
+        codigo:  v.codigo,
+        medidas: v.medidas,
+        unidad:  v.unidad,
+        precio:  v.precio,
+      })
+    }
+
+    let totalVariantes = 0
     await prisma.$transaction(async (tx) => {
       if (modo === 'reemplazar') {
+        // Cascade elimina variantes automáticamente
         await tx.productoCatalogo.deleteMany()
       }
+
       const BATCH = 500
-      for (let i = 0; i < registros.length; i += BATCH) {
-        const lote = registros.slice(i, i + BATCH)
-        const res  = await tx.productoCatalogo.createMany({ data: lote, skipDuplicates: false })
-        insertados += res.count
+
+      // Insertar productos en lotes, guardando el mapeo idExcel → uuid
+      const idMap = new Map()  // idExcel → uuid de la BD
+      for (let i = 0; i < productos.length; i += BATCH) {
+        const lote = productos.slice(i, i + BATCH)
+        for (const p of lote) {
+          const created = await tx.productoCatalogo.create({
+            data: {
+              proveedor:    p.proveedor,
+              archivoPdf:   p.archivoPdf,
+              nombre:       p.nombre,
+              rubro:        p.rubro,
+              categoria:    p.categoria,
+              subcategoria: p.subcategoria,
+              descripcion:  p.descripcion,
+              material:     p.material,
+            },
+          })
+          if (p.idExcel != null) {
+            idMap.set(p.idExcel, created.id)
+          }
+        }
       }
-    }, { timeout: 60000 })
+
+      // Insertar variantes en lotes
+      const variantesDb = []
+      for (const [idExcel, variantes] of variantesPorProducto) {
+        const productoId = idMap.get(idExcel)
+        if (!productoId) continue  // variante huérfana, ignorar
+        for (const v of variantes) {
+          variantesDb.push({ productoId, ...v })
+        }
+      }
+
+      for (let i = 0; i < variantesDb.length; i += BATCH) {
+        const lote = variantesDb.slice(i, i + BATCH)
+        const res   = await tx.varianteCatalogo.createMany({ data: lote })
+        totalVariantes += res.count
+      }
+    }, { timeout: 120000 })
 
     return NextResponse.json({
       ok: true,
       modo,
-      total:      registros.length,
-      insertados,
-      tieneRubro,   // indica al cliente si el archivo tenía columna Rubro
+      totalProductos:  productos.length,
+      totalVariantes,
     })
 
   } catch (err) {
@@ -122,8 +216,9 @@ export async function GET(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
-  const [total, porRubro, porProveedor, porCategoria] = await Promise.all([
+  const [total, totalVariantes, porRubro, porProveedor, porCategoria] = await Promise.all([
     prisma.productoCatalogo.count(),
+    prisma.varianteCatalogo.count(),
     prisma.productoCatalogo.groupBy({
       by: ['rubro'],
       _count: { id: true },
@@ -143,5 +238,5 @@ export async function GET(req) {
     }),
   ])
 
-  return NextResponse.json({ total, porRubro, porProveedor, porCategoria })
+  return NextResponse.json({ total, totalVariantes, porRubro, porProveedor, porCategoria })
 }
