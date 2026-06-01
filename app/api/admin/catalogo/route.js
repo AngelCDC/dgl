@@ -70,15 +70,23 @@ export async function GET(req) {
 
   // Si se piden facets, agregamos groupBy para cada campo
   if (facets) {
-    const facetFields = ['rubro', 'proveedor', 'categoria', 'subcategoria']
-    for (const field of facetFields) {
+    // proveedor es requerido (NOT NULL); rubro/categoria/subcategoria son nullable
+    const facetFields = [
+      { field: 'rubro',        nullable: true },
+      { field: 'proveedor',    nullable: false },
+      { field: 'categoria',    nullable: true },
+      { field: 'subcategoria', nullable: true },
+    ]
+    for (const { field, nullable } of facetFields) {
       const facetWhere = buildWhere({ ...ctx, excludeField: field })
       queries.push(
         prisma.productoCatalogo.groupBy({
           by: [field],
           _count: { id: true },
           orderBy: { _count: { id: 'desc' } },
-          where: { ...facetWhere, [field]: { not: null } },
+          where: nullable
+            ? { ...facetWhere, [field]: { not: null } }
+            : facetWhere,
         })
       )
     }
