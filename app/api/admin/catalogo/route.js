@@ -3,8 +3,38 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]/route'
 
+// ── Helpers para construir el where ────────────────────────────────────────────
+function buildTextFilter(q) {
+  if (!q) return {}
+  return {
+    OR: [
+      { nombre: { startsWith: q,        mode: 'insensitive' } },
+      { nombre: { contains:   ` ${q}`,  mode: 'insensitive' } },
+      { nombre: { contains:   `-${q}`,  mode: 'insensitive' } },
+      { descripcion: { contains: q, mode: 'insensitive' } },
+      { material:    { contains: q, mode: 'insensitive' } },
+      { proveedor:   { contains: q, mode: 'insensitive' } },
+      { rubro:       { contains: q, mode: 'insensitive' } },
+      { categoria:   { contains: q, mode: 'insensitive' } },
+      { subcategoria:{ contains: q, mode: 'insensitive' } },
+      { variantes: { some: { codigo:  { contains: q, mode: 'insensitive' } } } },
+      { variantes: { some: { medidas: { contains: q, mode: 'insensitive' } } } },
+      { variantes: { some: { precio:  { contains: q, mode: 'insensitive' } } } },
+    ],
+  }
+}
+
+function buildWhere({ q, rubro, proveedor, categoria, subcategoria, excludeField }) {
+  const filters = {}
+  if (rubro        && excludeField !== 'rubro')        filters.rubro        = { equals: rubro,        mode: 'insensitive' }
+  if (proveedor    && excludeField !== 'proveedor')    filters.proveedor    = { equals: proveedor,    mode: 'insensitive' }
+  if (categoria    && excludeField !== 'categoria')    filters.categoria    = { equals: categoria,    mode: 'insensitive' }
+  if (subcategoria && excludeField !== 'subcategoria') filters.subcategoria = { equals: subcategoria, mode: 'insensitive' }
+  return { ...filters, ...buildTextFilter(q) }
+}
+
 // ── GET — buscar productos en el catálogo (con variantes) ──────────────────────
-// ?q=texto&rubro=X&proveedor=Y&categoria=Z&subcategoria=W&page=1&limit=30
+// ?q=texto&rubro=X&proveedor=Y&categoria=Z&subcategoria=W&page=1&limit=30&facets=1
 export async function GET(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
@@ -18,35 +48,12 @@ export async function GET(req) {
   const page         = Math.max(1, parseInt(searchParams.get('page') ?? '1'))
   const limit        = Math.min(100, parseInt(searchParams.get('limit') ?? '30'))
   const skip         = (page - 1) * limit
+  const facets       = searchParams.get('facets') === '1'
 
-  const where = {
-    ...(rubro        ? { rubro:        { equals: rubro,        mode: 'insensitive' } } : {}),
-    ...(proveedor    ? { proveedor:    { equals: proveedor,    mode: 'insensitive' } } : {}),
-    ...(categoria    ? { categoria:    { equals: categoria,    mode: 'insensitive' } } : {}),
-    ...(subcategoria ? { subcategoria: { equals: subcategoria, mode: 'insensitive' } } : {}),
-    ...(q ? {
-      OR: [
-        // nombre: solo coincide si la query está al inicio del nombre
-        // o al inicio de una palabra dentro del nombre (separada por espacio o guión)
-        { nombre: { startsWith: q,        mode: 'insensitive' } },
-        { nombre: { contains:   ` ${q}`,  mode: 'insensitive' } },
-        { nombre: { contains:   `-${q}`,  mode: 'insensitive' } },
-        // resto de campos del producto: contains libre
-        { descripcion: { contains: q, mode: 'insensitive' } },
-        { material:    { contains: q, mode: 'insensitive' } },
-        { proveedor:   { contains: q, mode: 'insensitive' } },
-        { rubro:       { contains: q, mode: 'insensitive' } },
-        { categoria:   { contains: q, mode: 'insensitive' } },
-        { subcategoria:{ contains: q, mode: 'insensitive' } },
-        // búsqueda en variantes: código, medidas, precio
-        { variantes: { some: { codigo:  { contains: q, mode: 'insensitive' } } } },
-        { variantes: { some: { medidas: { contains: q, mode: 'insensitive' } } } },
-        { variantes: { some: { precio:  { contains: q, mode: 'insensitive' } } } },
-      ],
-    } : {}),
-  }
+  const ctx = { q, rubro, proveedor, categoria, subcategoria }
+  const where = buildWhere(ctx)
 
-  const [total, productos] = await Promise.all([
+  const queries = [
     prisma.productoCatalogo.count({ where }),
     prisma.productoCatalogo.findMany({
       where,
@@ -59,14 +66,36 @@ export async function GET(req) {
         },
       },
     }),
-  ])
+  ]
 
-  return NextResponse.json({
-    total,
-    page,
-    pages: Math.ceil(total / limit),
-    productos,
-  })
+  // Si se piden facets, agregamos groupBy para cada campo
+  if (facets) {
+    const facetFields = ['rubro', 'proveedor', 'categoria', 'subcategoria']
+    for (const field of facetFields) {
+      const facetWhere = buildWhere({ ...ctx, excludeField: field })
+      queries.push(
+        prisma.productoCatalogo.groupBy({
+          by: [field],
+          _count: { id: true },
+          orderBy: { _count: { id: 'desc' } },
+          where: { ...facetWhere, [field]: { not: null } },
+        })
+      )
+    }
+  }
+
+  const results = await Promise.all(queries)
+  const total = results[0]
+  const productos = results[1]
+
+  const resp = { total, page, pages: Math.ceil(total / limit), productos }
+
+  if (facets) {
+    const [rubros, proveedores, categorias, subcategorias] = results.slice(2)
+    resp.facets = { rubros, proveedores, categorias, subcategorias }
+  }
+
+  return NextResponse.json(resp)
 }
 
 // ── DELETE — eliminar un producto por id (cascade elimina variantes) ───────────

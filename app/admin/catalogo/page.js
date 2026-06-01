@@ -49,37 +49,6 @@ export default function CatalogoPage() {
   // Reset page cuando cambia cualquier filtro salvo page
   useEffect(() => { setPage(1) }, [query, rubro, proveedor, categoria, subcategoria])
 
-  // Cascada rubro → categorías disponibles
-  useEffect(() => {
-    if (!rubro) { setCategorias(stats?.porCategoria.map(c => c.categoria).filter(Boolean) ?? []); return }
-    fetch(`/api/admin/catalogo?rubro=${encodeURIComponent(rubro)}&limit=2000`)
-      .then(r => r.json())
-      .then(d => {
-        const cats = [...new Set(d.productos.map(p => p.categoria).filter(Boolean))].sort()
-        setCategorias(cats)
-        setCategoria('')
-        setSubcategoria('')
-      })
-      .catch(() => {})
-  }, [rubro])
-
-  // Cascada categoria → subcategorías disponibles
-  useEffect(() => {
-    if (!categoria) { setSubcategorias([]); setSubcategoria(''); return }
-    const params = new URLSearchParams()
-    if (rubro) params.set('rubro', rubro)
-    params.set('categoria', categoria)
-    params.set('limit', '2000')
-    fetch(`/api/admin/catalogo?${params}`)
-      .then(r => r.json())
-      .then(d => {
-        const subs = [...new Set(d.productos.map(p => p.subcategoria).filter(Boolean))].sort()
-        setSubcategorias(subs)
-        setSubcategoria('')
-      })
-      .catch(() => {})
-  }, [categoria, rubro])
-
   async function search() {
     setLoading(true)
     try {
@@ -91,12 +60,27 @@ export default function CatalogoPage() {
       if (subcategoria) params.set('subcategoria', subcategoria)
       params.set('page',  String(page))
       params.set('limit', '30')
+      params.set('facets', '1')
       const r = await fetch(`/api/admin/catalogo?${params}`)
       const d = await r.json()
       setResult(d)
+
+      // Actualizar opciones de filtros desde facets
+      if (d.facets) {
+        setRubros(mergeWithCurrent(d.facets.rubros.map(f => f.rubro).filter(Boolean), rubro))
+        setProveedores(mergeWithCurrent(d.facets.proveedores.map(f => f.proveedor), proveedor))
+        setCategorias(mergeWithCurrent(d.facets.categorias.map(f => f.categoria).filter(Boolean), categoria))
+        setSubcategorias(mergeWithCurrent(d.facets.subcategorias.map(f => f.subcategoria).filter(Boolean), subcategoria))
+      }
     } catch { /* ignore */ } finally {
       setLoading(false)
     }
+  }
+
+  // Combina las opciones del facet con el valor actualmente seleccionado
+  function mergeWithCurrent(opts, current) {
+    if (!current) return opts
+    return opts.includes(current) ? opts : [current, ...opts]
   }
 
   function reset() {
