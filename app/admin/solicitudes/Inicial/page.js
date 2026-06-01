@@ -327,6 +327,122 @@ function ProductoRow({ index, p, onField, onRemove, canRemove, touched, touch })
               </div>
             </div>
           )}
+
+          {/* Tarjeta de detalles del producto seleccionado del catálogo */}
+          {selectedProduct && (
+            <div style={{
+              marginTop: '10px',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '10px',
+              padding: '12px 14px',
+              display: 'flex',
+              gap: '10px',
+              alignItems: 'flex-start',
+            }}>
+              <span style={{ fontSize: '22px', flexShrink: 0, marginTop: '1px' }}>📦</span>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontWeight: '600', fontSize: '13px', color: '#111', marginBottom: '3px' }}>
+                  {selectedProduct.nombre}
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748b', lineHeight: '1.5' }}>
+                  <span style={{ fontWeight: '500', color: '#334155' }}>{selectedProduct.proveedor}</span>
+                  {selectedProduct.rubro && (
+                    <>
+                      <span style={{ color: '#cbd5e1', margin: '0 4px' }}>·</span>
+                      <span style={{
+                        display: 'inline-block',
+                        fontSize: '10px',
+                        padding: '1px 6px',
+                        borderRadius: '10px',
+                        background: '#eff6ff',
+                        color: '#1d4ed8',
+                        fontWeight: '600',
+                        verticalAlign: 'middle',
+                      }}>
+                        {selectedProduct.rubro}
+                      </span>
+                    </>
+                  )}
+                  {selectedProduct.categoria && (
+                    <>
+                      <span style={{ color: '#cbd5e1', margin: '0 4px' }}>·</span>
+                      {selectedProduct.categoria}
+                    </>
+                  )}
+                  {selectedProduct.subcategoria && (
+                    <>
+                      <span style={{ color: '#cbd5e1', margin: '0 4px' }}>·</span>
+                      {selectedProduct.subcategoria}
+                    </>
+                  )}
+                </div>
+                {selectedProduct.material && (
+                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px' }}>
+                    Material: {selectedProduct.material}
+                  </div>
+                )}
+                {selectedProduct.descripcion && (
+                  <div style={{
+                    fontSize: '11px',
+                    color: '#94a3b8',
+                    marginTop: '4px',
+                    lineHeight: '1.45',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}>
+                    {selectedProduct.descripcion}
+                  </div>
+                )}
+                <div style={{ marginTop: '5px', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <span style={{
+                    fontSize: '10px',
+                    padding: '2px 7px',
+                    borderRadius: '10px',
+                    background: '#fef3c7',
+                    color: '#92400e',
+                    fontWeight: '600',
+                  }}>
+                    {(selectedProduct.variantes?.length ?? 0) > 0
+                      ? `${selectedProduct.variantes.length} variante${selectedProduct.variantes.length !== 1 ? 's' : ''}`
+                      : 'Sin variantes'}
+                  </span>
+                  {selectedProduct.archivoPdf && (
+                    <span style={{ fontSize: '10px', color: '#94a3b8' }}>
+                      📄 {selectedProduct.archivoPdf}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedProduct(null)
+                  setSelectedVariant(null)
+                  onField('nombreProducto', '')
+                  onField('categoria', '')
+                  onField('descripcion', '')
+                  onField('marca', '')
+                  onField('referenciaModelo', '')
+                  onField('dimensiones', '')
+                }}
+                title="Quitar producto del catálogo"
+                style={{
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  color: '#94a3b8',
+                  padding: '2px',
+                  flexShrink: 0,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
         </Field>
 
         <Field label="Categoría">
