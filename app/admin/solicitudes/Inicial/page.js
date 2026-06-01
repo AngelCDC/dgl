@@ -158,51 +158,52 @@ function ValidationBanner({ errors, onClose }) {
 
 // ─── ProductoRow — fila de producto con búsqueda en catálogo ─────────────────
 function ProductoRow({ index, p, onField, onRemove, canRemove, touched, touch }) {
-  const [drop, setDrop] = useState({ open: false, results: [], loading: false });
   const [selectedProduct, setSelectedProduct] = useState(null); // producto del catálogo seleccionado (con variantes)
   const [selectedVariant, setSelectedVariant] = useState(null); // variante seleccionada
+  const [searching, setSearching] = useState(false);            // spinner mientras busca
   const debRef   = useRef(null);
   const wrapRef  = useRef(null);
 
-  // Cierre al hacer click fuera
-  useEffect(() => {
-    const fn = (e) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target))
-        setDrop(d => ({ ...d, open: false }));
-    };
-    document.addEventListener('mousedown', fn);
-    return () => document.removeEventListener('mousedown', fn);
-  }, []);
-
   const handleNombreChange = (val) => {
     onField('nombreProducto', val);
+    // Si el usuario edita manualmente, desvincula del catálogo
+    if (selectedProduct) {
+      setSelectedProduct(null);
+      setSelectedVariant(null);
+    }
     clearTimeout(debRef.current);
-    if (!val.trim()) { setDrop({ open: false, results: [], loading: false }); return; }
-    setDrop(d => ({ ...d, loading: true, open: true }));
+    if (!val.trim()) { setSearching(false); return; }
+    setSearching(true);
     debRef.current = setTimeout(async () => {
       try {
-        const res  = await fetch(`/api/admin/catalogo?q=${encodeURIComponent(val)}&limit=10`);
+        const res  = await fetch(`/api/admin/catalogo?q=${encodeURIComponent(val)}&limit=1`);
         const data = await res.json();
-        setDrop({ open: true, results: data.productos ?? [], loading: false });
+        setSearching(false);
+        // Solo auto-selecciona si hay coincidencia exacta al inicio del nombre
+        if (data.productos && data.productos.length > 0) {
+          const prod = data.productos[0];
+          // Verificar que el nombre del producto comienza con lo que el usuario escribió
+          if (prod.nombre.toLowerCase().startsWith(val.toLowerCase().trim())) {
+            applyProduct(prod);
+          }
+        }
       } catch {
-        setDrop(d => ({ ...d, loading: false }));
+        setSearching(false);
       }
-    }, 300);
+    }, 400);
   };
 
-  // Seleccionar producto del catálogo → auto-filla campos del producto padre
-  const selectFromCatalog = (prod) => {
+  // Aplicar producto del catálogo → auto-filla campos + muestra card
+  const applyProduct = (prod) => {
     onField('nombreProducto', prod.nombre);
     onField('categoria',       prod.subcategoria || prod.categoria || '');
     const desc = [prod.descripcion, prod.material].filter(Boolean).join(' · ');
     onField('descripcion',     desc);
     onField('marca',           prod.proveedor || '');
-    // Limpiar campos de variante previos
     onField('referenciaModelo', '');
     onField('dimensiones',     '');
     setSelectedProduct(prod);
     setSelectedVariant(null);
-    setDrop({ open: false, results: [], loading: false });
   };
 
   // Seleccionar variante → auto-filla campos de variante
@@ -223,7 +224,7 @@ function ProductoRow({ index, p, onField, onRemove, canRemove, touched, touch })
       </div>
 
       <div className="sol-grid-2">
-        {/* Nombre con dropdown de catálogo */}
+        {/* Nombre con búsqueda silenciosa en catálogo */}
         <Field
           label="Nombre del Producto" required
           error={touched[`p${i}_nombre`] && !p.nombreProducto.trim() ? 'Campo requerido' : ''}
@@ -234,99 +235,17 @@ function ProductoRow({ index, p, onField, onRemove, canRemove, touched, touch })
               value={p.nombreProducto}
               placeholder="Escribe para buscar en catálogo…"
               onChange={e => handleNombreChange(e.target.value)}
-              onFocus={() => { if (p.nombreProducto.trim() && drop.results.length) setDrop(d => ({ ...d, open: true })); }}
               onBlur={() => touch(`p${i}_nombre`)}
               autoComplete="off"
             />
 
-            {/* Spinner */}
-            {drop.loading && (
+            {/* Spinner de búsqueda */}
+            {searching && (
               <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: '#94a3b8' }}>
                 ⏳
               </span>
             )}
-
-            {/* Dropdown */}
-            {drop.open && !drop.loading && (
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
-                background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10,
-                boxShadow: '0 8px 24px rgba(0,0,0,.10)', zIndex: 200,
-                maxHeight: 280, overflowY: 'auto',
-              }}>
-                {drop.results.length === 0 ? (
-                  <div style={{ padding: '12px 14px', fontSize: 13, color: '#94a3b8' }}>
-                    Sin coincidencias — se registrará como producto nuevo
-                  </div>
-                ) : (
-                  <>
-                    <div style={{ padding: '7px 14px 5px', fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', borderBottom: '1px solid #f1f5f9' }}>
-                      {drop.results.length} producto{drop.results.length > 1 ? 's' : ''} en catálogo
-                    </div>
-                    {drop.results.map(prod => {
-                      const nv = prod.variantes?.length ?? 0
-                      return (
-                      <button
-                        key={prod.id}
-                        type="button"
-                        onMouseDown={e => { e.preventDefault(); selectFromCatalog(prod); }}
-                        style={{
-                          display: 'block', width: '100%', textAlign: 'left',
-                          padding: '9px 14px', background: 'none', border: 'none',
-                          cursor: 'pointer', borderBottom: '1px solid #f8fafc',
-                          transition: 'background .1s',
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                        onMouseLeave={e => e.currentTarget.style.background = ''}
-                      >
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#1e293b' }}>{prod.nombre}</div>
-                        <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
-                          {[prod.proveedor, prod.categoria, nv > 0 ? `${nv} variante${nv !== 1 ? 's' : ''}` : null].filter(Boolean).join(' · ')}
-                        </div>
-                      </button>
-                    )})}
-                  </>
-                )}
-              </div>
-            )}
           </div>
-
-          {/* Selector de variante (aparece tras seleccionar producto del catálogo) */}
-          {selectedProduct && selectedProduct.variantes && selectedProduct.variantes.length > 0 && (
-            <div style={{ marginTop: '10px' }}>
-              <div style={{ fontSize: '11px', fontWeight: '700', color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
-                Seleccionar variante ({selectedProduct.variantes.length} disponible{selectedProduct.variantes.length !== 1 ? 's' : ''})
-              </div>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {selectedProduct.variantes.map(v => {
-                  const isActive = selectedVariant?.id === v.id
-                  return (
-                    <button
-                      key={v.id}
-                      type="button"
-                      onClick={() => selectVariant(v)}
-                      style={{
-                        padding: '6px 12px',
-                        fontSize: '12px',
-                        fontFamily: 'inherit',
-                        border: isActive ? '2px solid #2563eb' : '1px solid #e0e0e0',
-                        borderRadius: '8px',
-                        background: isActive ? '#eff6ff' : 'white',
-                        color: isActive ? '#2563eb' : '#555',
-                        cursor: 'pointer',
-                        fontWeight: isActive ? '600' : '400',
-                        transition: 'border-color 0.15s, background 0.15s',
-                        textAlign: 'left',
-                      }}
-                    >
-                      <div style={{ fontFamily: 'monospace', fontSize: '11px' }}>{v.codigo || 'Sin código'}</div>
-                      {v.medidas && <div style={{ fontSize: '10px', color: '#888', marginTop: '2px', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.medidas}</div>}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
 
           {/* Tarjeta de detalles del producto seleccionado del catálogo */}
           {selectedProduct && (
@@ -335,17 +254,17 @@ function ProductoRow({ index, p, onField, onRemove, canRemove, touched, touch })
               background: '#f8fafc',
               border: '1px solid #e2e8f0',
               borderRadius: '10px',
-              padding: '12px 14px',
+              padding: '14px',
               display: 'flex',
               gap: '10px',
               alignItems: 'flex-start',
             }}>
-              <span style={{ fontSize: '22px', flexShrink: 0, marginTop: '1px' }}>📦</span>
+              <span style={{ fontSize: '24px', flexShrink: 0, marginTop: '0px' }}>📦</span>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontWeight: '600', fontSize: '13px', color: '#111', marginBottom: '3px' }}>
+                <div style={{ fontWeight: '600', fontSize: '14px', color: '#111', marginBottom: '4px' }}>
                   {selectedProduct.nombre}
                 </div>
-                <div style={{ fontSize: '11px', color: '#64748b', lineHeight: '1.5' }}>
+                <div style={{ fontSize: '11px', color: '#64748b', lineHeight: '1.55' }}>
                   <span style={{ fontWeight: '500', color: '#334155' }}>{selectedProduct.proveedor}</span>
                   {selectedProduct.rubro && (
                     <>
@@ -378,7 +297,7 @@ function ProductoRow({ index, p, onField, onRemove, canRemove, touched, touch })
                   )}
                 </div>
                 {selectedProduct.material && (
-                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px' }}>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
                     Material: {selectedProduct.material}
                   </div>
                 )}
@@ -396,25 +315,51 @@ function ProductoRow({ index, p, onField, onRemove, canRemove, touched, touch })
                     {selectedProduct.descripcion}
                   </div>
                 )}
-                <div style={{ marginTop: '5px', display: 'flex', gap: '6px', alignItems: 'center' }}>
-                  <span style={{
-                    fontSize: '10px',
-                    padding: '2px 7px',
-                    borderRadius: '10px',
-                    background: '#fef3c7',
-                    color: '#92400e',
-                    fontWeight: '600',
-                  }}>
-                    {(selectedProduct.variantes?.length ?? 0) > 0
-                      ? `${selectedProduct.variantes.length} variante${selectedProduct.variantes.length !== 1 ? 's' : ''}`
-                      : 'Sin variantes'}
-                  </span>
-                  {selectedProduct.archivoPdf && (
-                    <span style={{ fontSize: '10px', color: '#94a3b8' }}>
-                      📄 {selectedProduct.archivoPdf}
+
+                {/* Selector de variantes dentro de la card */}
+                {selectedProduct.variantes && selectedProduct.variantes.length > 0 && (
+                  <div style={{ marginTop: '10px', borderTop: '1px solid #e2e8f0', paddingTop: '10px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '7px' }}>
+                      Seleccionar variante ({selectedProduct.variantes.length} disponible{selectedProduct.variantes.length !== 1 ? 's' : ''})
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {selectedProduct.variantes.map(v => {
+                        const isActive = selectedVariant?.id === v.id
+                        return (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => selectVariant(v)}
+                            style={{
+                              padding: '6px 12px',
+                              fontSize: '12px',
+                              fontFamily: 'inherit',
+                              border: isActive ? '2px solid #2563eb' : '1px solid #e0e0e0',
+                              borderRadius: '8px',
+                              background: isActive ? '#eff6ff' : 'white',
+                              color: isActive ? '#2563eb' : '#555',
+                              cursor: 'pointer',
+                              fontWeight: isActive ? '600' : '400',
+                              transition: 'border-color 0.15s, background 0.15s',
+                              textAlign: 'left',
+                            }}
+                          >
+                            <div style={{ fontFamily: 'monospace', fontSize: '11px' }}>{v.codigo || 'Sin código'}</div>
+                            {v.medidas && <div style={{ fontSize: '10px', color: '#888', marginTop: '2px', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.medidas}</div>}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {(!selectedProduct.variantes || selectedProduct.variantes.length === 0) && (
+                  <div style={{ marginTop: '6px' }}>
+                    <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '10px', background: '#f1f5f9', color: '#64748b', fontWeight: '500' }}>
+                      Sin variantes — datos manuales
                     </span>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
               <button
                 type="button"
@@ -433,11 +378,14 @@ function ProductoRow({ index, p, onField, onRemove, canRemove, touched, touch })
                   border: 'none',
                   background: 'none',
                   cursor: 'pointer',
-                  fontSize: '14px',
+                  fontSize: '16px',
                   color: '#94a3b8',
-                  padding: '2px',
+                  padding: '2px 4px',
                   flexShrink: 0,
+                  borderRadius: '6px',
                 }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.color = '#dc2626'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#94a3b8'; }}
               >
                 ✕
               </button>
