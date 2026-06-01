@@ -820,7 +820,7 @@ function DetailModal({ producto: p, onClose }) {
                     <th style={detailThStyle}>Código</th>
                     <th style={detailThStyle}>Medidas</th>
                     <th style={detailThStyle}>Unidad</th>
-                    <th style={detailThStyle}>Preci</th>
+                    <th style={detailThStyle}>Precio</th>
                   </tr>
                 </thead>
                 <tbody>
