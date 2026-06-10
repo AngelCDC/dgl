@@ -82,7 +82,7 @@ export default function ImportarProveedoresPanel() {
             <div>
               <div style={{ fontWeight: '600', fontSize: '14px' }}>Importar proveedores desde Excel</div>
               <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
-                Columnas esperadas: <strong>Nombre</strong> · Link · Provincia · Dirección · Encargado · Teléfono · Fax · correo · Categoría
+                Columnas usadas: <strong>Nombre</strong> · website · Provincia · Dirección · Encargado · Teléfono · Fax · Email · Descripción · Categoría
               </div>
             </div>
           </div>

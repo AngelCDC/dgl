@@ -53,17 +53,17 @@ export async function POST(req) {
       return -1
     }
 
-    const iNombre    = col('nombre')
-    const iLink      = col('link', 'web', 'sitio')
-    const iProvincia = col('provincia', 'estado', 'ciudad', 'city')
-    const iDireccion = col('direccion', 'dirección')
-    const iZip       = col('zip', 'postal', 'cp')
-    const iLink2     = col('link2')
-    const iEncargado = col('encargado', 'contacto')
-    const iTelefono  = col('telefono', 'teléfono', 'tel', 'fono', 'telf', 'phone')
-    const iFax       = col('fax')
-    const iCorreo    = col('correo', 'email', 'mail', 'e-mail')
-    const iCategoria = col('categor')
+    const iNombre     = col('nombre')
+    const iWebsite    = col('website', 'sitio', 'web')        // "Link" se omite a propósito
+    const iProvincia  = col('provincia', 'estado', 'ciudad', 'city')
+    const iDireccion  = col('direccion', 'dirección')
+    const iZip        = col('zip', 'postal', 'cp')
+    const iEncargado  = col('encargado', 'contacto')
+    const iTelefono   = col('telefono', 'teléfono', 'tel', 'fono', 'telf', 'phone')
+    const iFax        = col('fax')
+    const iCorreo     = col('correo', 'email', 'mail', 'e-mail')
+    const iDescripcion = col('descripcion', 'descripción')
+    const iCategoria  = col('categor')
 
     if (iNombre === -1) {
       return NextResponse.json({
@@ -93,17 +93,17 @@ export async function POST(req) {
         if (iEncargado >= 0 && str(r[iEncargado])) notas.push(`Encargado: ${str(r[iEncargado])}`)
         if (iFax       >= 0 && str(r[iFax]))       notas.push(`Fax: ${str(r[iFax])}`)
         if (iZip       >= 0 && str(r[iZip]))       notas.push(`ZIP: ${str(r[iZip])}`)
-        if (iLink2     >= 0 && str(r[iLink2]))     notas.push(`Link secundario: ${str(r[iLink2])}`)
 
         const catName = iCategoria >= 0 ? str(r[iCategoria]) : null
         const categoryId = catName ? (catMap.get(catName.toLowerCase()) ?? null) : null
 
         return {
           name:          str(r[iNombre]),
-          website:       iLink      >= 0 ? str(r[iLink])      : null,
-          city:          iProvincia >= 0 ? str(r[iProvincia]) : null,
-          email:         iCorreo    >= 0 ? str(r[iCorreo])    : null,
-          phone:         iTelefono  >= 0 ? str(r[iTelefono])  : null,
+          website:       iWebsite    >= 0 ? str(r[iWebsite])    : null,
+          city:          iProvincia  >= 0 ? str(r[iProvincia])  : null,
+          email:         iCorreo     >= 0 ? str(r[iCorreo])     : null,
+          phone:         iTelefono   >= 0 ? str(r[iTelefono])   : null,
+          description:   iDescripcion >= 0 ? str(r[iDescripcion]) : null,
           categoryId,
           catName:       catName,
           catMatched:    catName ? catMap.has(catName.toLowerCase()) : null,
@@ -146,6 +146,7 @@ export async function POST(req) {
           data: {
             name:          p.name,
             slug,
+            description:   p.description,
             website:       p.website,
             city:          p.city,
             email:         p.email,
