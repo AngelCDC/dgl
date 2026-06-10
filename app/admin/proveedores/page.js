@@ -1,5 +1,6 @@
 import prisma from '../../lib/prisma'
 import Link from 'next/link'
+import ImportarProveedoresPanel from './ImportarProveedoresPanel'
 
 export default async function ProveedoresPage() {
   const proveedores = await prisma.supplier.findMany({
@@ -9,11 +10,17 @@ export default async function ProveedoresPage() {
 
   return (
     <div style={{ padding: '32px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: '600' }}>Proveedores</h1>
-        <Link href="/admin/proveedores/nuevo" style={{ background: '#111', color: 'white', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', textDecoration: 'none' }}>
-          + Nuevo proveedor
-        </Link>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', gap: '16px', flexWrap: 'wrap' }}>
+        <div>
+          <h1 style={{ fontSize: '22px', fontWeight: '600', marginBottom: '4px' }}>Proveedores</h1>
+          <p style={{ fontSize: '13px', color: '#888', margin: 0 }}>{proveedores.length} proveedores registrados</p>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <ImportarProveedoresPanel />
+          <Link href="/admin/proveedores/nuevo" style={{ background: '#111', color: 'white', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', textDecoration: 'none', height: '36px', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
+            + Nuevo proveedor
+          </Link>
+        </div>
       </div>
 
       <div style={{ background: 'white', border: '1px solid #eee', borderRadius: '10px', overflow: 'hidden' }}>
