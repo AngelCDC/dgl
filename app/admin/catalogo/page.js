@@ -841,7 +841,32 @@ function DetailModal({ producto: p, onClose }) {
           )}
         </div>
 
-        <div style={{ padding: '12px 24px', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ padding: '12px 24px', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+          {p.supplier?.email && (
+            <a
+              href={buildGmailUrl(p)}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                height: '34px',
+                padding: '0 18px',
+                background: '#ea4335',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                textDecoration: 'none',
+              }}
+            >
+              ✉️ Solicitar cotización
+            </a>
+          )}
           <button
             onClick={onClose}
             style={{
@@ -1007,4 +1032,38 @@ function Field({ label, value, mono }) {
       <div style={{ fontSize: '13px', color: '#111', fontFamily: mono ? 'monospace' : 'inherit', wordBreak: 'break-word' }}>{value}</div>
     </div>
   )
+}
+
+// ─── Genera URL de Gmail con datos del producto ───────────────────────────────
+function buildGmailUrl(producto) {
+  const subject = `Cotización: ${producto.nombre}`
+  const lines = []
+  lines.push(`Hola ${producto.supplier?.name ?? producto.proveedor},`)
+  lines.push('')
+  lines.push('Me interesa cotizar el siguiente producto publicado en DUBOIS:')
+  lines.push('')
+  lines.push(`Producto: ${producto.nombre}`)
+  if (producto.rubro) lines.push(`Rubro: ${producto.rubro}`)
+  if (producto.categoria) lines.push(`Categoría: ${producto.categoria}`)
+  if (producto.subcategoria) lines.push(`Subcategoría: ${producto.subcategoria}`)
+  if (producto.descripcion) lines.push(`Descripción: ${producto.descripcion}`)
+  if (producto.material) lines.push(`Material: ${producto.material}`)
+  lines.push('')
+  const numVariantes = producto.variantes?.length ?? 0
+  if (numVariantes > 0) {
+    lines.push(`Variantes (${numVariantes}):`)
+    for (const v of producto.variantes) {
+      const parts = []
+      if (v.codigo) parts.push(v.codigo)
+      if (v.medidas) parts.push(v.medidas)
+      if (v.unidad) parts.push(v.unidad)
+      if (v.precio) parts.push(v.precio)
+      lines.push(`  - ${parts.join(' | ')}`)
+    }
+  }
+  lines.push('')
+  lines.push('Quedo atento a tu respuesta. Saludos.')
+
+  const body = encodeURIComponent(lines.join('\n'))
+  return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(producto.supplier.email)}&su=${encodeURIComponent(subject)}&body=${body}`
 }

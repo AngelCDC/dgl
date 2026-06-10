@@ -84,32 +84,33 @@ model SupplierPlan {
 }
 
 model Supplier {
-  id            String            @id @default(uuid())
-  name          String
-  slug          String            @unique
-  logoUrl       String?
-  coverUrl      String?
-  description   String?
-  country       String
-  city          String?
-  website       String?
-  email         String?
-  phone         String?
-  whatsapp      String?
-  categoryId    String?
-  category      Category?         @relation(fields: [categoryId], references: [id])
-  planId        String?
-  plan          SupplierPlan?     @relation(fields: [planId], references: [id])
-  planStart     DateTime?
-  planEnd       DateTime?
-  status        String            @default("pending")
-  verified      Boolean           @default(false)
-  featured      Boolean           @default(false)
-  internalNotes String?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  products      SupplierProduct[]
-  contacts      ContactRequest[]
+  id               String               @id @default(uuid())
+  name             String
+  slug             String               @unique
+  logoUrl          String?
+  coverUrl         String?
+  description      String?
+  country          String
+  city             String?
+  website          String?
+  email            String?
+  phone            String?
+  whatsapp         String?
+  categoryId       String?
+  category         Category?            @relation(fields: [categoryId], references: [id])
+  planId           String?
+  plan             SupplierPlan?        @relation(fields: [planId], references: [id])
+  planStart        DateTime?
+  planEnd          DateTime?
+  status           String               @default("pending")
+  verified         Boolean              @default(false)
+  featured         Boolean              @default(false)
+  internalNotes    String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  products         SupplierProduct[]
+  catalogoProductos ProductoCatalogo[]
+  contacts         ContactRequest[]
 }
 
 model SupplierProduct {
@@ -359,6 +360,8 @@ model RiesgoAdquisicion {
 model ProductoCatalogo {
   id           String              @id @default(uuid())
   proveedor    String
+  supplierId   String?
+  supplier     Supplier?           @relation(fields: [supplierId], references: [id])
   archivoPdf   String?
   nombre       String
   rubro        String?             // Agrupación global (nivel 1)
@@ -371,6 +374,7 @@ model ProductoCatalogo {
   variantes    VarianteCatalogo[]
 
   @@index([proveedor])
+  @@index([supplierId])
   @@index([rubro])
   @@index([categoria])
   @@index([subcategoria])

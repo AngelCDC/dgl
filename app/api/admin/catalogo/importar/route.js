@@ -149,6 +149,13 @@ export async function POST(req) {
       })
     }
 
+    // Pre-cargar proveedores del directorio para vincular por nombre
+    const suppliers = await prisma.supplier.findMany({ select: { id: true, name: true } })
+    const supplierMap = new Map()
+    for (const s of suppliers) {
+      supplierMap.set(s.name.trim().toLowerCase(), s.id)
+    }
+
     let totalVariantes = 0
     await prisma.$transaction(async (tx) => {
       if (modo === 'reemplazar') {
@@ -163,9 +170,11 @@ export async function POST(req) {
       for (let i = 0; i < productos.length; i += BATCH) {
         const lote = productos.slice(i, i + BATCH)
         for (const p of lote) {
+          const normalizedName = p.proveedor.trim().toLowerCase()
           const created = await tx.productoCatalogo.create({
             data: {
               proveedor:    p.proveedor,
+              supplierId:   supplierMap.get(normalizedName) ?? null,
               archivoPdf:   p.archivoPdf,
               nombre:       p.nombre,
               rubro:        p.rubro,
