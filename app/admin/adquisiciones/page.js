@@ -1,9 +1,16 @@
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../../api/auth/[...nextauth]/route'
+import { buildAccessWhere } from '../../lib/access'
 import prisma from '../../lib/prisma'
 import Link from 'next/link'
 import DeleteButton from '../../components/admin/DeleteButton'
 
 export default async function AdquisicionesPage() {
+  const session = await getServerSession(authOptions)
+  const where = await buildAccessWhere(session)
+
   const solicitudes = await prisma.solicitudAdquisicion.findMany({
+    where,
     orderBy: { createdAt: 'desc' },
     include: {
       _count: { select: { cotizantes: true, riesgos: true } },

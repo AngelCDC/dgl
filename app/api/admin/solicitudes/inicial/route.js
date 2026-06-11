@@ -3,12 +3,16 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../auth/[...nextauth]/route'
 import { solicitudProcuraSimpleSchema } from '../../../../lib/schemas/solicitud-levantamiento-procura'
+import { buildAccessWhere } from '../../../../lib/access'
 
 export async function GET(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
+  const where = await buildAccessWhere(session)
+
   const solicitudes = await prisma.solicitudProcura.findMany({
+    where,
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,
@@ -112,6 +116,7 @@ export async function POST(req) {
     // ── 2. Crear SolicitudProcura con sus relaciones anidadas ────────────────
     const solicitud = await prisma.solicitudProcura.create({
       data: {
+        createdById:          session.user.id,
         fecha:                fechaStr,
         cedulaRif,
         clienteId,

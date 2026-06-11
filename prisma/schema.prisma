@@ -15,9 +15,11 @@ model User {
   role      String    @default("trabajador")  // "admin" | "trabajador" | "cliente"
   avatarUrl String?
   rubros    String[]  // Rubros asignados (solo para role="cliente")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  articles  Article[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  articles        Article[]
+  solicitudes     SolicitudProcura[]
+  adquisiciones   SolicitudAdquisicion[]
 }
 
 model Category {
@@ -185,6 +187,10 @@ model SolicitudProcura {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Creador
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id])
+
   adquisicion SolicitudAdquisicion? // relación inversa
 }
 
@@ -335,6 +341,10 @@ model SolicitudAdquisicion {
   status    String   @default("borrador")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Creador
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id])
 
   // Vinculación
   solicitudProcuraId String?           @unique

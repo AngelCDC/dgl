@@ -2,12 +2,16 @@ import prisma from '../../../../lib/prisma'
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../auth/[...nextauth]/route'
+import { buildAccessWhere } from '../../../../lib/access'
 
 export async function GET(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
+  const where = await buildAccessWhere(session)
+
   const solicitudes = await prisma.solicitudAdquisicion.findMany({
+    where,
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,
@@ -34,6 +38,7 @@ export async function POST(req) {
 
     const solicitud = await prisma.solicitudAdquisicion.create({
       data: {
+        createdById:            session.user.id,
         fecha:                  `${data.fecha.dd}/${data.fecha.mm}/${data.fecha.aaaa}`,
         tipoDocumento:          data.tipoDocumento || null,
         tipoDocumentoOtro:      data.tipoDocumentoOtro || null,
