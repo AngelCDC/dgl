@@ -1,5 +1,6 @@
 import prisma from '../../lib/prisma'
 import Link from 'next/link'
+import DeleteButton from '../../components/admin/DeleteButton'
 
 export default async function ArticulosPage() {
   const articulos = await prisma.article.findMany({
@@ -33,6 +34,10 @@ export default async function ArticulosPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <StatusBadge status={a.status} />
               <Link href={`/admin/articulos/${a.id}`} style={{ fontSize: '13px', color: '#555', textDecoration: 'none' }}>Editar</Link>
+              <DeleteButton
+                apiPath={`/api/admin/articulos/${a.id}`}
+                confirmMsg={`¿Eliminar "${a.title}"? Esta acción no se puede deshacer.`}
+              />
             </div>
           </div>
         ))}
