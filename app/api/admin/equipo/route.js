@@ -10,8 +10,7 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
       select: {
         id: true, name: true, email: true, role: true, avatarUrl: true,
-        clienteId: true, createdAt: true,
-        cliente: { select: { id: true, razonSocial: true, cedulaRif: true, rubros: true } },
+        rubros: true, createdAt: true,
       },
     })
     return NextResponse.json(users)
@@ -25,17 +24,17 @@ export async function POST(req) {
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   try {
-    const { name, email, password, role, clienteId } = await req.json()
+    const { name, email, password, role, rubros } = await req.json()
     if (!name || !email || !password) return NextResponse.json({ error: 'Nombre, email y contraseña son requeridos' }, { status: 400 })
     if (password.length < 8) return NextResponse.json({ error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
 
     const hashed = await bcrypt.hash(password, 10)
     const data = { name: name.trim(), email: email.trim().toLowerCase(), password: hashed, role: role || 'trabajador' }
-    if (role === 'cliente' && clienteId) data.clienteId = clienteId
+    if (role === 'cliente' && rubros?.length) data.rubros = rubros
 
     const user = await prisma.user.create({
       data,
-      select: { id: true, name: true, email: true, role: true, clienteId: true, createdAt: true },
+      select: { id: true, name: true, email: true, role: true, rubros: true, createdAt: true },
     })
     return NextResponse.json(user, { status: 201 })
   } catch (err) {

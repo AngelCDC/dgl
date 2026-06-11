@@ -14,8 +14,7 @@ model User {
   password  String
   role      String    @default("trabajador")  // "admin" | "trabajador" | "cliente"
   avatarUrl String?
-  clienteId String?
-  cliente   Cliente?  @relation(fields: [clienteId], references: [id])
+  rubros    String[]  // Rubros asignados (solo para role="cliente")
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   articles  Article[]
@@ -212,7 +211,6 @@ model Cliente {
   updatedAt DateTime @updatedAt
 
   solicitudes SolicitudProcura[]
-  usuarios    User[]
 
   @@index([cedulaRif])
 }

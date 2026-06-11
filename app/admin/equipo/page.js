@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 
 const ROLES = ['admin', 'trabajador', 'cliente']
-const emptyForm = { name: '', email: '', password: '', role: 'trabajador', clienteId: '' }
+const emptyForm = { name: '', email: '', password: '', role: 'trabajador', rubros: [] }
 
 // ─── PRIMITIVAS UI (desde adquisiciones/[id]) ──────────────────────────────────
 function FieldLabel({ children }) {
@@ -96,12 +96,12 @@ function Avatar({ src, name, size = 36 }) {
 
 // ─── PÁGINA ───────────────────────────────────────────────────────────────────
 export default function EquipoPage() {
-  const [users, setUsers]       = useState([])
-  const [clients, setClients]   = useState([])
-  const [form, setForm]         = useState(emptyForm)
-  const [showForm, setShowForm] = useState(false)
-  const [loading, setLoading]   = useState(false)
-  const [msg, setMsg]           = useState(null)
+  const [users, setUsers]           = useState([])
+  const [rubrosDisponibles, setRubrosDisponibles] = useState([])
+  const [form, setForm]             = useState(emptyForm)
+  const [showForm, setShowForm]     = useState(false)
+  const [loading, setLoading]       = useState(false)
+  const [msg, setMsg]               = useState(null)
 
   const [editUser, setEditUser] = useState(null)
   const [editForm, setEditForm] = useState({})
@@ -115,15 +115,20 @@ export default function EquipoPage() {
     } catch { setMsg({ type: 'error', text: 'Error al cargar usuarios' }) }
   }
 
-  async function loadClients() {
+  async function loadRubros() {
     try {
-      const res = await fetch('/api/admin/clientes?limit=500')
+      const res = await fetch('/api/admin/catalogo?limit=1')
       const data = await res.json()
-      setClients(Array.isArray(data) ? data : [])
+      // Extraer rubros únicos de los facets o de los productos
+      const rubrosSet = new Set()
+      if (data.facets?.rubro) {
+        data.facets.rubro.forEach(r => rubrosSet.add(r.value))
+      }
+      setRubrosDisponibles([...rubrosSet].sort())
     } catch { /* no crítico */ }
   }
 
-  useEffect(() => { load(); loadClients() }, [])
+  useEffect(() => { load(); loadRubros() }, [])
 
   function set(field, val) { setForm(f => ({ ...f, [field]: val })) }
 
@@ -136,7 +141,7 @@ export default function EquipoPage() {
     setLoading(true)
     try {
       const payload = { ...form }
-      if (payload.role !== 'cliente') delete payload.clienteId
+      if (payload.role !== 'cliente') payload.rubros = []
 
       const res = await fetch('/api/admin/equipo', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -153,7 +158,7 @@ export default function EquipoPage() {
   // ── Abrir modal de edición ────────────────────────────────────────────────
   function openEdit(u) {
     setEditUser(u)
-    setEditForm({ name: u.name, email: u.email, role: u.role, avatarUrl: u.avatarUrl || '', password: '', clienteId: u.clienteId || '' })
+    setEditForm({ name: u.name, email: u.email, role: u.role, avatarUrl: u.avatarUrl || '', password: '', rubros: u.rubros || [] })
   }
 
   function closeEdit() { setEditUser(null); setEditForm({}) }
@@ -165,8 +170,7 @@ export default function EquipoPage() {
     if (!editForm.name || !editForm.email) return
     setSaving(true)
     try {
-      const body = { name: editForm.name, email: editForm.email, role: editForm.role, avatarUrl: editForm.avatarUrl }
-      if (editForm.role === 'cliente') body.clienteId = editForm.clienteId || null
+      const body = { name: editForm.name, email: editForm.email, role: editForm.role, avatarUrl: editForm.avatarUrl, rubros: editForm.rubros || [] }
       if (editForm.password) body.password = editForm.password
 
       const res = await fetch(`/api/admin/equipo/${editUser.id}`, {
@@ -270,20 +274,35 @@ export default function EquipoPage() {
                 </FieldWrap>
               </EditGrid>
 
-              {/* Cliente asignado (solo visible si rol = cliente) */}
+              {/* Rubros (solo visible si rol = cliente) */}
               {form.role === 'cliente' && (
                 <div style={{ marginTop: 14 }}>
-                  <FieldWrap label="Cliente asignado">
-                    <select value={form.clienteId} onChange={e => set('clienteId', e.target.value)} style={{
-                      width: '100%', boxSizing: 'border-box', border: '1px solid #e2e8f0', borderRadius: 8,
-                      padding: '8px 12px', fontSize: 13, color: '#1e293b', background: '#fff',
-                      outline: 'none', fontFamily: 'inherit', cursor: 'pointer',
-                    }}>
-                      <option value="">— Sin cliente asignado —</option>
-                      {clients.map(c => (
-                        <option key={c.id} value={c.id}>{c.razonSocial} ({c.cedulaRif})</option>
-                      ))}
-                    </select>
+                  <FieldWrap label="Rubros con acceso">
+                    {rubrosDisponibles.length === 0 ? (
+                      <Inp value={form.rubros.join(', ')} onChange={v => set('rubros', v.split(',').map(s => s.trim()).filter(Boolean))}
+                        placeholder="Ej: Medicina, Tecnología (separados por coma)" />
+                    ) : (
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {rubrosDisponibles.map(rubro => {
+                          const active = (form.rubros || []).includes(rubro)
+                          return (
+                            <button key={rubro} type="button" onClick={() => {
+                              const next = active ? form.rubros.filter(r => r !== rubro) : [...(form.rubros || []), rubro]
+                              set('rubros', next)
+                            }} style={{
+                              padding: '5px 12px', fontSize: 12, fontWeight: 600,
+                              border: `1px solid ${active ? '#3b82f6' : '#e2e8f0'}`,
+                              borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit',
+                              background: active ? '#eff6ff' : '#fff',
+                              color: active ? '#1d4ed8' : '#64748b',
+                              transition: 'all .15s',
+                            }}>
+                              {rubro}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
                   </FieldWrap>
                 </div>
               )}
@@ -318,12 +337,16 @@ export default function EquipoPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                   <Avatar src={u.avatarUrl} name={u.name} size={40} />
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div>
                       <span style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{u.name}</span>
-                      {u.cliente && (
-                        <span style={{ fontSize: 11, color: '#94a3b8', background: '#f1f5f9', padding: '1px 8px', borderRadius: 10 }}>
-                          {u.cliente.razonSocial}
-                        </span>
+                      {u.role === 'cliente' && u.rubros?.length > 0 && (
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 3 }}>
+                          {u.rubros.map(r => (
+                            <span key={r} style={{ fontSize: 10, color: '#b45309', background: '#fffbeb', padding: '1px 8px', borderRadius: 10, border: '1px solid #fcd34d' }}>
+                              {r}
+                            </span>
+                          ))}
+                        </div>
                       )}
                     </div>
                     <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{u.email}</div>
@@ -423,20 +446,35 @@ export default function EquipoPage() {
                   </FieldWrap>
                 </EditGrid>
 
-                {/* Cliente asignado (solo si rol = cliente) */}
+                {/* Rubros (solo si rol = cliente) */}
                 {editForm.role === 'cliente' && (
                   <div style={{ marginTop: 14 }}>
-                    <FieldWrap label="Cliente asignado">
-                      <select value={editForm.clienteId} onChange={e => setEdit('clienteId', e.target.value)} style={{
-                        width: '100%', boxSizing: 'border-box', border: '1px solid #e2e8f0', borderRadius: 8,
-                        padding: '8px 12px', fontSize: 13, color: '#1e293b', background: '#fff',
-                        outline: 'none', fontFamily: 'inherit', cursor: 'pointer',
-                      }}>
-                        <option value="">— Sin cliente asignado —</option>
-                        {clients.map(c => (
-                          <option key={c.id} value={c.id}>{c.razonSocial} ({c.cedulaRif})</option>
-                        ))}
-                      </select>
+                    <FieldWrap label="Rubros con acceso">
+                      {rubrosDisponibles.length === 0 ? (
+                        <Inp value={(editForm.rubros || []).join(', ')} onChange={v => setEdit('rubros', v.split(',').map(s => s.trim()).filter(Boolean))}
+                          placeholder="Ej: Medicina, Tecnología (separados por coma)" />
+                      ) : (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {rubrosDisponibles.map(rubro => {
+                            const active = (editForm.rubros || []).includes(rubro)
+                            return (
+                              <button key={rubro} type="button" onClick={() => {
+                                const next = active ? editForm.rubros.filter(r => r !== rubro) : [...(editForm.rubros || []), rubro]
+                                setEdit('rubros', next)
+                              }} style={{
+                                padding: '5px 12px', fontSize: 12, fontWeight: 600,
+                                border: `1px solid ${active ? '#3b82f6' : '#e2e8f0'}`,
+                                borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit',
+                                background: active ? '#eff6ff' : '#fff',
+                                color: active ? '#1d4ed8' : '#64748b',
+                                transition: 'all .15s',
+                              }}>
+                                {rubro}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
                     </FieldWrap>
                   </div>
                 )}
