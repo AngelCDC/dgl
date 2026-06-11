@@ -14,15 +14,21 @@ export async function generateMetadata({ params }) {
 
   if (!articulo) return { title: 'Artículo no encontrado — DUBOIS' }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tudominio.com'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.grupodubois.com'
 
   const description = articulo.metaDesc || articulo.excerpt || 'Artículo de comercio internacional publicado por DUBOIS — Global Trade Intelligence.'
   const title = articulo.metaTitle || articulo.title
 
-  const coverUrl = articulo.coverUrl?.startsWith('http')
+  // Resuelve la URL absoluta del blob
+  const rawCover = articulo.coverUrl?.startsWith('http')
     ? articulo.coverUrl
     : articulo.coverUrl
     ? `${baseUrl}${articulo.coverUrl}`
+    : null
+
+  // Proxea por tu propio dominio para que crawlers externos puedan acceder
+  const coverUrl = rawCover
+    ? `${baseUrl}/api/og-image?url=${encodeURIComponent(rawCover)}`
     : null
 
   return {
