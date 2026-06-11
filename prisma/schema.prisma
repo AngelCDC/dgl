@@ -12,8 +12,10 @@ model User {
   name      String
   email     String    @unique
   password  String
-  role      String    @default("editor")
+  role      String    @default("trabajador")  // "admin" | "trabajador" | "cliente"
   avatarUrl String?
+  clienteId String?
+  cliente   Cliente?  @relation(fields: [clienteId], references: [id])
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   articles  Article[]
@@ -96,6 +98,7 @@ model Supplier {
   email            String?
   phone            String?
   whatsapp         String?
+  rubro            String?
   categoryId       String?
   category         Category?            @relation(fields: [categoryId], references: [id])
   planId           String?
@@ -189,7 +192,7 @@ model SolicitudProcura {
 // ─── Base de datos de clientes ────────────────────────────────────────────────
 model Cliente {
   id                    String   @id @default(uuid())
-  cedulaRif             String   @unique  // Cédula o RIF del cliente
+  cedulaRif             String   @unique
   razonSocial           String
   ciudad                String?
   direccion             String?
@@ -202,10 +205,14 @@ model Cliente {
   contactoTelefono String?
   contactoEmail    String?
 
+  // Rubros asignados para acceso de clientes (filtra catálogo y proveedores)
+  rubros  String[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   solicitudes SolicitudProcura[]
+  usuarios    User[]
 
   @@index([cedulaRif])
 }

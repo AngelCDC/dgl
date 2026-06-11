@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { getNavForRole } from "../lib/permisos";
 
 // ─── Iconos SVG inline ────────────────────────────────────────────────────────
 const Icon = ({ d, size = 16 }) => (
@@ -31,54 +32,14 @@ const ICONS = {
   chevron:      "M9 18l6-6-6-6",
 }
 
-// ─── Datos de navegación ──────────────────────────────────────────────────────
-const NAV = [
-  {
-    items: [
-      { href: "/admin",          label: "Dashboard",            icon: "dashboard"   },
-    ],
-  },
-  {
-    title: "Documentos",
-    items: [
-      { href: "/admin/solicitudes",   label: "Solicitud de Adquisición", icon: "solicitudes"  },
-      { href: "/admin/adquisiciones", label: "Estudio de Mercado",       icon: "adquisicion"  },
-    ],
-  },
-  {
-    title: "Contenido",
-    items: [
-      { href: "/admin/articulos",  label: "Artículos",   icon: "articulos"  },
-      { href: "/admin/categorias", label: "Categorías",  icon: "categorias" },
-    ],
-  },
-  {
-    title: "Proveedores",
-    items: [
-      { href: "/admin/proveedores", label: "Directorio", icon: "proveedores" },
-      { href: "/admin/planes",      label: "Planes",     icon: "planes"      },
-      { href: "/admin/catalogo",    label: "Catálogo",   icon: "catalogo"    },
-    ],
-  },
-  {
-    title: "Clientes",
-    items: [
-      { href: "/admin/clientes", label: "Base de Clientes", icon: "clientes" },
-    ],
-  },
-  {
-    title: "Sistema",
-    items: [
-      { href: "/admin/equipo",    label: "Equipo",    icon: "equipo"    },
-      { href: "/admin/contactos", label: "Mensajes",  icon: "mensajes"  },
-    ],
-  },
-]
+// ─── Navegación dinámica según rol ────────────────────────────────────────────
+// (la NAV estática se reemplaza por getNavForRole(role) en SidebarInner)
 
 // ─── Shell principal ──────────────────────────────────────────────────────────
-export default function AdminShell({ children, userName }) {
+export default function AdminShell({ children, userName, userRole }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const role = userRole || 'trabajador';
 
   const initials = userName
     ? userName.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()
@@ -106,6 +67,7 @@ export default function AdminShell({ children, userName }) {
             pathname={pathname}
             userName={userName}
             initials={initials}
+            role={role}
             onNavigate={null}
           />
         </aside>
@@ -151,6 +113,7 @@ export default function AdminShell({ children, userName }) {
           pathname={pathname}
           userName={userName}
           initials={initials}
+          role={role}
           onNavigate={() => setMenuOpen(false)}
         />
       </aside>
@@ -476,7 +439,15 @@ export default function AdminShell({ children, userName }) {
 }
 
 // ─── Contenido del sidebar (usado tanto en desktop como en drawer) ─────────────
-function SidebarInner({ pathname, userName, initials, onNavigate }) {
+function SidebarInner({ pathname, userName, initials, role, onNavigate }) {
+  const nav = getNavForRole(role);
+
+  const roleBadge = {
+    admin:      { label: 'Admin',      color: '#3b82f6', bg: 'rgba(59,130,246,0.15)' },
+    trabajador: { label: 'Trabajador', color: '#10b981', bg: 'rgba(16,185,129,0.15)' },
+    cliente:    { label: 'Cliente',    color: '#f59e0b', bg: 'rgba(245,158,11,0.15)' },
+  }[role] || { label: role, color: '#94a3b8', bg: 'rgba(148,163,184,0.15)' };
+
   return (
     <>
       {/* Header del sidebar — solo en desktop */}
@@ -489,7 +460,7 @@ function SidebarInner({ pathname, userName, initials, onNavigate }) {
 
       {/* Navegación */}
       <nav className="ash-nav">
-        {NAV.map((group, gi) => (
+        {nav.map((group, gi) => (
           <div key={gi}>
             {group.title && (
               <div className="ash-section-title">{group.title}</div>
@@ -502,11 +473,32 @@ function SidebarInner({ pathname, userName, initials, onNavigate }) {
                 pathname={pathname}
                 onNavigate={onNavigate}
               >
-                {item.label}
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {item.label}
+                  {item.hint && (
+                    <span style={{
+                      fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 10,
+                      background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)',
+                      letterSpacing: '0.04em',
+                    }}>{item.hint}</span>
+                  )}
+                </span>
               </NavLink>
             ))}
           </div>
         ))}
+
+        {/* Separador + Mi Perfil (siempre visible) */}
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <NavLink
+            href="/admin/equipo/perfil"
+            icon="equipo"
+            pathname={pathname}
+            onNavigate={onNavigate}
+          >
+            Mi Perfil
+          </NavLink>
+        </div>
       </nav>
 
       {/* Footer */}
@@ -514,6 +506,12 @@ function SidebarInner({ pathname, userName, initials, onNavigate }) {
         <div className="ash-avatar">{initials}</div>
         <div className="ash-user-info">
           <div className="ash-user-name">{userName || "Usuario"}</div>
+          <div style={{
+            fontSize: 10, fontWeight: 600,
+            color: roleBadge.color, marginTop: 1,
+          }}>
+            {roleBadge.label}
+          </div>
         </div>
         <button
           className="ash-logout-btn"
@@ -556,8 +554,12 @@ const PAGE_TITLES = {
   "/admin/proveedores":"Proveedores",
   "/admin/planes":     "Planes",
   "/admin/catalogo":   "Catálogo de Productos",
+  "/admin/clientes":   "Base de Clientes",
   "/admin/equipo":     "Equipo",
   "/admin/contactos":  "Mensajes",
+  "/admin/equipo/perfil": "Mi Perfil",
+  "/admin/configuracion": "Configuración",
+  "/admin/roles":      "Roles y Permisos",
 };
 
 function PageTitle({ pathname }) {

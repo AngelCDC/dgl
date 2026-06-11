@@ -27,14 +27,15 @@ export async function PATCH(req, { params }) {
   try {
     const { id } = await params
     const body = await req.json()
-    const { name, email, role, avatarUrl, password } = body
+    const { name, email, role, avatarUrl, password, clienteId } = body
 
-    // Construir el objeto de actualización solo con los campos provistos
+    // Construir el objeto de actualizacion solo con los campos provistos
     const data = {}
     if (name !== undefined) data.name = name.trim()
     if (email !== undefined) data.email = email.trim().toLowerCase()
     if (role !== undefined) data.role = role
     if (avatarUrl !== undefined) data.avatarUrl = avatarUrl || null
+    if (clienteId !== undefined) data.clienteId = clienteId || null
     if (password !== undefined && password.length > 0) {
       if (password.length < 8) return NextResponse.json({ error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
       data.password = await bcrypt.hash(password, 10)
@@ -47,7 +48,7 @@ export async function PATCH(req, { params }) {
     const user = await prisma.user.update({
       where: { id },
       data,
-      select: { id: true, name: true, email: true, role: true, avatarUrl: true, createdAt: true, updatedAt: true },
+      select: { id: true, name: true, email: true, role: true, avatarUrl: true, clienteId: true, createdAt: true, updatedAt: true },
     })
 
     return NextResponse.json(user)

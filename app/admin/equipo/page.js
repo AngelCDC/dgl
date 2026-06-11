@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 
-const ROLES = ['admin', 'editor']
-const emptyForm = { name: '', email: '', password: '', role: 'editor' }
+const ROLES = ['admin', 'trabajador', 'cliente']
+const emptyForm = { name: '', email: '', password: '', role: 'trabajador', clienteId: '' }
 
 // ─── PRIMITIVAS UI (desde adquisiciones/[id]) ──────────────────────────────────
 function FieldLabel({ children }) {
@@ -97,13 +97,13 @@ function Avatar({ src, name, size = 36 }) {
 // ─── PÁGINA ───────────────────────────────────────────────────────────────────
 export default function EquipoPage() {
   const [users, setUsers]       = useState([])
+  const [clients, setClients]   = useState([])
   const [form, setForm]         = useState(emptyForm)
   const [showForm, setShowForm] = useState(false)
   const [loading, setLoading]   = useState(false)
-  const [msg, setMsg]           = useState(null)    // { type: 'success'|'error', text: '' }
+  const [msg, setMsg]           = useState(null)
 
-  // ── Edición ────────────────────────────────────────────────────────────────
-  const [editUser, setEditUser] = useState(null)     // usuario siendo editado (null = modal cerrado)
+  const [editUser, setEditUser] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [saving, setSaving]     = useState(false)
 
@@ -115,7 +115,15 @@ export default function EquipoPage() {
     } catch { setMsg({ type: 'error', text: 'Error al cargar usuarios' }) }
   }
 
-  useEffect(() => { load() }, [])
+  async function loadClients() {
+    try {
+      const res = await fetch('/api/admin/clientes?limit=500')
+      const data = await res.json()
+      setClients(Array.isArray(data) ? data : [])
+    } catch { /* no crítico */ }
+  }
+
+  useEffect(() => { load(); loadClients() }, [])
 
   function set(field, val) { setForm(f => ({ ...f, [field]: val })) }
 
@@ -127,9 +135,12 @@ export default function EquipoPage() {
     if (!form.name || !form.email || !form.password) return
     setLoading(true)
     try {
+      const payload = { ...form }
+      if (payload.role !== 'cliente') delete payload.clienteId
+
       const res = await fetch('/api/admin/equipo', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       })
       const d = await res.json()
       if (!res.ok) throw new Error(d.error || 'Error')
@@ -142,7 +153,8 @@ export default function EquipoPage() {
   // ── Abrir modal de edición ────────────────────────────────────────────────
   function openEdit(u) {
     setEditUser(u)
-    setEditForm({ name: u.name, email: u.email, role: u.role, avatarUrl: u.avatarUrl || '', password: '' })
+    setEditForm({ name: u.name, email: u.email, role: u.role, avatarUrl: u.avatarUrl || '', password: '', clienteId: u.clienteId || '' })
+  }
   }
 
   function closeEdit() { setEditUser(null); setEditForm({}) }
@@ -155,6 +167,7 @@ export default function EquipoPage() {
     setSaving(true)
     try {
       const body = { name: editForm.name, email: editForm.email, role: editForm.role, avatarUrl: editForm.avatarUrl }
+      if (editForm.role === 'cliente') body.clienteId = editForm.clienteId || null
       if (editForm.password) body.password = editForm.password
 
       const res = await fetch(`/api/admin/equipo/${editUser.id}`, {
@@ -179,9 +192,12 @@ export default function EquipoPage() {
     } catch { setMsg({ type: 'error', text: 'Error al eliminar usuario.' }) }
   }
 
-  const roleBadge = (r) => r === 'admin'
-    ? { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' }
-    : { bg: '#f8fafc', color: '#475569', border: '#e2e8f0' }
+  const roleBadge = (r) => {
+    if (r === 'admin')      return { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', label: 'Admin' }
+    if (r === 'trabajador') return { bg: '#f0fdf4', color: '#166534', border: '#86efac', label: 'Trabajador' }
+    if (r === 'cliente')    return { bg: '#fffbeb', color: '#b45309', border: '#fcd34d', label: 'Cliente' }
+    return { bg: '#f8fafc', color: '#475569', border: '#e2e8f0', label: r }
+  }
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: 900, fontFamily: 'inherit' }}>
@@ -254,6 +270,25 @@ export default function EquipoPage() {
                   </select>
                 </FieldWrap>
               </EditGrid>
+
+              {/* Cliente asignado (solo visible si rol = cliente) */}
+              {form.role === 'cliente' && (
+                <div style={{ marginTop: 14 }}>
+                  <FieldWrap label="Cliente asignado">
+                    <select value={form.clienteId} onChange={e => set('clienteId', e.target.value)} style={{
+                      width: '100%', boxSizing: 'border-box', border: '1px solid #e2e8f0', borderRadius: 8,
+                      padding: '8px 12px', fontSize: 13, color: '#1e293b', background: '#fff',
+                      outline: 'none', fontFamily: 'inherit', cursor: 'pointer',
+                    }}>
+                      <option value="">— Sin cliente asignado —</option>
+                      {clients.map(c => (
+                        <option key={c.id} value={c.id}>{c.razonSocial} ({c.cedulaRif})</option>
+                      ))}
+                    </select>
+                  </FieldWrap>
+                </div>
+              )}
+
               <div style={{ marginTop: 16 }}>
                 <button type="submit" disabled={loading} style={{
                   fontSize: 13, padding: '8px 22px', border: 'none', borderRadius: 9,
@@ -284,7 +319,14 @@ export default function EquipoPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                   <Avatar src={u.avatarUrl} name={u.name} size={40} />
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{u.name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{u.name}</span>
+                      {u.cliente && (
+                        <span style={{ fontSize: 11, color: '#94a3b8', background: '#f1f5f9', padding: '1px 8px', borderRadius: 10 }}>
+                          {u.cliente.razonSocial}
+                        </span>
+                      )}
+                    </div>
                     <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{u.email}</div>
                   </div>
                 </div>
@@ -294,7 +336,7 @@ export default function EquipoPage() {
                     background: roleBadge(u.role).bg, color: roleBadge(u.role).color,
                     border: `1px solid ${roleBadge(u.role).border}`,
                   }}>
-                    {u.role}
+                    {roleBadge(u.role).label}
                   </span>
                   <span style={{ fontSize: 12, color: '#94a3b8' }}>
                     {new Date(u.createdAt).toLocaleDateString('es-VE', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -380,6 +422,27 @@ export default function EquipoPage() {
                       {ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
                     </select>
                   </FieldWrap>
+                </EditGrid>
+
+                {/* Cliente asignado (solo si rol = cliente) */}
+                {editForm.role === 'cliente' && (
+                  <div style={{ marginTop: 14 }}>
+                    <FieldWrap label="Cliente asignado">
+                      <select value={editForm.clienteId} onChange={e => setEdit('clienteId', e.target.value)} style={{
+                        width: '100%', boxSizing: 'border-box', border: '1px solid #e2e8f0', borderRadius: 8,
+                        padding: '8px 12px', fontSize: 13, color: '#1e293b', background: '#fff',
+                        outline: 'none', fontFamily: 'inherit', cursor: 'pointer',
+                      }}>
+                        <option value="">— Sin cliente asignado —</option>
+                        {clients.map(c => (
+                          <option key={c.id} value={c.id}>{c.razonSocial} ({c.cedulaRif})</option>
+                        ))}
+                      </select>
+                    </FieldWrap>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <FieldWrap label="Nueva contraseña (opcional)">
                     <Inp type="password" value={editForm.password} onChange={v => setEdit('password', v)}
                       placeholder="Dejar vacío para no cambiar" />
