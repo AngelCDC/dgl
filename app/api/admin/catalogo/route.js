@@ -105,14 +105,23 @@ export async function GET(req) {
       if (rubrosCliente !== null && rubrosCliente.length > 0) {
         facetWhere.rubro = { in: rubrosCliente, mode: 'insensitive' }
       }
+      // Construir el where final para el groupBy
+      let groupWhere = facetWhere
+      if (nullable) {
+        if (field === 'rubro' && facetWhere.rubro) {
+          // Ya hay filtro de rubros (cliente), el `in` excluye nulls implícitamente
+          groupWhere = facetWhere
+        } else {
+          // Exigir que el campo no sea null
+          groupWhere = { ...facetWhere, [field]: { not: null } }
+        }
+      }
       queries.push(
         prisma.productoCatalogo.groupBy({
           by: [field],
           _count: { id: true },
           orderBy: { _count: { id: 'desc' } },
-          where: nullable
-            ? { ...facetWhere, [field]: { not: null } }
-            : facetWhere,
+          where: groupWhere,
         })
       )
     }

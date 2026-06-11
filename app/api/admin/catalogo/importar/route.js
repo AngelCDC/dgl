@@ -225,25 +225,62 @@ export async function GET(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
+  // ── Cliente: filtrar por los rubros asignados al usuario ──────────────────
+  let rubrosCliente = null
+  if (session.user?.role === 'cliente') {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { rubros: true },
+    })
+    rubrosCliente = user?.rubros ?? []
+  }
+
+  // Construir where base según rubros del cliente
+  const baseWhere = {}
+  if (rubrosCliente !== null) {
+    if (rubrosCliente.length === 0) {
+      // Sin rubros asignados → no ve nada
+      return NextResponse.json({
+        total: 0,
+        totalVariantes: 0,
+        porRubro: [],
+        porProveedor: [],
+        porCategoria: [],
+      })
+    }
+    baseWhere.rubro = { in: rubrosCliente, mode: 'insensitive' }
+  }
+
+  const totalVariantesWhere = rubrosCliente !== null && rubrosCliente.length > 0
+    ? { producto: { rubro: { in: rubrosCliente, mode: 'insensitive' } } }
+    : {}
+
   const [total, totalVariantes, porRubro, porProveedor, porCategoria] = await Promise.all([
-    prisma.productoCatalogo.count(),
-    prisma.varianteCatalogo.count(),
+    prisma.productoCatalogo.count({ where: baseWhere }),
+    prisma.varianteCatalogo.count({ where: totalVariantesWhere }),
     prisma.productoCatalogo.groupBy({
       by: ['rubro'],
       _count: { id: true },
       orderBy: { _count: { id: 'desc' } },
-      where: { rubro: { not: null } },
+      // Si hay filtro de rubros, el `in` ya excluye nulls.
+      // Si no hay filtro, pedimos rubro not null explícitamente.
+      where: rubrosCliente !== null
+        ? { rubro: { in: rubrosCliente, mode: 'insensitive' } }
+        : { rubro: { not: null } },
     }),
     prisma.productoCatalogo.groupBy({
       by: ['proveedor'],
       _count: { id: true },
       orderBy: { _count: { id: 'desc' } },
+      where: baseWhere,
     }),
     prisma.productoCatalogo.groupBy({
       by: ['categoria'],
       _count: { id: true },
       orderBy: { _count: { id: 'desc' } },
-      where: { categoria: { not: null } },
+      where: rubrosCliente !== null
+        ? { ...baseWhere, categoria: { not: null } }
+        : { categoria: { not: null } },
     }),
   ])
 
