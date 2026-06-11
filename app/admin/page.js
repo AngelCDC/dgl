@@ -1,7 +1,33 @@
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../api/auth/[...nextauth]/route'
+import { buildAccessWhere } from '../lib/access'
 import prisma from '../lib/prisma'
 import Link from 'next/link'
 
 export default async function AdminDashboard() {
+  const session = await getServerSession(authOptions)
+
+  // ── Cliente: rubros asignados para filtrar catálogo y proveedores ──────────
+  let rubrosCliente = null
+  if (session?.user?.role === 'cliente') {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { rubros: true },
+    })
+    rubrosCliente = user?.rubros ?? []
+  }
+
+  // ── Where de acceso (admin ve todo, trabajador/cliente no ven lo del admin) ──
+  const accessWhere = await buildAccessWhere(session)
+
+  // ── Where para catálogo y proveedores según rubros del cliente ──────────────
+  const catalogoWhere = rubrosCliente !== null
+    ? (rubrosCliente.length === 0 ? { id: '__ninguno__' } : { rubro: { in: rubrosCliente, mode: 'insensitive' } })
+    : {}
+  const proveedoresWhere = rubrosCliente !== null
+    ? (rubrosCliente.length === 0 ? { id: '__ninguno__' } : { rubro: { in: rubrosCliente, mode: 'insensitive' } })
+    : {}
+
   const [
     totalArticulos,
     totalProveedores,
@@ -12,11 +38,12 @@ export default async function AdminDashboard() {
     mensajes,
   ] = await Promise.all([
     prisma.article.count(),
-    prisma.supplier.count(),
+    prisma.supplier.count({ where: proveedoresWhere }),
     prisma.contactRequest.count({ where: { status: 'new' } }),
-    prisma.solicitudAdquisicion.count(),
-    prisma.productoCatalogo.count().catch(() => 0),
+    prisma.solicitudAdquisicion.count({ where: accessWhere }),
+    prisma.productoCatalogo.count({ where: catalogoWhere }).catch(() => 0),
     prisma.solicitudAdquisicion.findMany({
+      where: accessWhere,
       take: 8,
       orderBy: { createdAt: 'desc' },
       select: { id: true, solicitante: true, descripcionObjeto: true, fecha: true, status: true, createdAt: true },
