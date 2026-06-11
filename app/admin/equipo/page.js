@@ -155,7 +155,6 @@ export default function EquipoPage() {
     setEditUser(u)
     setEditForm({ name: u.name, email: u.email, role: u.role, avatarUrl: u.avatarUrl || '', password: '', clienteId: u.clienteId || '' })
   }
-  }
 
   function closeEdit() { setEditUser(null); setEditForm({}) }
 
