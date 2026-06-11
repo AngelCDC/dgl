@@ -43,7 +43,7 @@ export default async function HomePage() {
                     </div>
                   )}
                   <div style={{ position: "relative", zIndex: 1 }}>
-                    <div className="hero-watermark">DGL</div>
+                    <div className="hero-watermark">DG</div>
                     <span className="category-pill-accent">{hero.category?.name ?? "Artículo"}</span>
                     <h1 className="hero-title">{hero.title}</h1>
                     {hero.excerpt && <p className="hero-excerpt">{hero.excerpt}</p>}

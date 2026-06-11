@@ -447,7 +447,7 @@ export default function EquipoPage() {
                     <Inp type="password" value={editForm.password} onChange={v => setEdit('password', v)}
                       placeholder="Dejar vacío para no cambiar" />
                   </FieldWrap>
-                </EditGrid>
+                </div>
               </div>
             </div>
 
