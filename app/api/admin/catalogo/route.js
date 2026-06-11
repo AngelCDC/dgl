@@ -101,6 +101,10 @@ export async function GET(req) {
     ]
     for (const { field, nullable } of facetFields) {
       const facetWhere = buildWhere({ ...ctx, excludeField: field })
+      // Si es cliente, también filtrar facets por sus rubros
+      if (rubrosCliente !== null && rubrosCliente.length > 0) {
+        facetWhere.rubro = { in: rubrosCliente, mode: 'insensitive' }
+      }
       queries.push(
         prisma.productoCatalogo.groupBy({
           by: [field],
