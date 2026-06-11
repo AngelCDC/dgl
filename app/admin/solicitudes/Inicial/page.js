@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const TIPOS_NECESIDAD = [
   { value: 'materia_prima',     label: 'Materia Prima' },
@@ -39,6 +39,20 @@ const defaultProducto = () => ({
   cantidadReferencial:  '',
   prioridad:         '',
 });
+
+// ─── Helper: convierte producto del catálogo en descripción para la solicitud ──
+function buildDescFromCatalog(p) {
+  const parts = []
+  if (p.descripcion) parts.push(p.descripcion)
+  if (p.material) parts.push(`Material: ${p.material}`)
+  if (p.variantes?.length) {
+    parts.push(`Variantes (${p.variantes.length}): ` +
+      p.variantes.map(v =>
+        [v.codigo, v.medidas, v.unidad, v.precio].filter(Boolean).join(' ')
+      ).join('; '))
+  }
+  return parts.join('\n')
+}
 
 // ─── Validación ──────────────────────────────────────────────────────────────
 function validateForm(form) {
@@ -514,6 +528,38 @@ export default function NuevaSolicitudInicialPage() {
   // null | 'loading' | { found: true, cliente: {...} } | { found: false }
   const [clienteLookup, setClienteLookup] = useState(null);
   const lookupTimer = useRef(null);
+
+  const searchParams = useSearchParams();
+
+  // ── Carga de productos desde el catálogo ────────────────────────────────────
+  useEffect(() => {
+    const fromCatalog = searchParams.get('fromCatalog')
+    if (fromCatalog !== 'true') return
+
+    const raw = sessionStorage.getItem('catalogProducts')
+    if (!raw) return
+
+    try {
+      const products = JSON.parse(raw)
+      const mapped = products.map(p => ({
+        nombreProducto:    p.nombre ?? '',
+        categoria:         p.categoria ?? p.rubro ?? '',
+        descripcion:       buildDescFromCatalog(p),
+        dimensiones:       p.variantes?.[0]?.medidas ?? '',
+        empaque:           '',
+        marca:             p.proveedor ?? '',
+        referenciaModelo:  p.variantes?.[0]?.codigo ?? '',
+        paisOrigen:        p.supplier?.country ?? '',
+        tipoNecesidad:     '',
+        tipoNecesidadOtro: '',
+        frecuenciaRequerida:  '',
+        cantidadReferencial:  '',
+        prioridad:         '',
+      }))
+      setForm(prev => ({ ...prev, productosCliente: mapped }))
+      sessionStorage.removeItem('catalogProducts')
+    } catch { /* ignore */ }
+  }, [])
 
   // ── Lookup de Cédula/RIF con debounce ─────────────────────────────────────
   useEffect(() => {

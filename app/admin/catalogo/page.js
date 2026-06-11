@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function CatalogoPage() {
@@ -16,6 +17,12 @@ export default function CatalogoPage() {
   const [loading,  setLoading]  = useState(false)
   const [importUI, setImportUI] = useState(false)
   const [detail,   setDetail]   = useState(null)
+
+  // Carrito de productos para solicitud
+  const [selectedProducts, setSelectedProducts] = useState([])
+  const [cartOpen,         setCartOpen]         = useState(false)
+
+  const router = useRouter()
 
   // Listas para selects — cascada: rubro → categoría → subcategoría
   const [rubros,        setRubros]        = useState([])
@@ -85,6 +92,22 @@ export default function CatalogoPage() {
 
   function reset() {
     setQuery(''); setRubro(''); setProveedor(''); setCategoria(''); setSubcategoria(''); setPage(1)
+  }
+
+  // ── Carrito de solicitud ────────────────────────────────────────────────────
+  function addToSelection(producto) {
+    setSelectedProducts(prev => {
+      if (prev.find(p => p.id === producto.id)) return prev
+      return [...prev, producto]
+    })
+  }
+  function removeFromSelection(productId) {
+    setSelectedProducts(prev => prev.filter(p => p.id !== productId))
+  }
+
+  function handleCreateSolicitud() {
+    sessionStorage.setItem('catalogProducts', JSON.stringify(selectedProducts))
+    router.push('/admin/solicitudes/Inicial?fromCatalog=true')
   }
 
   const hayFiltros = query || rubro || proveedor || categoria || subcategoria
@@ -475,7 +498,157 @@ export default function CatalogoPage() {
       )}
 
       {/* ── Modal detalle ── */}
-      {detail && <DetailModal producto={detail} onClose={() => setDetail(null)} />}
+      {detail && (
+        <DetailModal
+          producto={detail}
+          onClose={() => setDetail(null)}
+          isInCart={selectedProducts.some(p => p.id === detail.id)}
+          onAddToCart={() => { addToSelection(detail); setDetail(null) }}
+          onRemoveFromCart={() => removeFromSelection(detail.id)}
+        />
+      )}
+
+      {/* ── Panel flotante del carrito ── */}
+      {selectedProducts.length > 0 && (
+        <div style={{
+          position: 'fixed',
+          bottom: 20,
+          right: 20,
+          zIndex: 998,
+          fontFamily: 'system-ui, sans-serif',
+        }}>
+          {cartOpen && (
+            <div style={{
+              background: 'white',
+              border: '1px solid #e0e0e0',
+              borderRadius: '12px',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+              width: '320px',
+              maxHeight: '420px',
+              overflow: 'hidden',
+              marginBottom: '8px',
+              display: 'flex',
+              flexDirection: 'column',
+            }}>
+              {/* Header */}
+              <div style={{
+                padding: '14px 16px',
+                borderBottom: '1px solid #f0f0f0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}>
+                <span style={{ fontWeight: '600', fontSize: '14px', color: '#111' }}>
+                  🛒 Productos seleccionados ({selectedProducts.length})
+                </span>
+                <button
+                  onClick={() => setCartOpen(false)}
+                  style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '14px', color: '#aaa' }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Lista */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+                {selectedProducts.map(p => (
+                  <div
+                    key={p.id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      padding: '10px 16px',
+                      borderBottom: '1px solid #f5f5f5',
+                      gap: '8px',
+                    }}
+                  >
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        color: '#111',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        marginBottom: '2px',
+                      }}>
+                        {p.nombre}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#888' }}>
+                        {p.proveedor}
+                        {p.variantes?.length > 0 && ` · ${p.variantes.length} variante(s)`}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => removeFromSelection(p.id)}
+                      title="Quitar de la solicitud"
+                      style={{
+                        flexShrink: 0,
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '6px',
+                        background: 'white',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        color: '#999',
+                        padding: '3px 8px',
+                        fontFamily: 'inherit',
+                        lineHeight: 1,
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Footer */}
+              <div style={{ padding: '12px 16px', borderTop: '1px solid #f0f0f0' }}>
+                <button
+                  onClick={handleCreateSolicitud}
+                  style={{
+                    width: '100%',
+                    height: '38px',
+                    background: '#111',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  Crear Solicitud de Adquisición →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Botón toggle */}
+          <button
+            onClick={() => setCartOpen(v => !v)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 16px',
+              background: '#111',
+              color: 'white',
+              border: 'none',
+              borderRadius: '24px',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+              marginLeft: 'auto',
+            }}
+          >
+            🛒 {selectedProducts.length} producto{selectedProducts.length !== 1 ? 's' : ''}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -731,7 +904,7 @@ function ImportPanel({ onDone }) {
 }
 
 // ─── Modal de detalle ─────────────────────────────────────────────────────────
-function DetailModal({ producto: p, onClose }) {
+function DetailModal({ producto: p, onClose, isInCart, onAddToCart, onRemoveFromCart }) {
   useEffect(() => {
     const h = e => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', h)
@@ -866,6 +1039,43 @@ function DetailModal({ producto: p, onClose }) {
             >
               ✉️ Solicitar cotización
             </a>
+          )}
+          {isInCart ? (
+            <button
+              onClick={onRemoveFromCart}
+              style={{
+                height: '34px',
+                padding: '0 18px',
+                background: '#ecfdf5',
+                color: '#065f46',
+                border: '1px solid #a7f3d0',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              ✓ En solicitud
+            </button>
+          ) : (
+            <button
+              onClick={onAddToCart}
+              style={{
+                height: '34px',
+                padding: '0 18px',
+                background: '#2563eb',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              📦 Añadir a solicitud
+            </button>
           )}
           <button
             onClick={onClose}
