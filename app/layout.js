@@ -5,9 +5,27 @@ import { Analytics } from "@vercel/analytics/next";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
+  metadataBase: new URL(
+    process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXT_PUBLIC_SITE_URL || "https://www.grupodubois.com"
+  ),
   title: "DUBOIS — Global Trade Intelligence",
   description:
     "Inteligencia de comercio internacional para empresas latinoamericanas",
+  openGraph: {
+    title: "DUBOIS — Global Trade Intelligence",
+    description:
+      "Inteligencia de comercio internacional para empresas latinoamericanas",
+    siteName: "DUBOIS — Global Trade Intelligence",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DUBOIS — Global Trade Intelligence",
+    description:
+      "Inteligencia de comercio internacional para empresas latinoamericanas",
+  },
 };
 
 export default function RootLayout({ children }) {

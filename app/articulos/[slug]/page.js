@@ -23,18 +23,19 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title,
       description,
+      url: `/articulos/${articulo.slug}`,
       type: 'article',
       publishedTime: articulo.publishedAt?.toISOString(),
       authors: [articulo.author?.name ?? 'DUBOIS'],
       tags: articulo.category?.name ? [articulo.category.name] : [],
       siteName: 'DUBOIS — Global Trade Intelligence',
-      ...(articulo.coverUrl ? { images: [{ url: articulo.coverUrl }] } : {}),
+      ...(articulo.coverUrl ? { images: [{ url: articulo.coverUrl, width: 1200, height: 630 }] } : {}),
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      ...(articulo.coverUrl ? { images: [articulo.coverUrl] } : {}),
+      ...(articulo.coverUrl ? { images: [{ url: articulo.coverUrl }] } : {}),
     },
   }
 }

@@ -20,9 +20,16 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: `${proveedor.name} — DUBOIS`,
       description: proveedor.description ?? '',
+      url: `/proveedores/${proveedor.slug}`,
       type: 'website',
       siteName: 'DUBOIS — Global Trade Intelligence',
-      ...(proveedor.logoUrl ? { images: [{ url: proveedor.logoUrl }] } : {}),
+      ...(proveedor.coverUrl || proveedor.logoUrl ? { images: [{ url: proveedor.coverUrl || proveedor.logoUrl, width: 1200, height: 630 }] } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${proveedor.name} — DUBOIS`,
+      description: proveedor.description ?? '',
+      ...(proveedor.coverUrl || proveedor.logoUrl ? { images: [{ url: proveedor.coverUrl || proveedor.logoUrl }] } : {}),
     },
   }
 }
