@@ -1,9 +1,30 @@
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../api/auth/[...nextauth]/route'
 import prisma from '../../lib/prisma'
 import Link from 'next/link'
 import ImportarProveedoresPanel from './ImportarProveedoresPanel'
 
 export default async function ProveedoresPage() {
+  const session = await getServerSession(authOptions)
+  const where = {}
+
+  // Cliente: filtrar proveedores por los rubros asignados al usuario
+  if (session?.user?.role === 'cliente') {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { rubros: true },
+    })
+    const rubros = user?.rubros ?? []
+    if (rubros.length > 0) {
+      where.rubro = { in: rubros, mode: 'insensitive' }
+    } else {
+      // Sin rubros asignados → no ve proveedores
+      where.id = '__ninguno__'
+    }
+  }
+
   const proveedores = await prisma.supplier.findMany({
+    where,
     orderBy: { createdAt: 'desc' },
     include: { category: { select: { name: true } }, plan: { select: { name: true } } },
   })

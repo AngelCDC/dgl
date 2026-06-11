@@ -39,9 +39,19 @@ export async function GET(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
+  // ── Cliente: filtrar por los rubros asignados al usuario ──────────────────
+  let rubrosCliente = null
+  if (session.user?.role === 'cliente') {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { rubros: true },
+    })
+    rubrosCliente = user?.rubros ?? []
+  }
+
   const { searchParams } = new URL(req.url)
   const q            = searchParams.get('q')?.trim() ?? ''
-  const rubro        = searchParams.get('rubro')        ?? ''
+  const rubro        = rubrosCliente ? '' : (searchParams.get('rubro') ?? '')  // ignorar filtro manual si es cliente
   const proveedor    = searchParams.get('proveedor')    ?? ''
   const categoria    = searchParams.get('categoria')    ?? ''
   const subcategoria = searchParams.get('subcategoria') ?? ''
@@ -52,6 +62,15 @@ export async function GET(req) {
 
   const ctx = { q, rubro, proveedor, categoria, subcategoria }
   const where = buildWhere(ctx)
+
+  // Si es cliente, forzar filtro por sus rubros asignados
+  if (rubrosCliente !== null) {
+    if (rubrosCliente.length === 0) {
+      // Sin rubros asignados → no ve nada
+      return NextResponse.json({ total: 0, page: 1, pages: 0, productos: [], facets: facets ? { rubros: [], proveedores: [], categorias: [], subcategorias: [] } : undefined })
+    }
+    where.rubro = { in: rubrosCliente, mode: 'insensitive' }
+  }
 
   const queries = [
     prisma.productoCatalogo.count({ where }),
