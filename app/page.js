@@ -127,7 +127,7 @@ function ArticleCardLarge({ article }) {
               }}
             />
           ) : (
-            <span className="card-placeholder-text">DG</span>
+            <span className="card-placeholder-text">DGL</span>
           )}
         </div>
         <div className="card-body">
