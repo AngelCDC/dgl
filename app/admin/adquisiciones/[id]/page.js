@@ -269,7 +269,7 @@ export default function AdquisicionDetallePage({ params }) {
   const totalObligaciones = (data.obligaciones ?? []).length
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: 1200, fontFamily: 'inherit' }}>
+    <div style={{ padding: '24px 32px', width: '100%', fontFamily: 'inherit' }}>
 
       {/* ── TOP BAR ─────────────────────────────────────────────────────────── */}
       <div style={{ marginBottom: 28 }}>

@@ -117,7 +117,7 @@ export default async function SolicitudDetallePage({ params }) {
   const totalPasos       = s.proximosPasos.length;
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: 1200, fontFamily: 'inherit' }}>
+    <div style={{ padding: '24px 32px', width: '100%', fontFamily: 'inherit' }}>
 
       {/* ── TOP BAR ─────────────────────────────────────────────────────────── */}
       <div style={{ marginBottom: 28 }}>
