@@ -117,12 +117,12 @@ export default function EquipoPage() {
 
   async function loadRubros() {
     try {
-      const res = await fetch('/api/admin/catalogo?limit=1')
+      const res = await fetch('/api/admin/catalogo?limit=1&facets=1')
       const data = await res.json()
-      // Extraer rubros únicos de los facets o de los productos
+      // Extraer rubros únicos de los facets
       const rubrosSet = new Set()
-      if (data.facets?.rubro) {
-        data.facets.rubro.forEach(r => rubrosSet.add(r.value))
+      if (data.facets?.rubros) {
+        data.facets.rubros.forEach(f => { if (f.rubro) rubrosSet.add(f.rubro) })
       }
       setRubrosDisponibles([...rubrosSet].sort())
     } catch { /* no crítico */ }
@@ -142,6 +142,7 @@ export default function EquipoPage() {
     try {
       const payload = { ...form }
       if (payload.role !== 'cliente') payload.rubros = []
+      else payload.rubros = (payload.rubros || []).filter(Boolean)
 
       const res = await fetch('/api/admin/equipo', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -170,7 +171,7 @@ export default function EquipoPage() {
     if (!editForm.name || !editForm.email) return
     setSaving(true)
     try {
-      const body = { name: editForm.name, email: editForm.email, role: editForm.role, avatarUrl: editForm.avatarUrl, rubros: editForm.rubros || [] }
+      const body = { name: editForm.name, email: editForm.email, role: editForm.role, avatarUrl: editForm.avatarUrl, rubros: (editForm.rubros || []).filter(Boolean) }
       if (editForm.password) body.password = editForm.password
 
       const res = await fetch(`/api/admin/equipo/${editUser.id}`, {
@@ -279,24 +280,25 @@ export default function EquipoPage() {
                 <div style={{ marginTop: 14 }}>
                   <FieldWrap label="Rubros con acceso">
                     {rubrosDisponibles.length === 0 ? (
-                      <Inp value={form.rubros.join(', ')} onChange={v => set('rubros', v.split(',').map(s => s.trim()).filter(Boolean))}
-                        placeholder="Ej: Medicina, Tecnología (separados por coma)" />
+                      <div style={{ fontSize: 13, color: '#94a3b8' }}>Cargando rubros…</div>
                     ) : (
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                         {rubrosDisponibles.map(rubro => {
-                          const active = (form.rubros || []).includes(rubro)
+                          const active = (form.rubros || []).filter(Boolean).includes(rubro)
                           return (
                             <button key={rubro} type="button" onClick={() => {
-                              const next = active ? form.rubros.filter(r => r !== rubro) : [...(form.rubros || []), rubro]
+                              const cleaned = (form.rubros || []).filter(Boolean)
+                              const next = active ? cleaned.filter(r => r !== rubro) : [...cleaned, rubro]
                               set('rubros', next)
                             }} style={{
-                              padding: '5px 12px', fontSize: 12, fontWeight: 600,
+                              padding: '6px 14px', fontSize: 12, fontWeight: 600,
                               border: `1px solid ${active ? '#3b82f6' : '#e2e8f0'}`,
                               borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit',
                               background: active ? '#eff6ff' : '#fff',
                               color: active ? '#1d4ed8' : '#64748b',
                               transition: 'all .15s',
                             }}>
+                              {active && <span style={{ marginRight: 4 }}>✓</span>}
                               {rubro}
                             </button>
                           )
@@ -451,24 +453,25 @@ export default function EquipoPage() {
                   <div style={{ marginTop: 14 }}>
                     <FieldWrap label="Rubros con acceso">
                       {rubrosDisponibles.length === 0 ? (
-                        <Inp value={(editForm.rubros || []).join(', ')} onChange={v => setEdit('rubros', v.split(',').map(s => s.trim()).filter(Boolean))}
-                          placeholder="Ej: Medicina, Tecnología (separados por coma)" />
+                        <div style={{ fontSize: 13, color: '#94a3b8' }}>Cargando rubros…</div>
                       ) : (
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           {rubrosDisponibles.map(rubro => {
-                            const active = (editForm.rubros || []).includes(rubro)
+                            const active = (editForm.rubros || []).filter(Boolean).includes(rubro)
                             return (
                               <button key={rubro} type="button" onClick={() => {
-                                const next = active ? editForm.rubros.filter(r => r !== rubro) : [...(editForm.rubros || []), rubro]
+                                const cleaned = (editForm.rubros || []).filter(Boolean)
+                                const next = active ? cleaned.filter(r => r !== rubro) : [...cleaned, rubro]
                                 setEdit('rubros', next)
                               }} style={{
-                                padding: '5px 12px', fontSize: 12, fontWeight: 600,
+                                padding: '6px 14px', fontSize: 12, fontWeight: 600,
                                 border: `1px solid ${active ? '#3b82f6' : '#e2e8f0'}`,
                                 borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit',
                                 background: active ? '#eff6ff' : '#fff',
                                 color: active ? '#1d4ed8' : '#64748b',
                                 transition: 'all .15s',
                               }}>
+                                {active && <span style={{ marginRight: 4 }}>✓</span>}
                                 {rubro}
                               </button>
                             )
