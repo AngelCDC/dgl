@@ -12,8 +12,18 @@ export const authOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) return null
+
+        // Rate limiting anti fuerza bruta (10 intentos/min por IP)
+        if (req) {
+          const rl = checkRateLimit({ windowMs: 60_000, max: 10, id: getRateLimitKey(req, 'auth') })
+          if (!rl.ok) {
+            // Devolver null igual que credenciales inválidas — no revelamos
+            // si la cuenta existe o si el rate limit se activó
+            return null
+          }
+        }
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
@@ -58,21 +68,6 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 }
 
-const baseHandler = NextAuth(authOptions)
-
-// Wrapper con rate limiting anti fuerza bruta
-async function handler(req) {
-  // Solo aplicar rate limit al POST (login)
-  if (req.method === 'POST') {
-    const rl = checkRateLimit({ windowMs: 60_000, max: 10, id: getRateLimitKey(req, 'auth') })
-    if (!rl.ok) {
-      return new Response(JSON.stringify({ error: 'Demasiados intentos. Espera un minuto.' }), {
-        status: 429,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    }
-  }
-  return baseHandler(req)
-}
+const handler = NextAuth(authOptions)
 
 export { handler as GET, handler as POST }
