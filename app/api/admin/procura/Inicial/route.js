@@ -1,12 +1,16 @@
 import prisma from '../../../../lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../auth/[...nextauth]/route'
+import { buildAccessWhere } from '../../../../lib/access'
 
 export async function GET(req) {
   const session = await getServerSession(authOptions)
   if (!session) return Response.json({ error: 'No autorizado' }, { status: 401 })
 
+  const where = await buildAccessWhere(session)
+
   const solicitudes = await prisma.solicitudProcura.findMany({
+    where,
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,
@@ -31,10 +35,21 @@ export async function POST(req) {
   try {
     const data = await req.json()
 
+    // Validar campos requeridos
+    if (!data.empresaCliente || !data.objetivoReunion || !data.fecha || !data.elaboradoPor?.nombre) {
+      return Response.json({ error: 'Faltan campos requeridos: empresaCliente, objetivoReunion, fecha, elaboradoPor.nombre' }, { status: 400 })
+    }
+
+    const fechaStr = data.fecha?.dd && data.fecha?.mm && data.fecha?.aaaa
+      ? `${data.fecha.dd}/${data.fecha.mm}/${data.fecha.aaaa}`
+      : (data.fechaStr || '')
+
     const solicitud = await prisma.solicitudProcura.create({
       data: {
+        createdById: session.user.id,
+
         // 1. Reunión
-        fecha: `${data.fecha.dd}/${data.fecha.mm}/${data.fecha.aaaa}`,
+        fecha: fechaStr,
         empresaCliente: data.empresaCliente,
         nombreComercial: data.nombreComercial ?? null,
         ciudad: data.ciudad ?? null,
@@ -55,12 +70,12 @@ export async function POST(req) {
         proximosPasos: data.proximosPasos ?? [],
 
         // 8. Elaborado por
-        elaboradoPorNombre: data.elaboradoPor.nombre,
-        elaboradoPorCargo: data.elaboradoPor.cargo ?? null,
-        elaboradoPorFecha: data.elaboradoPor.fecha,
+        elaboradoPorNombre: data.elaboradoPor?.nombre || '',
+        elaboradoPorCargo: data.elaboradoPor?.cargo ?? null,
+        elaboradoPorFecha: data.elaboradoPor?.fecha || fechaStr,
 
         // Contactos
-        contactos: {
+        contactos: data.contactoPrincipal ? {
           create: [
             {
               esPrincipal: true,
@@ -77,14 +92,14 @@ export async function POST(req) {
               email: c.email || null,
             })),
           ],
-        },
+        } : undefined,
 
         // Productos
-        productos: {
-          create: (data.productosCliente ?? []).map((p, i) => ({
+        productos: (data.productosCliente ?? []).length > 0 ? {
+          create: data.productosCliente.map((p, i) => ({
             nombreProducto: p.nombreProducto,
             categoria: p.categoria ?? null,
-            descripcionGeneral: p.descripcionGeneral,
+            descripcionGeneral: p.descripcionGeneral || p.nombreProducto,
             caracteristicasPrincipales: p.caracteristicasPrincipales ?? [],
             presentaciones: p.presentaciones ?? [],
             materiales: p.materiales ?? [],
@@ -100,11 +115,11 @@ export async function POST(req) {
             observaciones: p.observaciones ?? null,
             sortOrder: i,
           })),
-        },
+        } : undefined,
 
         // Necesidades
-        necesidades: {
-          create: (data.necesidadesProcura ?? []).map((n, i) => ({
+        necesidades: (data.necesidadesProcura ?? []).length > 0 ? {
+          create: data.necesidadesProcura.map((n, i) => ({
             productoRelacionado: n.productoRelacionado,
             tipoNecesidad: n.tipoNecesidad,
             tipoNecesidadOtro: n.tipoNecesidadOtro ?? null,
@@ -116,7 +131,7 @@ export async function POST(req) {
             observaciones: n.observaciones ?? null,
             sortOrder: i,
           })),
-        },
+        } : undefined,
       },
     })
 

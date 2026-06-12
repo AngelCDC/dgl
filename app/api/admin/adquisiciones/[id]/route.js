@@ -49,13 +49,30 @@ export async function PATCH(req, { params }) {
     const body = await req.json()
     const { cotizantes, riesgos, ...campos } = body
 
+    // ── Whitelist de campos permitidos (previene mass assignment) ─────────
+    const ALLOWED_SCALAR = [
+      'fecha', 'tipoDocumento', 'tipoDocumentoOtro', 'solicitante', 'ccNit',
+      'telCel', 'ext', 'email', 'descripcionNecesidad', 'pertinencia',
+      'descripcionObjeto', 'especificaciones', 'requierePermisos', 'obligaciones',
+      'modalidad', 'justificacionModalidad', 'valorEstimado', 'formaPago',
+      'detallePago', 'criterioMenorPrecio', 'criterioOtro', 'contratistaNombre',
+      'contratistaCcNit', 'contratistaEmail', 'contratistaCiudad',
+      'contratistaTelefono', 'plazo', 'cronogramaChina', 'comiteEvaluador',
+      'elaboradoPorNombre', 'elaboradoPorCargo', 'elaboradoPorFecha',
+      'contratanteNombre', 'contratanteCargo', 'contratanteFecha',
+    ]
+    const safeData = {}
+    for (const key of ALLOWED_SCALAR) {
+      if (campos[key] !== undefined) safeData[key] = campos[key]
+    }
+
     const adquisicion = await prisma.$transaction(async (tx) => {
 
       // 1. Actualizar campos escalares
       const updated = await tx.solicitudAdquisicion.update({
         where: { id },
         data: {
-          ...campos,
+          ...safeData,
           updatedAt: new Date(),
         },
       })

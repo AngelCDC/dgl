@@ -8,16 +8,21 @@ export async function POST(req) {
 
   const data = await req.json()
 
+  // Validar campos requeridos
+  if (!data.title || !data.slug) {
+    return Response.json({ error: 'Título y slug son requeridos' }, { status: 400 })
+  }
+
   const article = await prisma.article.create({
     data: {
       title: data.title,
       slug: data.slug,
-      excerpt: data.excerpt,
-      content: data.content,
+      excerpt: data.excerpt || null,
+      content: data.content || null,
       coverUrl: data.coverUrl || null,
-      categoryId: data.categoryId,
-      authorId: data.authorId,
-      status: data.status,
+      categoryId: data.categoryId || null,
+      authorId: session.user.id,  // ← forzar el autor real, ignorar lo que envíe el cliente
+      status: data.status || 'draft',
       publishedAt: data.status === 'published' ? new Date() : null,
     },
   })

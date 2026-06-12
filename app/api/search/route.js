@@ -1,9 +1,17 @@
 import prisma from '../../lib/prisma'
+import { checkRateLimit, getRateLimitKey } from '../../lib/rate-limit'
+
 export async function GET(req) {
+  // Rate limit: 30 búsquedas por IP cada 60 segundos
+  const rl = checkRateLimit({ windowMs: 60_000, max: 30, id: getRateLimitKey(req, 'search') })
+  if (!rl.ok) {
+    return Response.json({ error: 'Demasiadas búsquedas. Intenta de nuevo en unos segundos.' }, { status: 429 })
+  }
+
   const { searchParams } = new URL(req.url)
   const q = searchParams.get('q')?.trim()
 
-  if (!q || q.length < 2) return Response.json({ articulos: [], proveedores: [] })
+  if (!q || q.length < 2 || q.length > 200) return Response.json({ articulos: [], proveedores: [] })
 
   const [articulos, proveedores] = await Promise.all([
     prisma.article.findMany({

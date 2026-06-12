@@ -4,6 +4,9 @@ import { authOptions } from '../../auth/[...nextauth]/route'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
+  const session = await getServerSession(authOptions)
+  if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
   try {
     const cats = await prisma.category.findMany({
       orderBy: { name: 'asc' },

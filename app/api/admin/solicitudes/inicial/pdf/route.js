@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { createElement } from 'react';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../../../auth/[...nextauth]/route';
 import SolicitudLevantamientoProcuraPDF from '../../../../../components/SolicitudLevantamientoProcuraPDF';
 import { solicitudProcuraSimpleSchema } from '../../../../../lib/schemas/solicitud-levantamiento-procura';
 
 export async function POST(request) {
+  const session = await getServerSession(authOptions)
+  if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
   try {
     const data = await request.json();
     const validatedData = solicitudProcuraSimpleSchema.parse(data);

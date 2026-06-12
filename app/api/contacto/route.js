@@ -1,12 +1,23 @@
 import prisma from '../../lib/prisma'
 import { NextResponse } from 'next/server'
+import { checkRateLimit, getRateLimitKey } from '../../lib/rate-limit'
 
 export async function POST(request) {
+  // Rate limit: 5 contactos por IP cada 60 segundos
+  const rl = checkRateLimit({ windowMs: 60_000, max: 5, id: getRateLimitKey(request, 'contacto') })
+  if (!rl.ok) {
+    return NextResponse.json({ error: 'Demasiadas solicitudes. Intenta de nuevo en unos segundos.' }, { status: 429 })
+  }
+
   try {
     const { name, email, company, message, type } = await request.json()
 
     if (!name || !email || !message) {
       return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 })
+    }
+
+    if (name.length > 200 || email.length > 254 || message.length > 2000 || (company && company.length > 200)) {
+      return NextResponse.json({ error: 'Campos demasiado largos' }, { status: 400 })
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

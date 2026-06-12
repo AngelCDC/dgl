@@ -2,6 +2,7 @@ import prisma from '../../../lib/prisma'
 import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
+import { checkRateLimit, getRateLimitKey } from '../../../lib/rate-limit'
 
 export const authOptions = {
   providers: [
@@ -57,5 +58,21 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 }
 
-const handler = NextAuth(authOptions)
+const baseHandler = NextAuth(authOptions)
+
+// Wrapper con rate limiting anti fuerza bruta
+async function handler(req) {
+  // Solo aplicar rate limit al POST (login)
+  if (req.method === 'POST') {
+    const rl = checkRateLimit({ windowMs: 60_000, max: 10, id: getRateLimitKey(req, 'auth') })
+    if (!rl.ok) {
+      return new Response(JSON.stringify({ error: 'Demasiados intentos. Espera un minuto.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+  }
+  return baseHandler(req)
+}
+
 export { handler as GET, handler as POST }

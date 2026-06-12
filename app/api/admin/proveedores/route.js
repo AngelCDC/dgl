@@ -37,6 +37,10 @@ export async function POST(req) {
 
   const data = await req.json();
 
+  if (!data.name || !data.slug || !data.country) {
+    return NextResponse.json({ error: 'Nombre, slug y país son requeridos' }, { status: 400 })
+  }
+
   const supplier = await prisma.supplier.create({
     data: {
       name: data.name,

@@ -1,97 +1,100 @@
 // lib/schemas/solicitud.js
 import { z } from 'zod';
 
+const str     = (max = 500) => z.string().max(max);
+const strReq  = (max = 500) => z.string().min(1, 'Requerido').max(max);
+const strOpt  = (max = 500) => z.string().max(max).optional();
+
 // Cada cotizante pertenece a un grupo de producto
 const cotizanteSchema = z.object({
-  productoNombre: z.string().min(1, 'Requerido'),
-  nombre:         z.string(),
-  valor:          z.string(),
-});
+  productoNombre: strReq(300),
+  nombre:         str(300),
+  valor:          str(100),
+}).strict();
 
 export const solicitudSchema = z.object({
   // 1. Información General
   fecha: z.object({
-    dd:   z.string().length(2),
-    mm:   z.string().length(2),
-    aaaa: z.string().length(4),
-  }),
+    dd:   strReq(2),
+    mm:   strReq(2),
+    aaaa: strReq(4),
+  }).strict(),
   tipoDocumento:      z.enum(['SC1', 'SCP', 'SDS', 'SDC', 'SCM', 'SDV', 'otro']).or(z.literal('')),
-  tipoDocumentoOtro:  z.string().optional(),
-  solicitante:        z.string().min(1, 'Requerido'),
-  ccNit:              z.string().min(1, 'Requerido'),
-  telCel:             z.string().min(1, 'Requerido'),
-  ext:                z.string().optional(),
-  email:              z.string().email('Email inválido'),
+  tipoDocumentoOtro:  strOpt(200),
+  solicitante:        strReq(200),
+  ccNit:              strReq(50),
+  telCel:             strReq(50),
+  ext:                strOpt(20),
+  email:              z.string().email('Email inválido').max(254),
 
   // 2. Justificación
-  descripcionNecesidad: z.string().min(1, 'Requerido'),
-  pertinencia:          z.string().min(1, 'Requerido'),
+  descripcionNecesidad: strReq(2000),
+  pertinencia:          strReq(2000),
 
   // 3. Objeto
-  descripcionObjeto:  z.string().min(1, 'Requerido'),
-  especificaciones:   z.string().min(1, 'Requerido'),
+  descripcionObjeto:  strReq(2000),
+  especificaciones:   strReq(2000),
   requierePermisos:   z.enum(['SI', 'NO']).optional(),
 
   // 4. Obligaciones
-  obligaciones: z.array(z.string()).min(1),
+  obligaciones: z.array(str(1000)).min(1).max(20),
 
   // 5. Modalidad
   modalidad:              z.enum(['directa', 'publica']),
-  justificacionModalidad: z.string().optional(),
+  justificacionModalidad: strReq(2000),
 
   // 6. Estudio de mercado — array de cotizantes con productoNombre
-  // Cada grupo de producto tiene sus propios cotizantes
-  cotizantes: z.array(cotizanteSchema).min(1, 'Debe agregar al menos un cotizante'),
+  cotizantes: z.array(cotizanteSchema).min(1).max(200),
 
   // 7. Valor estimado
-  valorEstimado: z.string().min(1, 'Requerido'),
+  valorEstimado: strReq(200),
 
   // 8. Forma de pago
   formaPago:   z.enum(['unico', 'parciales']),
-  detallePago: z.string().optional(),
+  detallePago: strOpt(2000),
 
   // 9. Criterios selección
   criterioMenorPrecio: z.boolean(),
-  criterioOtro:        z.string().optional(),
+  criterioOtro:        strOpt(2000),
 
   // 10. Contratista
-  contratistaNombre:   z.string().optional(),
-  contratistaCcNit:    z.string().optional(),
-  contratistaEmail:    z.string().optional(),
-  contratistaCiudad:   z.string().optional(),
-  contratistaTelefono: z.string().optional(),
+  contratistaNombre:   strOpt(200),
+  contratistaCcNit:    strOpt(50),
+  contratistaEmail:    strOpt(254),
+  contratistaCiudad:   strOpt(200),
+  contratistaTelefono: strOpt(50),
 
   // 11. Riesgos
   riesgos: z.array(z.object({
-    descripcion: z.string(),
-    mitigacion:  z.string(),
+    descripcion: str(1000),
+    mitigacion:  str(1000),
     asignacion:  z.enum(['Contratante', 'Contratista']),
-  })).max(4),
+  }).strict()).max(4),
 
   // 12. Garantías
-  garantias: z.array(z.string()).optional(),
+  garantias: z.array(str(500)).max(10).optional(),
 
   // 13. Plazo
-  plazo: z.string().min(1, 'Requerido'),
+  plazo: strReq(200),
 
   // 14. Comité evaluador
-  comiteEvaluador: z.array(z.string()).max(3).optional(),
+  comiteEvaluador: z.array(str(200)).max(3).optional(),
 
   // 16. Documentos soporte
-  documentosSoporte: z.array(z.string()).optional(),
+  documentosSoporte: z.array(str(500)).max(20).optional(),
 
   // Firmas
   elaboradoPor: z.object({
-    nombre: z.string(),
-    cargo:  z.string(),
-    fecha:  z.string(),
-  }),
+    nombre: str(200),
+    cargo:  str(200),
+    fecha:  str(50),
+  }).strict(),
   responsableContratacion: z.object({
-    nombre: z.string(),
-    cargo:  z.string(),
-    fecha:  z.string(),
-  }),
-});
+    nombre: str(200),
+    cargo:  str(200),
+    fecha:  str(50),
+  }).strict(),
+}).strict();
 
 /**
  * @typedef {import('zod').infer<typeof solicitudSchema>} SolicitudFormData

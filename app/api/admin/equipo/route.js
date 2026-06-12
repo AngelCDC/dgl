@@ -5,6 +5,9 @@ import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 
 export async function GET() {
+  const session = await getServerSession(authOptions)
+  if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
   try {
     const users = await prisma.user.findMany({
       orderBy: { createdAt: 'desc' },

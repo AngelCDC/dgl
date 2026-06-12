@@ -9,6 +9,10 @@ export async function PUT(req, { params }) {
   const { id } = await params
   const data = await req.json()
 
+  if (!data.name || !data.slug || !data.country) {
+    return Response.json({ error: 'Nombre, slug y país son requeridos' }, { status: 400 })
+  }
+
   const supplier = await prisma.supplier.update({
     where: { id },
     data: {
