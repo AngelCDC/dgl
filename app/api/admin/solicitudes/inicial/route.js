@@ -184,6 +184,7 @@ export async function POST(req) {
     // ── 3. Crear SolicitudAdquisicion vinculada ──────────────────────────────
     const adquisicion = await prisma.solicitudAdquisicion.create({
       data: {
+        createdById:            session.user.id,
         solicitudProcuraId:     solicitud.id,
         status:                 'borrador',
         fecha:                  fechaStr,
