@@ -43,13 +43,31 @@ export function checkRateLimit({ windowMs = 60_000, max = 30, id = 'global' } = 
 }
 
 /**
+ * Obtiene el valor de un header, soportando tanto Headers nativo como objeto plano.
+ * @param {Headers|Object} headers
+ * @param {string} name
+ * @returns {string|undefined}
+ */
+function getHeader(headers, name) {
+  if (!headers) return undefined
+  // Native Headers object (Web API Request)
+  if (typeof headers.get === 'function') return headers.get(name)
+  // Plain object (NextAuth internal, or Express-style)
+  if (typeof headers === 'object') return headers[name] ?? headers[name.toLowerCase()]
+  return undefined
+}
+
+/**
  * Obtiene una clave de rate limit basada en IP + ruta.
- * @param {Request} req
+ * Acepta tanto un Request nativo como el objeto { headers } que pasa NextAuth a authorize().
+ * @param {Request|{headers: Headers|Object}} req
  * @param {string}  route - ej: 'contacto', 'search', 'auth'
  * @returns {string}
  */
 export function getRateLimitKey(req, route = 'global') {
-  const forwarded = req.headers.get('x-forwarded-for')
-  const ip = forwarded?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '127.0.0.1'
+  const headers = req?.headers
+  const forwarded = getHeader(headers, 'x-forwarded-for')
+  const realIp = getHeader(headers, 'x-real-ip')
+  const ip = forwarded?.split(',')[0]?.trim() || realIp || '127.0.0.1'
   return `rl:${route}:${ip}`
 }

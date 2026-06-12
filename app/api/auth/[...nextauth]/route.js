@@ -16,29 +16,34 @@ export const authOptions = {
         if (!credentials?.email || !credentials?.password) return null
 
         // Rate limiting anti fuerza bruta (10 intentos/min por IP)
-        if (req) {
-          const rl = checkRateLimit({ windowMs: 60_000, max: 10, id: getRateLimitKey(req, 'auth') })
-          if (!rl.ok) {
-            // Devolver null igual que credenciales inválidas — no revelamos
-            // si la cuenta existe o si el rate limit se activó
-            return null
+        // En App Router, NextAuth pasa { query, body, headers, method } como 2º arg
+        // donde headers es un objeto plano, no un Headers nativo
+        try {
+          if (req?.headers) {
+            const rl = checkRateLimit({ windowMs: 60_000, max: 10, id: getRateLimitKey(req, 'auth') })
+            if (!rl.ok) return null
           }
-        }
+        } catch { /* si falla el rate limiter, continuamos sin él */ }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        })
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          })
 
-        if (!user) return null
+          if (!user) return null
 
-        const valid = await bcrypt.compare(credentials.password, user.password)
-        if (!valid) return null
+          const valid = await bcrypt.compare(credentials.password, user.password)
+          if (!valid) return null
 
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          }
+        } catch (err) {
+          console.error('Error en authorize:', err)
+          return null
         }
       },
     }),
