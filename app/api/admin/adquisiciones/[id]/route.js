@@ -2,6 +2,16 @@ import prisma from '../../../../lib/prisma'
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../auth/[...nextauth]/route'
+import { buildAccessWhere } from '../../../../lib/access'
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+async function canWrite(session) {
+  if (!session?.user) return false
+  if (session.user.role === 'admin') return true
+  if (session.user.role === 'trabajador') return true
+  // cliente → no puede escribir
+  return false
+}
 
 // ── GET — cargar adquisición completa ─────────────────────────────────────────
 export async function GET(req, { params }) {
@@ -10,8 +20,11 @@ export async function GET(req, { params }) {
 
   const { id } = await params
 
-  const adquisicion = await prisma.solicitudAdquisicion.findUnique({
-    where: { id },
+  // Construir filtro de acceso
+  const accessWhere = await buildAccessWhere(session, { id })
+
+  const adquisicion = await prisma.solicitudAdquisicion.findFirst({
+    where: accessWhere,
     include: {
       cotizantes:       { orderBy: { sortOrder: 'asc' } },
       riesgos:          { orderBy: { sortOrder: 'asc' } },
@@ -28,6 +41,7 @@ export async function GET(req, { params }) {
 export async function PATCH(req, { params }) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (!(await canWrite(session))) return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
 
   const { id } = await params
 
@@ -93,6 +107,7 @@ export async function PATCH(req, { params }) {
 export async function DELETE(req, { params }) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (!(await canWrite(session))) return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
 
   const { id } = await params
 
@@ -109,6 +124,7 @@ export async function DELETE(req, { params }) {
 export async function POST(req, { params }) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (!(await canWrite(session))) return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
 
   const { id } = await params
 

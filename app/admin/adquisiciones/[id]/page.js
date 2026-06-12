@@ -162,10 +162,11 @@ function SectionCard({ n, title, editing, onEdit, onSave, onCancel, saving, fina
 // ─── PÁGINA ───────────────────────────────────────────────────────────────────
 export default function AdquisicionDetallePage({ params }) {
   const router = useRouter()
-  const [id,       setId]       = useState(null)
-  const [data,     setData]     = useState(null)
-  const [loading,  setLoading]  = useState(true)
-  const [emitting, setEmitting] = useState(false)
+  const [id,        setId]        = useState(null)
+  const [data,      setData]      = useState(null)
+  const [loading,   setLoading]   = useState(true)
+  const [emitting,  setEmitting]  = useState(false)
+  const [userRole,  setUserRole]  = useState(null)
 
   const [editing, setEditing] = useState({})
   const [saving,  setSaving]  = useState({})
@@ -182,6 +183,14 @@ export default function AdquisicionDetallePage({ params }) {
       .then(d => { setData(d); setLoading(false) })
   }, [id])
 
+  // Obtener rol del usuario actual
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(r => r.json())
+      .then(s => setUserRole(s?.user?.role ?? null))
+      .catch(() => setUserRole(null))
+  }, [])
+
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, color: '#94a3b8', fontSize: 14 }}>
       Cargando estudio de mercado…
@@ -191,7 +200,10 @@ export default function AdquisicionDetallePage({ params }) {
     <div style={{ padding: 32, color: '#94a3b8' }}>No encontrado.</div>
   )
 
+  const isCliente = userRole === 'cliente'
   const finalizado = data.status === 'finalizado'
+  // Cliente nunca puede editar: todas las secciones en solo lectura
+  const readOnly = finalizado || isCliente
 
   const startEdit  = (s, draft) => { setDrafts(p => ({ ...p, [s]: draft })); setEditing(p => ({ ...p, [s]: true })) }
   const cancelEdit = (s) => { setEditing(p => ({ ...p, [s]: false })); setDrafts(p => ({ ...p, [s]: undefined })) }
@@ -299,7 +311,7 @@ export default function AdquisicionDetallePage({ params }) {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
               PDF
             </a>
-            {finalizado ? (
+            {!isCliente && (finalizado ? (
               <button onClick={handleReabrir} disabled={emitting} style={{
                 fontSize: 13, padding: '8px 18px', border: '1px solid #e2e8f0', borderRadius: 9,
                 background: '#fff', color: '#64748b', cursor: 'pointer', fontWeight: 500,
@@ -313,7 +325,7 @@ export default function AdquisicionDetallePage({ params }) {
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                 {emitting ? 'Emitiendo…' : 'Emitir documento'}
               </button>
-            )}
+            ))}
           </div>
         </div>
       </div>
@@ -337,7 +349,7 @@ export default function AdquisicionDetallePage({ params }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           {/* 1. INFORMACIÓN GENERAL */}
-          <SectionCard n="1" title="Información General" finalizado={finalizado}
+          <SectionCard n="1" title="Información General" finalizado={readOnly}
             editing={editing.general}
             onEdit={() => startEdit('general', { fecha: data.fecha, solicitante: data.solicitante, telCel: data.telCel, ext: data.ext, email: data.email })}
             onSave={() => saveSection('general', d.general)}
@@ -369,7 +381,7 @@ export default function AdquisicionDetallePage({ params }) {
           </SectionCard>
 
           {/* 2. JUSTIFICACIÓN */}
-          <SectionCard n="2" title="Justificación" finalizado={finalizado}
+          <SectionCard n="2" title="Justificación" finalizado={readOnly}
             editing={editing.justificacion}
             onEdit={() => startEdit('justificacion', { descripcionNecesidad: [data.descripcionNecesidad, data.pertinencia].filter(Boolean).join('\n\n') })}
             onSave={() => saveSection('justificacion', { descripcionNecesidad: d.justificacion?.descripcionNecesidad, pertinencia: '' })}
@@ -388,7 +400,7 @@ export default function AdquisicionDetallePage({ params }) {
           </SectionCard>
 
           {/* 3. OBJETO A CONTRATAR */}
-          <SectionCard n="3" title="Objeto a Contratar" finalizado={finalizado}
+          <SectionCard n="3" title="Objeto a Contratar" finalizado={readOnly}
             editing={editing.objeto}
             onEdit={() => startEdit('objeto', { descripcionObjeto: data.descripcionObjeto, requierePermisos: data.requierePermisos })}
             onSave={() => saveSection('objeto', d.objeto)}
@@ -440,7 +452,7 @@ export default function AdquisicionDetallePage({ params }) {
           </SectionCard>
 
           {/* 4. OBLIGACIONES */}
-          <SectionCard n="4" title="Obligaciones del Contratista" finalizado={finalizado}
+          <SectionCard n="4" title="Obligaciones del Contratista" finalizado={readOnly}
             editing={editing.obligaciones}
             onEdit={() => startEdit('obligaciones', { obligaciones: data.obligaciones?.length ? [...data.obligaciones] : [''] })}
             onSave={() => saveSection('obligaciones', { obligaciones: d.obligaciones?.obligaciones.filter(o => o.trim()) })}
@@ -478,7 +490,7 @@ export default function AdquisicionDetallePage({ params }) {
           </SectionCard>
 
           {/* 5. PLAZO + CRONOGRAMA CHINA */}
-          <SectionCard n="5" title="Plazo de Ejecución" finalizado={finalizado}
+          <SectionCard n="5" title="Plazo de Ejecución" finalizado={readOnly}
             editing={editing.plazo}
             onEdit={() => startEdit('plazo', {
               plazo: data.plazo || '',
@@ -589,7 +601,7 @@ export default function AdquisicionDetallePage({ params }) {
           </SectionCard>
 
           {/* 6. ESTUDIO DE MERCADO */}
-          <SectionCard n="6" title="Estudio de Mercado" finalizado={finalizado} accent="#0a1628"
+          <SectionCard n="6" title="Estudio de Mercado" finalizado={readOnly} accent="#0a1628"
             editing={editing.mercado}
             onEdit={() => {
               const gs = grupos.length
@@ -716,7 +728,7 @@ export default function AdquisicionDetallePage({ params }) {
           </SectionCard>
 
           {/* 7. RIESGOS */}
-          <SectionCard n="7" title="Análisis de Riesgos" finalizado={finalizado} accent="#d97706"
+          <SectionCard n="7" title="Análisis de Riesgos" finalizado={readOnly} accent="#d97706"
             editing={editing.riesgos}
             onEdit={() => startEdit('riesgos', {
               riesgos: data.riesgos?.length
@@ -788,7 +800,7 @@ export default function AdquisicionDetallePage({ params }) {
           </SectionCard>
 
           {/* 8. FIRMAS */}
-          <SectionCard n="8" title="Firmas y Aprobaciones" finalizado={finalizado}
+          <SectionCard n="8" title="Firmas y Aprobaciones" finalizado={readOnly}
             editing={editing.firmas}
             onEdit={() => startEdit('firmas', { elaboradoPorFecha: data.elaboradoPorFecha, contratanteNombre: data.contratanteNombre, contratanteCargo: data.contratanteCargo, contratanteFecha: data.contratanteFecha })}
             onSave={() => saveSection('firmas', { ...d.firmas, elaboradoPorNombre: 'Angel Dubois', elaboradoPorCargo: 'FOUNDER - CEO' })}
@@ -863,7 +875,7 @@ export default function AdquisicionDetallePage({ params }) {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                   Descargar PDF
                 </a>
-                {finalizado ? (
+                {!isCliente && (finalizado ? (
                   <button onClick={handleReabrir} disabled={emitting} style={{
                     padding: '9px', border: '1px solid #e2e8f0', borderRadius: 9,
                     background: '#fff', color: '#64748b', cursor: 'pointer', fontSize: 13, fontWeight: 500,
@@ -877,7 +889,7 @@ export default function AdquisicionDetallePage({ params }) {
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                     {emitting ? 'Emitiendo…' : 'Emitir documento'}
                   </button>
-                )}
+                ))}
               </div>
             </div>
           </div>

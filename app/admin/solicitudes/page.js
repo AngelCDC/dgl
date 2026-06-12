@@ -56,16 +56,20 @@ export default async function SolicitudesPage() {
               <Link href={`/admin/solicitudes/${s.id}`} style={{ fontSize: '13px', color: '#555', padding: '6px 12px', border: '1px solid #eee', borderRadius: '6px' }}>
                 Ver
               </Link>
-              <Link href={`/admin/solicitudes/${s.id}/editar`} style={{ fontSize: '13px', color: '#555', padding: '6px 12px', border: '1px solid #eee', borderRadius: '6px' }}>
-                Editar
-              </Link>
+              {session?.user?.role !== 'cliente' && (
+                <Link href={`/admin/solicitudes/${s.id}/editar`} style={{ fontSize: '13px', color: '#555', padding: '6px 12px', border: '1px solid #eee', borderRadius: '6px' }}>
+                  Editar
+                </Link>
+              )}
               <a href={`/api/admin/solicitudes/inicial/${s.id}/pdf`} target="_blank" style={{ fontSize: '13px', color: '#2563eb', padding: '6px 12px', border: '1px solid #2563eb', borderRadius: '6px' }}>
                 PDF
               </a>
-              <DeleteButton
-                apiPath={`/api/admin/solicitudes/${s.id}`}
-                confirmMsg={`¿Eliminar la solicitud de "${s.empresaCliente}"? Se eliminará también el estudio de mercado vinculado. Esta acción no se puede deshacer.`}
-              />
+              {session?.user?.role !== 'cliente' && (
+                <DeleteButton
+                  apiPath={`/api/admin/solicitudes/${s.id}`}
+                  confirmMsg={`¿Eliminar la solicitud de "${s.empresaCliente}"? Se eliminará también el estudio de mercado vinculado. Esta acción no se puede deshacer.`}
+                />
+              )}
             </div>
           </div>
         ))}

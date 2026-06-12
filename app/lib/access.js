@@ -6,7 +6,7 @@ import prisma from './prisma'
  * Reglas:
  *  - admin       → ve TODO (no filter)
  *  - trabajador  → ve lo creado por trabajadores y clientes (NO lo del admin)
- *  - cliente     → igual que trabajador + su filtro de rubros
+ *  - cliente     → ve SOLO lo que él mismo creó (backoffice personal)
  *
  * @param {object} session - session de next-auth (con user.id y user.role)
  * @param {object} extra   - filtros adicionales (ej: { rubro: { in: [...] } })
@@ -20,8 +20,12 @@ export async function buildAccessWhere(session, extra = {}) {
   // Admin ve todo
   if (role === 'admin') return { ...extra }
 
-  // Trabajador y cliente: excluir lo creado por admins
-  // Buscamos todos los IDs de usuarios admin
+  // Cliente: solo ve lo que él creó (backoffice personal)
+  if (role === 'cliente') {
+    return { createdById: session.user.id, ...extra }
+  }
+
+  // Trabajador: excluir lo creado por admins
   const adminIds = await prisma.user.findMany({
     where: { role: 'admin' },
     select: { id: true },
