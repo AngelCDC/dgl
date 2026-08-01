@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Image,
 } from "@react-pdf/renderer";
+import path from "path";
 
 const C = {
   navy: "#0a1628",
@@ -43,7 +44,7 @@ function metricColor(value) {
   return C.green;
 }
 
- const Image1 = process.cwd() + "public/LogoDubois.png";
+const Image1 = path.resolve(process.cwd(), "public", "LogoDubois.png");
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
