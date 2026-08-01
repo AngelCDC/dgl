@@ -43,6 +43,8 @@ function metricColor(value) {
   return C.green;
 }
 
+import Image1 from "";
+
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   page: {
@@ -316,7 +318,7 @@ export default function ReporteVerificacionPDF({ data }) {
         {/* ── Header ──────────────────────────────────────────────────── */}
         <View style={styles.header} fixed>
           <Image
-            src={require("../../public/LogoDubois.png")}
+            src={require(Image1)}
             style={styles.logoImg}
           />
           <View style={{ flexDirection: "column" }}>
