@@ -87,19 +87,19 @@ const styles = StyleSheet.create({
   },
   monogramText: {
     color: C.white,
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: "Helvetica-Bold",
     letterSpacing: 1,
   },
   headerBrand: {
     color: C.white,
-    fontSize: 15,
+    fontSize: 13,
     fontFamily: "Helvetica-Bold",
     letterSpacing: 1.5,
   },
   headerSlogan: {
     color: "#7a90b0",
-    fontSize: 8.5,
+    fontSize: 6.5,
     fontFamily: "Helvetica",
     letterSpacing: 2,
     marginTop: 2,
@@ -124,9 +124,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  footerText: { fontSize: 8.5, color: C.steel, fontFamily: "Helvetica" },
+  footerText: { fontSize: 6.5, color: C.steel, fontFamily: "Helvetica" },
   footerBrand: {
-    fontSize: 8.5,
+    fontSize: 6.5,
     color: C.navy,
     fontFamily: "Helvetica-Bold",
     letterSpacing: 0.5,
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   },
   docSubtitle: {
     color: C.steel,
-    fontSize: 10,
+    fontSize: 8,
     fontFamily: "Helvetica",
     marginBottom: 6,
   },
@@ -164,18 +164,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   recordTitle: {
-    fontSize: 15,
+    fontSize: 13,
     fontFamily: "Helvetica-Bold",
     color: C.navy,
     marginBottom: 4,
   },
   recordCode: {
-    fontSize: 10,
+    fontSize: 8,
     fontFamily: "Helvetica",
     color: C.steel,
     marginBottom: 2,
   },
-  recordMeta: { fontSize: 10, fontFamily: "Helvetica", color: C.steel },
+  recordMeta: { fontSize: 8, fontFamily: "Helvetica", color: C.steel },
 
   // ── Section ──────────────────────────────────────────────────────────────
   sectionTitleBar: {
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   },
   sectionTitleText: {
     color: C.white,
-    fontSize: 10,
+    fontSize: 8,
     fontFamily: "Helvetica-Bold",
     textTransform: "uppercase",
     letterSpacing: 0.8,
@@ -197,14 +197,14 @@ const styles = StyleSheet.create({
   fieldRow: { flexDirection: "row", marginBottom: 4, paddingHorizontal: 2 },
   fieldLabel: {
     width: 130,
-    fontSize: 9.5,
+    fontSize: 7.5,
     fontFamily: "Helvetica-Bold",
     color: C.steel,
     flexShrink: 0,
   },
   fieldValue: {
     flex: 1,
-    fontSize: 10,
+    fontSize: 8,
     fontFamily: "Helvetica",
     color: C.carbon,
   },
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   },
   tableHeaderCell: {
     color: C.white,
-    fontSize: 9,
+    fontSize: 7,
     fontFamily: "Helvetica-Bold",
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     backgroundColor: C.bgSoft,
   },
-  tableCell: { fontSize: 9.5, fontFamily: "Helvetica", color: C.carbon },
+  tableCell: { fontSize: 7.5, fontFamily: "Helvetica", color: C.carbon },
 
   // ── Chips ────────────────────────────────────────────────────────────────
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 3, marginTop: 4 },
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     border: "0.5pt solid #dce3ed",
     paddingVertical: 2,
     paddingHorizontal: 6,
-    fontSize: 9,
+    fontSize: 7,
     fontFamily: "Helvetica",
     color: C.steel,
   },
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     padding: 8,
     marginBottom: 6,
   },
-  cleanBannerText: { fontSize: 10, fontFamily: "Helvetica", color: "#065f46" },
+  cleanBannerText: { fontSize: 8, fontFamily: "Helvetica", color: "#065f46" },
 
   // ── Bullet lists ─────────────────────────────────────────────────────────
   bulletItem: {
@@ -274,14 +274,14 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   bulletDot: {
-    fontSize: 10,
+    fontSize: 8,
     fontFamily: "Helvetica-Bold",
     marginRight: 6,
     width: 10,
     flexShrink: 0,
   },
   bulletText: {
-    fontSize: 10,
+    fontSize: 8,
     fontFamily: "Helvetica",
     color: C.carbon,
     flex: 1,
@@ -295,14 +295,14 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   quoteText: {
-    fontSize: 10,
+    fontSize: 8,
     fontFamily: "Helvetica",
     color: "#d1d5db",
     lineHeight: 1.5,
   },
 
   // ── Score badge ──────────────────────────────────────────────────────────
-  scoreLarge: { fontSize: 24, fontFamily: "Helvetica-Bold" },
+  scoreLarge: { fontSize: 22, fontFamily: "Helvetica-Bold" },
 });
 
 // ─── Component ─────────────────────────────────────────────────────────────────
@@ -392,7 +392,7 @@ export default function ReporteVerificacionPDF({ data }) {
               <>
                 <Text
                   style={{
-                    fontSize: 9.5,
+                    fontSize: 7.5,
                     fontFamily: "Helvetica-Bold",
                     color: C.steel,
                     marginTop: 6,
@@ -412,7 +412,7 @@ export default function ReporteVerificacionPDF({ data }) {
                     </View>
                   ))}
                   {(bl.ambitoNegocio || []).length > 30 && (
-                    <Text style={{ fontSize: 9, color: C.steel }}>
+                    <Text style={{ fontSize: 7, color: C.steel }}>
                       +{bl.ambitoNegocio.length - 30} más
                     </Text>
                   )}
@@ -595,7 +595,7 @@ export default function ReporteVerificacionPDF({ data }) {
                 </Text>
               </View>
             ) : (
-              <Text style={{ fontSize: 9.5, color: C.red }}>
+              <Text style={{ fontSize: 7.5, color: C.red }}>
                 ⚠ Se encontraron {n.sanctions.total} sanciones administrativas.
               </Text>
             )}
@@ -620,7 +620,7 @@ export default function ReporteVerificacionPDF({ data }) {
                 </Text>
               </View>
             ) : (
-              <Text style={{ fontSize: 9.5, color: C.red }}>
+              <Text style={{ fontSize: 7.5, color: C.red }}>
                 ⚠ Se encontraron {n.exceptions.total} excepciones operativas.
               </Text>
             )}
@@ -645,7 +645,7 @@ export default function ReporteVerificacionPDF({ data }) {
                 </Text>
               </View>
             ) : (
-              <Text style={{ fontSize: 9.5, color: C.red }}>
+              <Text style={{ fontSize: 7.5, color: C.red }}>
                 ⚠ Se encontraron {n.blacklist.total} registros en lista negra.
               </Text>
             )}
@@ -658,7 +658,7 @@ export default function ReporteVerificacionPDF({ data }) {
             <>
               <Text
                 style={{
-                  fontSize: 10,
+                  fontSize: 8,
                   fontFamily: "Helvetica-Bold",
                   color: C.green,
                   marginBottom: 4,
@@ -679,7 +679,7 @@ export default function ReporteVerificacionPDF({ data }) {
             <>
               <Text
                 style={{
-                  fontSize: 10,
+                  fontSize: 8,
                   fontFamily: "Helvetica-Bold",
                   color: C.steel,
                   marginBottom: 4,
@@ -701,7 +701,7 @@ export default function ReporteVerificacionPDF({ data }) {
             <>
               <Text
                 style={{
-                  fontSize: 10,
+                  fontSize: 8,
                   fontFamily: "Helvetica-Bold",
                   color: C.red,
                   marginBottom: 4,
