@@ -318,7 +318,7 @@ export default function ReporteVerificacionPDF({ data }) {
         {/* ── Header ──────────────────────────────────────────────────── */}
         <View style={styles.header} fixed>
           <Image
-            src={require(Image1)}
+            src={Image1}
             style={styles.logoImg}
           />
           <View style={{ flexDirection: "column" }}>
