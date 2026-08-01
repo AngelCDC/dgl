@@ -15,6 +15,7 @@ const PERMISOS = {
     clientes:      'write',
     articulos:     'write',
     mensajes:      'write',
+    reportes:      'write',
     sistema:       'write',
     perfil:        'write',
   },
@@ -26,6 +27,7 @@ const PERMISOS = {
     clientes:      'write',
     articulos:     'read',
     mensajes:      'write',
+    reportes:      null,       // sin acceso
     sistema:       null,       // sin acceso
     perfil:        'write',
   },
@@ -37,6 +39,7 @@ const PERMISOS = {
     clientes:      null,       // sin acceso
     articulos:     null,       // sin acceso
     mensajes:      'write',
+    reportes:      null,       // sin acceso
     sistema:       null,       // sin acceso
     perfil:        'write',
   },
@@ -51,6 +54,7 @@ const RUTA_A_MODULO = [
   { modulo: 'clientes',      pattern: /^\/admin\/clientes/ },
   { modulo: 'articulos',     pattern: /^\/admin\/(articulos|categorias)/ },
   { modulo: 'mensajes',      pattern: /^\/admin\/contactos/ },
+  { modulo: 'reportes',      pattern: /^\/admin\/reportes/ },
   { modulo: 'sistema',       pattern: /^\/admin\/(equipo|planes|configuracion|roles)/ },
   { modulo: 'perfil',        pattern: /^\/admin\/equipo\/perfil/ },
 ]
@@ -172,6 +176,10 @@ export function getNavForRole(role) {
     nav.push({
       title: 'Clientes',
       items: [links.clientes],
+    })
+    nav.push({
+      title: 'Verificación',
+      items: [{ href: '/admin/reportes', label: 'Informes de Verificación', icon: 'reportes' }],
     })
     nav.push({
       title: 'Sistema',

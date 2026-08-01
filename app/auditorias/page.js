@@ -2,6 +2,10 @@ import Link from 'next/link'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import Sidebar from '../components/Sidebar'
+import prisma from '../lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../api/auth/[...nextauth]/route'
+import { scoreColor, scoreLabel } from '../lib/reportes/verificacion'
 
 export const metadata = {
   title: 'Auditorías de Proveedores — DUBOIS Global Trade Intelligence',
@@ -63,7 +67,22 @@ const PASOS = [
   { num: '04', titulo: 'Informe', desc: 'Recibes un reporte ejecutivo completo con hallazgos, puntuación de riesgo y recomendaciones.' },
 ]
 
-export default function AuditoriasPage() {
+export default async function AuditoriasPage() {
+  // Detectar sesión para mostrar informes de verificación
+  const session = await getServerSession(authOptions)
+
+  let reportes = []
+  if (session) {
+    try {
+      reportes = await prisma.reporteVerificacion.findMany({
+        where: { visible: true },
+        orderBy: { createdAt: 'desc' },
+        take: 3,
+        select: { id: true, nombreEmpresa: true, nombreEmpresaZh: true, estadoEmpresa: true, puntajeTotal: true, createdAt: true },
+      })
+    } catch { /* mantener compatible con build sin migración */ }
+  }
+
   return (
     <>
       <Navbar />
@@ -157,6 +176,119 @@ export default function AuditoriasPage() {
                 ))}
               </div>
             </div>
+
+            {/* Informes de verificación recientes (solo usuarios autenticados) */}
+            {session ? (
+              reportes.length > 0 ? (
+                <div className="section-block">
+                  <div className="section-title-row">
+                    <span className="section-title-text">Informes de Verificación Recientes</span>
+                    <Link href="/admin/reportes" className="section-title-link">Gestionar informes →</Link>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                    {reportes.map(r => (
+                      <Link key={r.id} href={`/auditorias/reporte/${r.id}`} style={{ textDecoration: 'none' }}>
+                        <div style={{
+                          background: '#fff', border: '1px solid var(--border)',
+                          borderLeft: '4px solid var(--accent)', padding: '20px',
+                          transition: 'transform 0.15s, box-shadow 0.15s',
+                          height: '100%',
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                            <div>
+                              <div style={{ fontFamily: 'var(--font-dm)', fontWeight: '700', fontSize: '15px', color: 'var(--navy)', marginBottom: '4px' }}>
+                                {r.nombreEmpresa}
+                              </div>
+                              {r.nombreEmpresaZh && (
+                                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--border)' }}>
+                                  {r.nombreEmpresaZh}
+                                </div>
+                              )}
+                            </div>
+                            <div style={{ textAlign: 'center', flexShrink: 0, marginLeft: '16px' }}>
+                              <div style={{ fontFamily: 'var(--font-dm)', fontWeight: '800', fontSize: '24px', color: scoreColor(r.puntajeTotal), letterSpacing: '-0.02em', lineHeight: '1' }}>
+                                {r.puntajeTotal ?? '—'}
+                              </div>
+                              <div style={{ fontFamily: 'var(--font-dm)', fontSize: '9px', fontWeight: '600', color: 'var(--steel)', letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: '2px' }}>
+                                {scoreLabel(r.puntajeTotal)}
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{
+                              display: 'inline-block', padding: '2px 8px',
+                              background: (r.estadoEmpresa || '').toLowerCase().includes('existente') ? '#dcfce7' : '#fef3c7',
+                              color: (r.estadoEmpresa || '').toLowerCase().includes('existente') ? '#15803d' : '#92400e',
+                              fontFamily: 'var(--font-dm)', fontSize: '10px', fontWeight: '500',
+                            }}>
+                              {r.estadoEmpresa || 'Sin estado'}
+                            </span>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--border)' }}>
+                              {new Date(r.createdAt).toLocaleDateString('es-VE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="section-block">
+                  <div className="section-title-row">
+                    <span className="section-title-text">Informes de Verificación</span>
+                  </div>
+                  <div style={{
+                    background: '#fff', border: '1px solid var(--border)',
+                    borderLeft: '4px solid var(--accent)', padding: '24px',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    flexWrap: 'wrap', gap: '16px',
+                  }}>
+                    <div>
+                      <div style={{ fontFamily: 'var(--font-dm)', fontWeight: '700', fontSize: '15px', color: 'var(--navy)', marginBottom: '4px' }}>
+                        ¿Eres administrador?
+                      </div>
+                      <p style={{ fontFamily: 'var(--font-inter)', fontSize: '13px', color: 'var(--steel)', lineHeight: '1.6', maxWidth: '480px' }}>
+                        Sube archivos JSON de due diligence de proveedores para generar informes de verificación formateados.
+                      </p>
+                    </div>
+                    <Link href="/admin/reportes" style={{
+                      display: 'inline-block', background: 'var(--accent)', color: '#fff',
+                      padding: '10px 24px', fontFamily: 'var(--font-dm)', fontSize: '13px',
+                      fontWeight: '600', letterSpacing: '0.06em', textTransform: 'uppercase',
+                      textDecoration: 'none', whiteSpace: 'nowrap',
+                    }}>
+                      Ir al panel →
+                    </Link>
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className="section-block">
+                <div className="section-title-row">
+                  <span className="section-title-text">Informes de Verificación</span>
+                </div>
+                <div style={{
+                  background: '#fff', border: '1px solid var(--border)',
+                  borderLeft: '4px solid var(--accent)', padding: '24px',
+                  textAlign: 'center',
+                }}>
+                  <div style={{ fontFamily: 'var(--font-dm)', fontWeight: '700', fontSize: '15px', color: 'var(--navy)', marginBottom: '4px' }}>
+                    Accede para ver informes de verificación
+                  </div>
+                  <p style={{ fontFamily: 'var(--font-inter)', fontSize: '13px', color: 'var(--steel)', lineHeight: '1.6', marginBottom: '16px' }}>
+                    Los informes de due diligence y verificación de empresas están disponibles para usuarios registrados.
+                  </p>
+                  <Link href="/login" style={{
+                    display: 'inline-block', background: 'var(--accent)', color: '#fff',
+                    padding: '10px 24px', fontFamily: 'var(--font-dm)', fontSize: '13px',
+                    fontWeight: '600', letterSpacing: '0.06em', textTransform: 'uppercase',
+                    textDecoration: 'none',
+                  }}>
+                    Iniciar sesión →
+                  </Link>
+                </div>
+              </div>
+            )}
 
             {/* Cobertura geográfica */}
             <div className="section-block">

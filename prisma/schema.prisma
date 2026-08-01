@@ -409,3 +409,21 @@ model VarianteCatalogo {
   @@index([productoId])
   @@index([codigo])
 }
+
+// ─── Informes de Verificación de Empresas (Due Diligence) ──────────────────
+model ReporteVerificacion {
+  id                  String   @id @default(uuid())
+  nombreEmpresa       String
+  nombreEmpresaZh     String?
+  estadoEmpresa       String?
+  codigoCreditoSocial String?
+  puntajeTotal        Int?
+  registrosTotales    Int?
+  visible             Boolean  @default(true)
+  data                Json
+  createdById         String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([createdAt])
+}
