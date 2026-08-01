@@ -43,7 +43,7 @@ function metricColor(value) {
   return C.green;
 }
 
-import Image1 from "@/public/LogoDubois.png";
+ const Image1 = "@/public/LogoDubois.png";
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
