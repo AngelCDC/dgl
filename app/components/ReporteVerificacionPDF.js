@@ -32,9 +32,11 @@ const PAGE_TOP_OFFSET = HEADER_HEIGHT + ACCENT_STRIPE_HEIGHT + PAGE_TOP_GAP;
 function dv(v) { return v || "—" }
 
 function metricColor(value) {
+  // Escala uniforme: el color indica volumen, no un juicio de riesgo
   if (value == null) return C.green
-  if (value >= 3) return C.red
-  if (value >= 1) return C.amber
+  if (value >= 4) return C.red
+  if (value >= 3) return C.amber
+  if (value >= 1) return C.steel
   return C.green
 }
 

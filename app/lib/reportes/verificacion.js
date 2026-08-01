@@ -26,17 +26,29 @@ export function isEmpty(list) {
 
 export const RISK = {
   clean: '#16a34a',
+  steel: '#5a6478',
   warn: '#d97706',
   severe: '#dc2626',
 }
 
-const SEVERITY_THRESHOLDS = { warn: 1, severe: 3 }
-
-/** Color según valor de métrica individual. */
+/**
+ * Color según valor de métrica individual.
+ * Escala uniforme para todas las métricas: la cantidad de registros no determina
+ * riesgo por sí sola — el color solo indica volumen, no un juicio.
+ *
+ *   0      → verde
+ *   1 – 2  → steel
+ *   3      → amber
+ *   4+     → rojo
+ *
+ * @param {number} value — valor numérico de la métrica
+ * @returns {string} color CSS
+ */
 export function metricColor(value) {
   if (value == null) return RISK.clean
-  if (value >= SEVERITY_THRESHOLDS.severe) return RISK.severe
-  if (value >= SEVERITY_THRESHOLDS.warn) return RISK.warn
+  if (value >= 4) return RISK.severe
+  if (value >= 3) return RISK.warn
+  if (value >= 1) return RISK.steel
   return RISK.clean
 }
 
@@ -136,7 +148,9 @@ export function normalizeReporte(raw) {
     }
   })
 
-  const totalScore = pick(metricsSummary, ['total_score']) ?? metrics.reduce((s, m) => s + m.value, 0)
+  // El total_score viene del JSON externo (calculado por el sistema de due diligence),
+  // NO se deriva de la suma de valores de métricas individuales.
+  const totalScore = pick(metricsSummary, ['total_score']) ?? null
   const totalRecords = pick(metricsSummary, ['total_records']) ?? 0
 
   // ── Records ──
