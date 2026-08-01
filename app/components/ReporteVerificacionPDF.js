@@ -391,7 +391,7 @@ export default function ReporteVerificacionPDF({ data }) {
             <Text style={styles.recordTitle}>
               {c.nombreEs || "Empresa sin nombre"}
             </Text>
-            {c.nombreZh && <Text style={styles.recordCode}>{c.nombreZh}</Text>}
+{/* Sin fuente CJK registrada — nombreZh omitido */}
             <Text style={styles.recordMeta}>
               {c.codigoCreditoSocial
                 ? `USCC: ${c.codigoCreditoSocial}  .  `
