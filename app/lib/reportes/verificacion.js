@@ -52,19 +52,34 @@ export function metricColor(value) {
   return RISK.clean
 }
 
-/** Color según puntaje total (escala arbitraria, calibrar con datos reales). */
-export function scoreColor(totalScore) {
-  if (totalScore == null) return RISK.clean
-  if (totalScore >= 20) return RISK.severe
-  if (totalScore >= 5) return RISK.warn
+/** Color según nivel de riesgo (string del sistema externo) o puntaje numérico (fallback). */
+export function scoreColor(scoreOrLevel) {
+  if (scoreOrLevel == null) return RISK.clean
+  // Si viene como string (ej: "BAJO", "MEDIO", "ALTO"), usar directamente
+  if (typeof scoreOrLevel === 'string') {
+    const l = scoreOrLevel.toUpperCase()
+    if (l.includes('ALTO') || l.includes('GRAVE')) return RISK.severe
+    if (l.includes('MEDIO')) return RISK.warn
+    return RISK.clean // BAJO, SIN DATOS, etc.
+  }
+  // Fallback numérico (compatibilidad con datos antiguos)
+  if (scoreOrLevel >= 20) return RISK.severe
+  if (scoreOrLevel >= 5) return RISK.warn
   return RISK.clean
 }
 
-/** Etiqueta de riesgo según puntaje. */
-export function scoreLabel(totalScore) {
-  if (totalScore == null) return 'Sin datos'
-  if (totalScore >= 20) return 'Riesgo Alto'
-  if (totalScore >= 5) return 'Riesgo Medio'
+/** Etiqueta de riesgo según nivel (string) o puntaje numérico (fallback). */
+export function scoreLabel(scoreOrLevel) {
+  if (scoreOrLevel == null) return 'Sin datos'
+  if (typeof scoreOrLevel === 'string') {
+    const l = scoreOrLevel.toUpperCase()
+    if (l.includes('ALTO') || l.includes('GRAVE')) return 'Riesgo Alto'
+    if (l.includes('MEDIO')) return 'Riesgo Medio'
+    return 'Riesgo Bajo'
+  }
+  // Fallback numérico
+  if (scoreOrLevel >= 20) return 'Riesgo Alto'
+  if (scoreOrLevel >= 5) return 'Riesgo Medio'
   return 'Riesgo Bajo'
 }
 
@@ -99,6 +114,8 @@ export function normalizeReporte(raw) {
   const sanctions = raw.administrative_sanctions || {}
   const exceptions = raw.operational_exception_list || {}
   const blacklist = raw.serious_blacklist || {}
+  const riskScoreRaw = raw.risk_score || {}
+  const taxCreditRaw = raw.tax_credit || {}
   const interp = raw.interpretation || {}
 
   // ── Company ──
@@ -148,10 +165,45 @@ export function normalizeReporte(raw) {
     }
   })
 
-  // El total_score viene del JSON externo (calculado por el sistema de due diligence),
-  // NO se deriva de la suma de valores de métricas individuales.
-  const totalScore = pick(metricsSummary, ['total_score']) ?? null
+  // El puntaje total ahora proviene de risk_score (calculado por el sistema externo),
+  // con fallback a credit_metrics_summary.total_score para datos antiguos.
+  const totalScore = pick(riskScoreRaw, ['numeric_score']) ?? pick(metricsSummary, ['total_score']) ?? null
   const totalRecords = pick(metricsSummary, ['total_records']) ?? 0
+
+  // ── Risk Score ──
+  const riskScore = {
+    level: pick(riskScoreRaw, ['level']) || null,
+    levelZh: pick(riskScoreRaw, ['level_zh']) || null,
+    numericScore: pick(riskScoreRaw, ['numeric_score']) ?? null,
+    scoringCriteria: riskScoreRaw.scoring_criteria
+      ? Object.entries(riskScoreRaw.scoring_criteria).map(([key, val]) => ({
+        key,
+        value: val.value || null,
+        score: val.score ?? null,
+        weight: val.weight || null,
+        comment: val.comment || null,
+      }))
+      : [],
+    riskFactors: (riskScoreRaw.risk_factors_identified || []).map(rf => ({
+      factor: rf.factor || null,
+      impact: rf.impact || null,
+      mitigation: rf.mitigation || null,
+    })),
+    recommendation: pick(riskScoreRaw, ['recommendation']) || null,
+    recommendationZh: pick(riskScoreRaw, ['recommendation_zh']) || null,
+  }
+
+  // ── Tax Credit ──
+  const taxCredit = {
+    taxpayerName: pick(taxCreditRaw, ['taxpayer_name']) || null,
+    taxpayerNameZh: pick(taxCreditRaw, ['taxpayer_name_zh']) || null,
+    taxpayerId: pick(taxCreditRaw, ['taxpayer_id']) || null,
+    evaluationYear: pick(taxCreditRaw, ['evaluation_year']) ?? null,
+    classification: pick(taxCreditRaw, ['classification']) || null,
+    classificationZh: pick(taxCreditRaw, ['classification_zh']) || null,
+    dataSource: pick(taxCreditRaw, ['data_source']) || null,
+    dataSourceZh: pick(taxCreditRaw, ['data_source_zh']) || null,
+  }
 
   // ── Records ──
   function normalizeRecords(src) {
@@ -189,6 +241,8 @@ export function normalizeReporte(raw) {
     metrics,
     totalScore,
     totalRecords,
+    riskScore,
+    taxCredit,
     permits: normalizeRecords(permits),
     sanctions: normalizeRecords(sanctions),
     exceptions: normalizeRecords(exceptions),
@@ -205,6 +259,8 @@ function emptyReport() {
     metrics: METRIC_KEYS.map(mk => ({ key: mk.key, value: 0, labelEs: mk.labelEs, labelZh: mk.labelZh, descEs: mk.descEs, descZh: mk.descZh })),
     totalScore: 0,
     totalRecords: 0,
+    riskScore: { level: null, levelZh: null, numericScore: null, scoringCriteria: [], riskFactors: [], recommendation: null, recommendationZh: null },
+    taxCredit: { taxpayerName: null, taxpayerNameZh: null, taxpayerId: null, evaluationYear: null, classification: null, classificationZh: null, dataSource: null, dataSourceZh: null },
     permits: { records: [], total: 0 },
     sanctions: { records: [], total: 0 },
     exceptions: { records: [], total: 0 },

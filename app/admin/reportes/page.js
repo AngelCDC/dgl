@@ -187,12 +187,16 @@ export default function ReportesAdminPage() {
               <PreviewField label="Código USCC" value={preview.company.codigoCreditoSocial} mono />
               <PreviewField label="Estado" value={preview.company.estado} />
               <PreviewField label="Representante legal" value={preview.company.representanteLegal} />
-              <PreviewField label="Score total">
-                <span style={{ fontWeight: '700', fontSize: '16px', color: scoreColor(preview.totalScore) }}>
-                  {preview.totalScore} — {scoreLabel(preview.totalScore)}
+              <PreviewField label="Nivel de Riesgo">
+                <span style={{ fontWeight: '700', fontSize: '16px', color: scoreColor(preview.riskScore?.level || preview.totalScore) }}>
+                  {preview.riskScore?.level || scoreLabel(preview.totalScore)}
+                  {preview.riskScore?.numericScore != null ? ` (${preview.riskScore.numericScore})` : ''}
                 </span>
               </PreviewField>
               <PreviewField label="Registros totales" value={preview.totalRecords} />
+              {preview.taxCredit?.classification && (
+                <PreviewField label="Credito Fiscal" value={`${preview.taxCredit.classification} (${preview.taxCredit.evaluationYear || '--'})`} />
+              )}
               <PreviewField label="Permisos" value={preview.permits.total} />
               <PreviewField label="Sanciones" value={preview.sanctions.total} />
               <PreviewField label="Excepciones" value={preview.exceptions.total} />
@@ -260,7 +264,7 @@ export default function ReportesAdminPage() {
                 <tr style={{ background: '#f9fafb', borderBottom: '1px solid #eee' }}>
                   <th style={thStyle}>Empresa</th>
                   <th style={thStyle}>Código</th>
-                  <th style={thStyle}>Score</th>
+                  <th style={thStyle}>Riesgo</th>
                   <th style={thStyle}>Visible</th>
                   <th style={thStyle}>Fecha</th>
                   <th style={{ ...thStyle, textAlign: 'right' }}>Acciones</th>
@@ -279,9 +283,15 @@ export default function ReportesAdminPage() {
                       {r.codigoCreditoSocial || '—'}
                     </td>
                     <td style={tdStyle}>
-                      <span style={{ fontWeight: '700', color: scoreColor(r.puntajeTotal) }}>
-                        {r.puntajeTotal ?? '—'}
-                      </span>
+                      {(() => {
+                        const level = r.data?.risk_score?.level
+                        const numericScore = r.data?.risk_score?.numeric_score ?? r.puntajeTotal
+                        return (
+                          <span style={{ fontWeight: '700', color: scoreColor(level || numericScore) }}>
+                            {level || numericScore || '—'}
+                          </span>
+                        )
+                      })()}
                     </td>
                     <td style={tdStyle}>
                       <button onClick={() => handleToggle(r)}

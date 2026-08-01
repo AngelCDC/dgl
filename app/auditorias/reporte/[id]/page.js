@@ -12,13 +12,13 @@ export async function generateMetadata({ params }) {
     where: { id },
     select: { nombreEmpresa: true, data: true },
   })
-  if (!reporte) return { title: 'Informe no encontrado — DUBOIS' }
+  if (!reporte) return { title: 'Informe no encontrado -- DUBOIS' }
 
   const n = normalizeReporte(reporte.data)
-  const desc = n.interpretation?.resumenEs?.slice(0, 160) || 'Informe de verificación y due diligence de empresa.'
+  const desc = n.interpretation?.resumenEs?.slice(0, 160) || 'Informe de verificacion y due diligence de empresa.'
 
   return {
-    title: `Informe de Verificación — ${reporte.nombreEmpresa} | DUBOIS`,
+    title: `Informe de Verificacion -- ${reporte.nombreEmpresa} | DUBOIS`,
     description: desc,
   }
 }
@@ -40,19 +40,24 @@ export default async function ReporteVerificacionPage({ params }) {
   const bl = n.businessLicense
   const cu = n.customsRegistration
   const interp = n.interpretation
+  const risk = n.riskScore
+
+  // Dynamic section numbering
+  let sec = 0
+  const S = () => { sec++; return String(sec).padStart(2, '0') }
 
   return (
     <>
       <Navbar />
       <main className="main-content" style={{ paddingBottom: '80px' }}>
 
-        {/* ════════════════════════════════════════════════════════════════════
+        {/* ================================================================
             HERO HEADER
-            ════════════════════════════════════════════════════════════════ */}
+            ================================================================ */}
         <div className="hero-block" style={{ marginBottom: '32px' }}>
           <div className="hero-watermark">DUE DILIGENCE</div>
           <span className="category-pill-accent" style={{ marginBottom: '14px' }}>
-            Informe de Verificación de Empresa
+            Informe de Verificacion de Empresa
           </span>
           <h1 className="hero-title" style={{ marginBottom: '8px' }}>
             {c.nombreEs}
@@ -85,49 +90,78 @@ export default async function ReporteVerificacionPage({ params }) {
 
             {/* USCC */}
             <div>
-              <div className="meta-label" style={{ color: 'rgba(255,255,255,0.4)' }}>Código USCC</div>
+              <div className="meta-label" style={{ color: 'rgba(255,255,255,0.4)' }}>Codigo USCC</div>
               <span className="mono-sm" style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>
-                {c.codigoCreditoSocial || '—'}
+                {c.codigoCreditoSocial || '--'}
               </span>
             </div>
 
-            {/* Fecha constitución */}
+            {/* Fecha constitucion */}
             <div>
-              <div className="meta-label" style={{ color: 'rgba(255,255,255,0.4)' }}>Constitución</div>
+              <div className="meta-label" style={{ color: 'rgba(255,255,255,0.4)' }}>Constitucion</div>
               <span style={{ fontFamily: 'var(--font-inter)', fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
-                {c.fechaConstitucion || '—'}
+                {c.fechaConstitucion || '--'}
               </span>
             </div>
           </div>
 
-          {/* Score highlight (right side) */}
-          <div style={{
-            position: 'absolute', right: '48px', top: '50%', transform: 'translateY(-50%)',
-            textAlign: 'center',
-          }}>
+          {/* Risk score highlight (right side) */}
+          {risk?.level && (
             <div style={{
-              fontFamily: 'var(--font-dm)', fontWeight: '800', fontSize: '56px',
-              color: scoreColor(n.totalScore), letterSpacing: '-0.04em', lineHeight: '1',
+              position: 'absolute', right: '48px', top: '50%', transform: 'translateY(-50%)',
+              textAlign: 'center',
             }}>
-              {n.totalScore}
+              <div style={{
+                fontFamily: 'var(--font-dm)', fontWeight: '800', fontSize: '48px',
+                color: scoreColor(risk.level), letterSpacing: '-0.04em', lineHeight: '1',
+                textTransform: 'uppercase',
+              }}>
+                {risk.level}
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '600',
+                color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase',
+                marginTop: '4px',
+              }}>
+                Riesgo {risk.level.toLowerCase()}
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'rgba(255,255,255,0.3)',
+                marginTop: '2px',
+              }}>
+                Score: {risk.numericScore ?? '--'} . {n.totalRecords} registros
+              </div>
             </div>
+          )}
+          {!risk?.level && (
             <div style={{
-              fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '600',
-              color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase',
-              marginTop: '4px',
+              position: 'absolute', right: '48px', top: '50%', transform: 'translateY(-50%)',
+              textAlign: 'center',
             }}>
-              {scoreLabel(n.totalScore)}
+              <div style={{
+                fontFamily: 'var(--font-dm)', fontWeight: '800', fontSize: '56px',
+                color: scoreColor(n.totalScore), letterSpacing: '-0.04em', lineHeight: '1',
+              }}>
+                {n.totalScore}
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '600',
+                color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase',
+                marginTop: '4px',
+              }}>
+                {scoreLabel(n.totalScore)}
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'rgba(255,255,255,0.3)',
+                marginTop: '2px',
+              }}>
+                {n.totalRecords} registros
+              </div>
             </div>
-            <div style={{
-              fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'rgba(255,255,255,0.3)',
-              marginTop: '2px',
-            }}>
-              {n.totalRecords} registros
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* ── PDF Download ──────────────────────────────────────────────────── */}
+        {/* -- PDF Download ---------------------------------------------------- */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '32px' }}>
           <a href={`/api/admin/reportes/${id}/pdf`}
             style={{
@@ -138,38 +172,38 @@ export default async function ReporteVerificacionPage({ params }) {
               letterSpacing: '0.06em', textTransform: 'uppercase',
               textDecoration: 'none',
             }}>
-            <span>↓</span> Descargar PDF
+            <span>v</span> Descargar PDF
           </a>
         </div>
 
-        {/* ════════════════════════════════════════════════════════════════════
-            1. INFORMACIÓN GENERAL
-            ════════════════════════════════════════════════════════════════ */}
+        {/* ================================================================
+            1. INFORMACION GENERAL
+            ================================================================ */}
         <section className="section-block">
           <div className="section-title-row">
-            <span className="section-title-text">01 — Información General de la Empresa</span>
+            <span className="section-title-text">{S()} -- Informacion General de la Empresa</span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)' }}>
             <InfoCard label="Representante Legal" value={c.representanteLegal} zh={c.representanteLegalZh} />
             <InfoCard label="Autoridad de Registro" value={c.autoridadRegistro} zh={c.autoridadRegistroZh} />
             <InfoCard label="Domicilio" value={c.domicilio} zh={c.domicilioZh} />
-            <InfoCard label="Fecha de Constitución" value={c.fechaConstitucion} />
+            <InfoCard label="Fecha de Constitucion" value={c.fechaConstitucion} />
           </div>
         </section>
 
-        {/* ════════════════════════════════════════════════════════════════════
+        {/* ================================================================
             2. LICENCIA COMERCIAL
-            ════════════════════════════════════════════════════════════════════ */}
+            ================================================================ */}
         <section className="section-block">
           <div className="section-title-row">
-            <span className="section-title-text">02 — Licencia Comercial</span>
+            <span className="section-title-text">{S()} -- Licencia Comercial</span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', marginBottom: '16px' }}>
             <InfoCard label="Capital Registrado" value={bl.capitalRegistrado} />
             <InfoCard label="Tipo de Entidad" value={bl.tipoEntidad} zh={bl.tipoEntidadZh} />
-            <InfoCard label="Fecha de Aprobación" value={bl.fechaAprobacion} />
+            <InfoCard label="Fecha de Aprobacion" value={bl.fechaAprobacion} />
           </div>
 
           {/* Alcance comercial */}
@@ -197,41 +231,202 @@ export default async function ReporteVerificacionPage({ params }) {
           )}
         </section>
 
-        {/* ════════════════════════════════════════════════════════════════════
-            3. REGISTRO ADUANERO
-            ════════════════════════════════════════════════════════════════════ */}
-        <section className="section-block">
-          <div className="section-title-row">
-            <span className="section-title-text">03 — Registro Aduanero</span>
-          </div>
+        {/* ================================================================
+            3. CREDITO FISCAL (opcional)
+            ================================================================ */}
+        {n.taxCredit?.classification && (
+          <section className="section-block">
+            <div className="section-title-row">
+              <span className="section-title-text">{S()} -- Credito Fiscal</span>
+            </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)' }}>
-            <InfoCard label="Aduana Local" value={cu.aduanaLocal} zh={cu.aduanaLocalZh} />
-            <InfoCard label="Fecha de Registro" value={cu.fechaRegistro} />
-            <InfoCard label="Estado">
-              <span style={{
-                display: 'inline-block', padding: '3px 12px',
-                background: (cu.estado || '').toLowerCase() === 'normal' || cu.estado === '正常'
-                  ? '#dcfce7' : '#fef3c7',
-                color: (cu.estado || '').toLowerCase() === 'normal' || cu.estado === '正常'
-                  ? '#15803d' : '#92400e',
-                fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '600',
-              }}>
-                {cu.estado || '—'}
-                {cu.estadoZh ? ` / ${cu.estadoZh}` : ''}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)' }}>
+              <InfoCard label="Contribuyente" value={n.taxCredit.taxpayerName} zh={n.taxCredit.taxpayerNameZh} />
+              <InfoCard label="ID Fiscal" value={n.taxCredit.taxpayerId} mono />
+              <InfoCard label="Ano de Evaluacion" value={n.taxCredit.evaluationYear} />
+              <InfoCard label="Clasificacion">
+                <span style={{
+                  display: 'inline-block', padding: '4px 14px',
+                  background: (n.taxCredit.classification || '').includes('A') || (n.taxCredit.classification || '').includes('A级')
+                    ? '#dcfce7' : '#fef3c7',
+                  color: (n.taxCredit.classification || '').includes('A') || (n.taxCredit.classification || '').includes('A级')
+                    ? '#15803d' : '#92400e',
+                  fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '600',
+                }}>
+                  {n.taxCredit.classification}
+                  {n.taxCredit.classificationZh ? ` (${n.taxCredit.classificationZh})` : ''}
+                </span>
+              </InfoCard>
+            </div>
+          </section>
+        )}
+
+        {/* ================================================================
+            4. REGISTRO ADUANERO (opcional)
+            ================================================================ */}
+        {cu.aduanaLocal && (
+          <section className="section-block">
+            <div className="section-title-row">
+              <span className="section-title-text">{S()} -- Registro Aduanero</span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)' }}>
+              <InfoCard label="Aduana Local" value={cu.aduanaLocal} zh={cu.aduanaLocalZh} />
+              <InfoCard label="Fecha de Registro" value={cu.fechaRegistro} />
+              <InfoCard label="Estado">
+                <span style={{
+                  display: 'inline-block', padding: '3px 12px',
+                  background: (cu.estado || '').toLowerCase() === 'normal' || cu.estado === '正常'
+                    ? '#dcfce7' : '#fef3c7',
+                  color: (cu.estado || '').toLowerCase() === 'normal' || cu.estado === '正常'
+                    ? '#15803d' : '#92400e',
+                  fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '600',
+                }}>
+                  {cu.estado || '--'}
+                  {cu.estadoZh ? ` / ${cu.estadoZh}` : ''}
+                </span>
+              </InfoCard>
+            </div>
+          </section>
+        )}
+
+        {/* ================================================================
+            5. EVALUACION DE RIESGO (nuevo - desde el sistema externo)
+            ================================================================ */}
+        {risk?.level && (
+          <section className="section-block">
+            <div className="section-title-row">
+              <span className="section-title-text">{S()} -- Evaluacion de Riesgo</span>
+              <span style={{ fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '600', color: scoreColor(risk.level) }}>
+                Nivel: {risk.level} . Score: {risk.numericScore ?? '--'}
               </span>
-            </InfoCard>
-          </div>
-        </section>
+            </div>
 
-        {/* ════════════════════════════════════════════════════════════════════
-            4. INDICADORES DE CRÉDITO
-            ════════════════════════════════════════════════════════════════════ */}
+            {/* Scoring criteria */}
+            {risk.scoringCriteria.length > 0 && (
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{
+                  fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '600',
+                  color: 'var(--navy)', letterSpacing: '0.04em', textTransform: 'uppercase',
+                  marginBottom: '12px',
+                }}>
+                  Criterios de Evaluacion
+                </div>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-inter)', fontSize: '12px' }}>
+                    <thead>
+                      <tr style={{ background: 'var(--navy)' }}>
+                        <th style={thStyle}>Criterio</th>
+                        <th style={thStyle}>Valor</th>
+                        <th style={{ ...thStyle, textAlign: 'center', width: '60px' }}>Score</th>
+                        <th style={{ ...thStyle, textAlign: 'center', width: '80px' }}>Peso</th>
+                        <th style={thStyle}>Comentario</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {risk.scoringCriteria.map((sc, i) => (
+                        <tr key={sc.key} style={{
+                          background: i % 2 === 0 ? '#fff' : 'var(--bg)',
+                          borderBottom: '1px solid var(--border)',
+                        }}>
+                          <td style={{ ...tdStyle, fontWeight: '500', color: 'var(--navy)', textTransform: 'capitalize' }}>
+                            {sc.key.replace(/_/g, ' ')}
+                          </td>
+                          <td style={tdStyle}>{sc.value || '--'}</td>
+                          <td style={{ ...tdStyle, textAlign: 'center' }}>
+                            <span style={{
+                              display: 'inline-block', padding: '2px 8px', borderRadius: '10px',
+                              background: sc.score >= 3 ? '#fef2f2' : sc.score >= 2 ? '#fef3c7' : '#ecfdf5',
+                              color: sc.score >= 3 ? '#dc2626' : sc.score >= 2 ? '#92400e' : '#15803d',
+                              fontFamily: 'var(--font-dm)', fontWeight: '700', fontSize: '13px',
+                            }}>
+                              {sc.score}
+                            </span>
+                          </td>
+                          <td style={{ ...tdStyle, textAlign: 'center', fontSize: '11px', color: 'var(--steel)' }}>
+                            {sc.weight || '--'}
+                          </td>
+                          <td style={{ ...tdStyle, fontSize: '11px', color: 'var(--steel)' }}>
+                            {sc.comment || '--'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Risk factors */}
+            {risk.riskFactors.length > 0 && (
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{
+                  fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '600',
+                  color: 'var(--navy)', letterSpacing: '0.04em', textTransform: 'uppercase',
+                  marginBottom: '12px',
+                }}>
+                  Factores de Riesgo Identificados
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {risk.riskFactors.map((rf, i) => (
+                    <div key={i} style={{
+                      background: '#fff', border: '1px solid var(--border)', padding: '16px 20px',
+                      borderLeft: `4px solid ${rf.impact?.toLowerCase() === 'alto' ? '#dc2626' : rf.impact?.toLowerCase() === 'medio' ? '#d97706' : '#16a34a'}`,
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <span style={{ fontFamily: 'var(--font-inter)', fontSize: '13px', fontWeight: '600', color: 'var(--ink)' }}>
+                          {rf.factor}
+                        </span>
+                        <span style={{
+                          display: 'inline-block', padding: '2px 10px', borderRadius: '10px',
+                          fontSize: '10px', fontWeight: '600', fontFamily: 'var(--font-dm)',
+                          background: rf.impact?.toLowerCase() === 'alto' ? '#fef2f2' : rf.impact?.toLowerCase() === 'medio' ? '#fef3c7' : '#ecfdf5',
+                          color: rf.impact?.toLowerCase() === 'alto' ? '#dc2626' : rf.impact?.toLowerCase() === 'medio' ? '#92400e' : '#15803d',
+                        }}>
+                          Impacto: {rf.impact || '--'}
+                        </span>
+                      </div>
+                      <p style={{ fontFamily: 'var(--font-inter)', fontSize: '12px', color: 'var(--steel)', lineHeight: '1.5', margin: 0 }}>
+                        Mitigacion: {rf.mitigation || '--'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recommendation */}
+            {risk.recommendation && (
+              <div style={{
+                background: 'var(--navy)', borderLeft: '4px solid var(--accent)',
+                padding: '24px 28px',
+              }}>
+                <div style={{
+                  fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '600',
+                  color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase',
+                  marginBottom: '10px',
+                }}>
+                  Recomendacion
+                </div>
+                <p style={{
+                  fontFamily: 'var(--font-inter)', fontSize: '14px', color: 'rgba(255,255,255,0.75)',
+                  lineHeight: '1.8',
+                }}>
+                  {risk.recommendation}
+                </p>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ================================================================
+            6. INDICADORES DE CREDITO
+            ================================================================ */}
         <section className="section-block">
           <div className="section-title-row">
-            <span className="section-title-text">04 — Indicadores de Crédito</span>
+            <span className="section-title-text">{S()} -- Indicadores de Credito</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--steel)' }}>
-              Score total: <strong style={{ color: scoreColor(n.totalScore) }}>{n.totalScore}</strong> · {n.totalRecords} registros
+              {n.totalRecords} registros totales
             </span>
           </div>
 
@@ -276,13 +471,13 @@ export default async function ReporteVerificacionPage({ params }) {
           </div>
         </section>
 
-        {/* ════════════════════════════════════════════════════════════════════
-            5. PERMISOS ADMINISTRATIVOS
-            ════════════════════════════════════════════════════════════════════ */}
+        {/* ================================================================
+            7. PERMISOS ADMINISTRATIVOS
+            ================================================================ */}
         <section className="section-block">
           <div className="section-title-row">
             <span className="section-title-text">
-              05 — Permisos Administrativos ({n.permits.total} registros)
+              {S()} -- Permisos Administrativos ({n.permits.total} registros)
             </span>
           </div>
 
@@ -295,12 +490,12 @@ export default async function ReporteVerificacionPage({ params }) {
           )}
         </section>
 
-        {/* ════════════════════════════════════════════════════════════════════
-            6. RIESGOS Y ANTECEDENTES
-            ════════════════════════════════════════════════════════════════════ */}
+        {/* ================================================================
+            8. RIESGOS Y ANTECEDENTES
+            ================================================================ */}
         <section className="section-block">
           <div className="section-title-row">
-            <span className="section-title-text">06 — Riesgos y Antecedentes</span>
+            <span className="section-title-text">{S()} -- Riesgos y Antecedentes</span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
@@ -313,7 +508,7 @@ export default async function ReporteVerificacionPage({ params }) {
                 Sanciones Administrativas ({n.sanctions.total})
               </div>
               {isEmpty(n.sanctions.records) ? (
-                <CleanBanner message="Sin sanciones administrativas — empresa limpia." compact />
+                <CleanBanner message="Sin sanciones administrativas -- empresa limpia." compact />
               ) : (
                 <RecordsTable records={n.sanctions.records} type="sanctions" />
               )}
@@ -328,7 +523,7 @@ export default async function ReporteVerificacionPage({ params }) {
                 Excepciones Operativas ({n.exceptions.total})
               </div>
               {isEmpty(n.exceptions.records) ? (
-                <CleanBanner message="Sin anomalías operativas registradas." compact />
+                <CleanBanner message="Sin anomalias operativas registradas." compact />
               ) : (
                 <RecordsTable records={n.exceptions.records} type="exceptions" />
               )}
@@ -351,12 +546,12 @@ export default async function ReporteVerificacionPage({ params }) {
           </div>
         </section>
 
-        {/* ════════════════════════════════════════════════════════════════════
-            7. INTERPRETACIÓN Y CONCLUSIÓN
-            ════════════════════════════════════════════════════════════════════ */}
+        {/* ================================================================
+            9. INTERPRETACION Y CONCLUSION
+            ================================================================ */}
         <section className="section-block">
           <div className="section-title-row">
-            <span className="section-title-text">07 — Interpretación y Conclusión</span>
+            <span className="section-title-text">{S()} -- Interpretacion y Conclusion</span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px', marginBottom: '20px' }}>
@@ -400,7 +595,7 @@ export default async function ReporteVerificacionPage({ params }) {
                 color: 'var(--steel)', letterSpacing: '0.06em', textTransform: 'uppercase',
                 marginBottom: '14px',
               }}>
-                · Indicadores Neutrales ({interp.neutrales.length})
+                . Indicadores Neutrales ({interp.neutrales.length})
               </div>
               {interp.neutrales.length === 0 ? (
                 <p style={{ fontFamily: 'var(--font-inter)', fontSize: '13px', color: 'var(--steel)' }}>
@@ -410,7 +605,7 @@ export default async function ReporteVerificacionPage({ params }) {
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {interp.neutrales.map((item, i) => (
                     <li key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                      <span style={{ color: 'var(--steel)', flexShrink: 0, marginTop: '2px' }}>·</span>
+                      <span style={{ color: 'var(--steel)', flexShrink: 0, marginTop: '2px' }}>.</span>
                       <span style={{ fontFamily: 'var(--font-inter)', fontSize: '13px', color: 'var(--ink)', lineHeight: '1.5' }}>
                         {item}
                       </span>
@@ -474,7 +669,7 @@ export default async function ReporteVerificacionPage({ params }) {
           )}
         </section>
 
-        {/* ── Volver ──────────────────────────────────────────────────────── */}
+        {/* -- Volver -------------------------------------------------------- */}
         <div style={{ textAlign: 'center', paddingTop: '24px' }}>
           <a href="/auditorias" style={{
             fontFamily: 'var(--font-dm)', fontSize: '13px', fontWeight: '500',
@@ -482,7 +677,7 @@ export default async function ReporteVerificacionPage({ params }) {
             padding: '10px 24px', border: '1px solid var(--border)',
             textDecoration: 'none', display: 'inline-block',
           }}>
-            ← Volver a Auditorías
+            -- Volver a Auditorias
           </a>
         </div>
 
@@ -492,17 +687,18 @@ export default async function ReporteVerificacionPage({ params }) {
   )
 }
 
-// ─── Sub-componentes ────────────────────────────────────────────────────────────
+// --- Sub-componentes ------------------------------------------------------------
 
-function InfoCard({ label, value, zh }) {
+function InfoCard({ label, value, zh, mono }) {
   return (
     <div style={{ background: '#fff', padding: '20px 24px' }}>
       <div className="meta-label" style={{ marginBottom: '6px' }}>{label}</div>
       <div style={{
-        fontFamily: 'var(--font-inter)', fontSize: '14px', color: 'var(--ink)',
+        fontFamily: mono ? 'var(--font-mono)' : 'var(--font-inter)',
+        fontSize: '14px', color: 'var(--ink)',
         lineHeight: '1.5', wordBreak: 'break-word',
       }}>
-        {value || '—'}
+        {value || '--'}
       </div>
       {zh && (
         <div style={{
@@ -546,7 +742,7 @@ function RecordsTable({ records, type }) {
         <tr style={{ background: 'var(--navy)' }}>
           <th style={{ ...thStyle, width: '36px' }}>#</th>
           <th style={thStyle}>Documento</th>
-          <th style={thStyle}>Categoría</th>
+          <th style={thStyle}>Categoria</th>
           <th style={thStyle}>Contenido</th>
           <th style={thStyle}>Autoridad</th>
           <th style={thStyle}>Desde</th>
@@ -564,7 +760,7 @@ function RecordsTable({ records, type }) {
             </td>
             <td style={tdStyle}>
               <div style={{ fontWeight: '500', color: 'var(--ink)' }}>
-                {r.decisionDocumentNumber || '—'}
+                {r.decisionDocumentNumber || '--'}
               </div>
               <div style={{ fontSize: '11px', color: 'var(--steel)', marginTop: '2px' }}>
                 {r.decisionDocumentName || ''}
@@ -576,18 +772,18 @@ function RecordsTable({ records, type }) {
                 background: 'var(--bg)', fontFamily: 'var(--font-dm)',
                 fontSize: '10px', fontWeight: '500', color: 'var(--steel)',
               }}>
-                {r.permitCategory || '—'}
+                {r.permitCategory || '--'}
               </span>
             </td>
-            <td style={tdStyle}>{r.permitContent || '—'}</td>
+            <td style={tdStyle}>{r.permitContent || '--'}</td>
             <td style={{ ...tdStyle, fontSize: '11px', color: 'var(--steel)' }}>
-              {r.issuingAuthority || '—'}
+              {r.issuingAuthority || '--'}
             </td>
             <td style={{ ...tdStyle, fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--steel)' }}>
-              {r.validFrom || '—'}
+              {r.validFrom || '--'}
             </td>
             <td style={{ ...tdStyle, fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--steel)' }}>
-              {r.validTo || '—'}
+              {r.validTo || '--'}
             </td>
           </tr>
         ))}

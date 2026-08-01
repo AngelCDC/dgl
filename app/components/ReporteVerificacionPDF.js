@@ -1,6 +1,6 @@
 // components/pdf/ReporteVerificacionPDF.js
-// Template @react-pdf/renderer para informes de verificación de empresas.
-// Sin texto en chino (sin fuente CJK) — solo español.
+// Template @react-pdf/renderer para informes de verificacion de empresas.
+// Sin texto en chino (sin fuente CJK) -- solo espanol.
 import {
   Document,
   Page,
@@ -30,13 +30,12 @@ const ACCENT_STRIPE_HEIGHT = 3;
 const PAGE_TOP_GAP = 16;
 const PAGE_TOP_OFFSET = HEADER_HEIGHT + ACCENT_STRIPE_HEIGHT + PAGE_TOP_GAP;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// --- Helpers ------------------------------------------------------------------
 function dv(v) {
-  return v || "—";
+  return v || "--";
 }
 
 function metricColor(value) {
-  // Escala uniforme: el color indica volumen, no un juicio de riesgo
   if (value == null) return C.green;
   if (value >= 4) return C.red;
   if (value >= 3) return C.amber;
@@ -44,9 +43,17 @@ function metricColor(value) {
   return C.green;
 }
 
+function riskLevelColor(level) {
+  if (!level) return C.green;
+  const l = level.toUpperCase();
+  if (l.includes("ALTO") || l.includes("GRAVE")) return C.red;
+  if (l.includes("MEDIO")) return C.amber;
+  return C.green;
+}
+
 const Image1 = path.resolve(process.cwd(), "public", "LogoDubois.png");
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// --- Styles -------------------------------------------------------------------
 const styles = StyleSheet.create({
   page: {
     backgroundColor: C.white,
@@ -58,7 +65,7 @@ const styles = StyleSheet.create({
     color: C.carbon,
   },
 
-  // ── Header ───────────────────────────────────────────────────────────────
+  // -- Header ---------------------------------------------------------------
   header: {
     backgroundColor: C.navy,
     paddingVertical: 14,
@@ -113,7 +120,7 @@ const styles = StyleSheet.create({
     right: 0,
   },
 
-  // ── Footer ───────────────────────────────────────────────────────────────
+  // -- Footer ---------------------------------------------------------------
   footer: {
     position: "absolute",
     bottom: 16,
@@ -132,10 +139,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // ── Body ─────────────────────────────────────────────────────────────────
+  // -- Body -----------------------------------------------------------------
   body: { paddingHorizontal: 28 },
 
-  // ── Doc title ────────────────────────────────────────────────────────────
+  // -- Doc title ------------------------------------------------------------
   docTitle: {
     color: C.navy,
     fontSize: 14,
@@ -156,7 +163,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
-  // ── Record header card ───────────────────────────────────────────────────
+  // -- Record header card ---------------------------------------------------
   recordHeader: {
     backgroundColor: C.bgSoft,
     border: "0.5pt solid #dce3ed",
@@ -177,7 +184,13 @@ const styles = StyleSheet.create({
   },
   recordMeta: { fontSize: 8, fontFamily: "Helvetica", color: C.steel },
 
-  // ── Section ──────────────────────────────────────────────────────────────
+  // -- Risk level badge (in header) -----------------------------------------
+  riskBadge: {
+    fontSize: 16,
+    fontFamily: "Helvetica-Bold",
+  },
+
+  // -- Section --------------------------------------------------------------
   sectionTitleBar: {
     backgroundColor: C.corp,
     paddingVertical: 5,
@@ -193,7 +206,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
 
-  // ── Field rows ───────────────────────────────────────────────────────────
+  // -- Field rows -----------------------------------------------------------
   fieldRow: { flexDirection: "row", marginBottom: 4, paddingHorizontal: 2 },
   fieldLabel: {
     width: 130,
@@ -209,14 +222,14 @@ const styles = StyleSheet.create({
     color: C.carbon,
   },
 
-  // ── Cards ────────────────────────────────────────────────────────────────
+  // -- Cards ----------------------------------------------------------------
   card: {
     border: "0.5pt solid #dce3ed",
     padding: 10,
     marginBottom: 8,
   },
 
-  // ── Tables ───────────────────────────────────────────────────────────────
+  // -- Tables ---------------------------------------------------------------
   table: { marginBottom: 8 },
   tableHeader: {
     backgroundColor: C.navy,
@@ -247,7 +260,7 @@ const styles = StyleSheet.create({
   },
   tableCell: { fontSize: 7.5, fontFamily: "Helvetica", color: C.carbon },
 
-  // ── Chips ────────────────────────────────────────────────────────────────
+  // -- Chips ----------------------------------------------------------------
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 3, marginTop: 4 },
   chip: {
     border: "0.5pt solid #dce3ed",
@@ -258,7 +271,7 @@ const styles = StyleSheet.create({
     color: C.steel,
   },
 
-  // ── Green banner ─────────────────────────────────────────────────────────
+  // -- Green banner ---------------------------------------------------------
   cleanBanner: {
     backgroundColor: "#ecfdf5",
     border: "0.5pt solid #a7f3d0",
@@ -267,7 +280,7 @@ const styles = StyleSheet.create({
   },
   cleanBannerText: { fontSize: 8, fontFamily: "Helvetica", color: "#065f46" },
 
-  // ── Bullet lists ─────────────────────────────────────────────────────────
+  // -- Bullet lists ---------------------------------------------------------
   bulletItem: {
     flexDirection: "row",
     marginBottom: 3,
@@ -287,7 +300,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // ── Quote block ──────────────────────────────────────────────────────────
+  // -- Quote block ----------------------------------------------------------
   quoteBlock: {
     backgroundColor: C.navy,
     borderLeft: "3pt solid #2563eb",
@@ -301,22 +314,31 @@ const styles = StyleSheet.create({
     lineHeight: 1.5,
   },
 
-  // ── Score badge ──────────────────────────────────────────────────────────
+  // -- Score badge ----------------------------------------------------------
   scoreLarge: { fontSize: 22, fontFamily: "Helvetica-Bold" },
+
+  // -- Risk factor card -----------------------------------------------------
+  riskFactorCard: {
+    border: "0.5pt solid #dce3ed",
+    padding: 8,
+    marginBottom: 5,
+  },
 });
 
-// ─── Component ─────────────────────────────────────────────────────────────────
+// --- Component ----------------------------------------------------------------
 export default function ReporteVerificacionPDF({ data }) {
   const n = data || {};
   const c = n.company || {};
   const bl = n.businessLicense || {};
   const cu = n.customsRegistration || {};
   const interp = n.interpretation || {};
+  const risk = n.riskScore || {};
+  const tax = n.taxCredit || {};
 
   return (
     <Document>
       <Page size="A4" style={styles.page} wrap>
-        {/* ── Header ──────────────────────────────────────────────────── */}
+        {/* -- Header ---------------------------------------------------- */}
         <View style={styles.header} fixed>
           <Image
             src={Image1}
@@ -328,16 +350,23 @@ export default function ReporteVerificacionPDF({ data }) {
               INTELIGENCIA DE COMERCIO INTERNACIONAL
             </Text>
           </View>
+          {risk.level && (
+            <View style={{ marginLeft: "auto" }}>
+              <Text style={[styles.riskBadge, { color: riskLevelColor(risk.level) }]}>
+                {risk.level}
+              </Text>
+            </View>
+          )}
         </View>
         <View style={styles.accentStripe} fixed />
 
-        {/* ── Footer ──────────────────────────────────────────────────── */}
+        {/* -- Footer ---------------------------------------------------- */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerBrand}>
-            DUBOIS — Global Trade Intelligence
+            DUBOIS -- Global Trade Intelligence
           </Text>
           <Text style={styles.footerText}>
-            Documento confidencial — uso interno · Página{" "}
+            Documento confidencial -- uso interno . Pagina{" "}
             <Text
               render={({ pageNumber, totalPages }) =>
                 `${pageNumber} / ${totalPages}`
@@ -346,11 +375,11 @@ export default function ReporteVerificacionPDF({ data }) {
           </Text>
         </View>
 
-        {/* ── Body ────────────────────────────────────────────────────── */}
+        {/* -- Body ------------------------------------------------------ */}
         <View style={styles.body}>
           {/* Doc title */}
           <Text style={styles.docTitle}>
-            Informe de Verificación de Empresa
+            Informe de Verificacion de Empresa
           </Text>
           <Text style={styles.docSubtitle}>
             Due Diligence & Compliance Check
@@ -365,28 +394,39 @@ export default function ReporteVerificacionPDF({ data }) {
             {c.nombreZh && <Text style={styles.recordCode}>{c.nombreZh}</Text>}
             <Text style={styles.recordMeta}>
               {c.codigoCreditoSocial
-                ? `USCC: ${c.codigoCreditoSocial}  ·  `
+                ? `USCC: ${c.codigoCreditoSocial}  .  `
                 : ""}
-              {c.estado ? `Estado: ${c.estado}  ·  ` : ""}
+              {c.estado ? `Estado: ${c.estado}  .  ` : ""}
               {c.fechaConstitucion || ""}
             </Text>
+            {/* Risk level indicator in header card */}
+            {risk.level && (
+              <View style={{ marginTop: 8, flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Text style={[styles.riskBadge, { color: riskLevelColor(risk.level), fontSize: 14 }]}>
+                  Riesgo: {risk.level}
+                </Text>
+                <Text style={{ fontSize: 7, color: C.steel }}>
+                  Score: {risk.numericScore ?? "--"}
+                </Text>
+              </View>
+            )}
           </View>
 
-          {/* ── Sección 1: Información General ────────────────────────── */}
-          <SectionTitle title="1. Información General de la Empresa" />
+          {/* -- Seccion 1: Informacion General -------------------------- */}
+          <SectionTitle title="1. Informacion General de la Empresa" />
           <View style={styles.card}>
             <Field label="Representante legal" value={c.representanteLegal} />
             <Field label="Autoridad de registro" value={c.autoridadRegistro} />
             <Field label="Domicilio" value={c.domicilio} />
-            <Field label="Fecha de constitución" value={c.fechaConstitucion} />
+            <Field label="Fecha de constitucion" value={c.fechaConstitucion} />
           </View>
 
-          {/* ── Sección 2: Licencia Comercial ─────────────────────────── */}
+          {/* -- Seccion 2: Licencia Comercial --------------------------- */}
           <SectionTitle title="2. Licencia Comercial" />
           <View style={styles.card}>
             <Field label="Capital registrado" value={bl.capitalRegistrado} />
             <Field label="Tipo de entidad" value={bl.tipoEntidad} />
-            <Field label="Fecha aprobación" value={bl.fechaAprobacion} />
+            <Field label="Fecha aprobacion" value={bl.fechaAprobacion} />
 
             {(bl.ambitoNegocio || []).length > 0 && (
               <>
@@ -413,7 +453,7 @@ export default function ReporteVerificacionPDF({ data }) {
                   ))}
                   {(bl.ambitoNegocio || []).length > 30 && (
                     <Text style={{ fontSize: 7, color: C.steel }}>
-                      +{bl.ambitoNegocio.length - 30} más
+                      +{bl.ambitoNegocio.length - 30} mas
                     </Text>
                   )}
                 </View>
@@ -421,16 +461,104 @@ export default function ReporteVerificacionPDF({ data }) {
             )}
           </View>
 
-          {/* ── Sección 3: Registro Aduanero ──────────────────────────── */}
-          <SectionTitle title="3. Registro Aduanero" />
-          <View style={styles.card}>
-            <Field label="Aduana local" value={cu.aduanaLocal} />
-            <Field label="Fecha de registro" value={cu.fechaRegistro} />
-            <Field label="Estado cancelación" value={cu.estado} />
-          </View>
+          {/* -- Seccion 3: Credito Fiscal (opcional) --------------------- */}
+          {tax.classification && (
+            <>
+              <SectionTitle title="3. Credito Fiscal" />
+              <View style={styles.card}>
+                <Field label="Contribuyente" value={tax.taxpayerName} />
+                <Field label="ID Fiscal" value={tax.taxpayerId} />
+                <Field label="Ano de evaluacion" value={tax.evaluationYear} />
+                <Field label="Clasificacion" value={tax.classification} />
+                <Field label="Fuente" value={tax.dataSource} />
+              </View>
+            </>
+          )}
 
-          {/* ── Sección 4: Indicadores de Crédito ─────────────────────── */}
-          <SectionTitle title="4. Resumen de Indicadores de Crédito" />
+          {/* -- Seccion 4: Registro Aduanero (opcional) ------------------ */}
+          {cu.aduanaLocal && (
+            <>
+              <SectionTitle title={tax.classification ? "4. Registro Aduanero" : "3. Registro Aduanero"} />
+              <View style={styles.card}>
+                <Field label="Aduana local" value={cu.aduanaLocal} />
+                <Field label="Fecha de registro" value={cu.fechaRegistro} />
+                <Field label="Estado cancelacion" value={cu.estado} />
+              </View>
+            </>
+          )}
+
+          {/* -- Seccion 5: Evaluacion de Riesgo -------------------------- */}
+          {risk.level && (
+            <>
+              <SectionTitle title="5. Evaluacion de Riesgo (Sistema Externo)" />
+              <View style={styles.card}>
+                <Field label="Nivel de riesgo" value={risk.level} />
+                <Field label="Puntaje numerico" value={risk.numericScore} />
+                {risk.recommendation && (
+                  <Field label="Recomendacion" value={risk.recommendation} />
+                )}
+              </View>
+
+              {/* Scoring criteria */}
+              {risk.scoringCriteria.length > 0 && (
+                <View style={styles.table}>
+                  <View style={styles.tableHeader}>
+                    <Text style={[styles.tableHeaderCell, { flex: 2.5 }]}>Criterio</Text>
+                    <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Valor</Text>
+                    <Text style={[styles.tableHeaderCell, { flex: 0.6, textAlign: "center" }]}>Score</Text>
+                    <Text style={[styles.tableHeaderCell, { flex: 0.7, textAlign: "center" }]}>Peso</Text>
+                    <Text style={[styles.tableHeaderCell, { flex: 2.5 }]}>Comentario</Text>
+                  </View>
+                  {risk.scoringCriteria.map((sc, i) => (
+                    <View key={sc.key} style={i % 2 === 0 ? styles.tableRow : styles.tableRowAlt} wrap={false}>
+                      <Text style={[styles.tableCell, { flex: 2.5, fontFamily: "Helvetica-Bold", fontSize: 6.5 }]}>
+                        {sc.key.replace(/_/g, " ")}
+                      </Text>
+                      <Text style={[styles.tableCell, { flex: 2, fontSize: 6.5 }]}>{sc.value || "--"}</Text>
+                      <Text style={[styles.tableCell, { flex: 0.6, textAlign: "center", color: sc.score >= 3 ? C.red : sc.score >= 2 ? C.amber : C.green }]}>
+                        {sc.score}
+                      </Text>
+                      <Text style={[styles.tableCell, { flex: 0.7, textAlign: "center", fontSize: 6.5, color: C.steel }]}>
+                        {sc.weight || "--"}
+                      </Text>
+                      <Text style={[styles.tableCell, { flex: 2.5, fontSize: 6.5, color: C.steel }]}>
+                        {sc.comment || "--"}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* Risk factors */}
+              {risk.riskFactors.length > 0 && (
+                <>
+                  <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: C.navy, marginBottom: 6, marginTop: 8 }}>
+                    Factores de Riesgo Identificados
+                  </Text>
+                  {risk.riskFactors.map((rf, i) => (
+                    <View key={i} style={[styles.riskFactorCard, {
+                      borderLeft: `3pt solid ${rf.impact?.toLowerCase() === "alto" ? C.red : rf.impact?.toLowerCase() === "medio" ? C.amber : C.green}`,
+                    }]}>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+                        <Text style={{ fontSize: 7.5, fontFamily: "Helvetica-Bold", color: C.carbon, flex: 1 }}>
+                          {rf.factor}
+                        </Text>
+                        <Text style={{ fontSize: 7, fontFamily: "Helvetica-Bold", color: rf.impact?.toLowerCase() === "alto" ? C.red : rf.impact?.toLowerCase() === "medio" ? C.amber : C.green }}>
+                          Impacto: {rf.impact || "--"}
+                        </Text>
+                      </View>
+                      <Text style={{ fontSize: 7, color: C.steel }}>
+                        Mitigacion: {rf.mitigation || "--"}
+                      </Text>
+                    </View>
+                  ))}
+                </>
+              )}
+            </>
+          )}
+
+          {/* -- Seccion 6: Indicadores de Credito ----------------------- */}
+          <SectionTitle title="6. Resumen de Indicadores de Credito" />
           <View style={styles.table}>
             <View style={styles.tableHeader}>
               <Text style={[styles.tableHeaderCell, { flex: 3.5 }]}>
@@ -445,7 +573,7 @@ export default function ReporteVerificacionPDF({ data }) {
                 Valor
               </Text>
               <Text style={[styles.tableHeaderCell, { flex: 3 }]}>
-                Interpretación
+                Interpretacion
               </Text>
             </View>
             {(n.metrics || []).map((m, i) => (
@@ -508,15 +636,15 @@ export default function ReporteVerificacionPDF({ data }) {
                 <Text
                   style={{ fontFamily: "Helvetica-Bold", color: C.electric }}
                 >
-                  {n.totalScore}
+                  {risk.level || n.totalScore || "--"}
                 </Text>
               </Text>
             </View>
           </View>
 
-          {/* ── Sección 5: Permisos Administrativos ───────────────────── */}
+          {/* -- Seccion 7: Permisos Administrativos --------------------- */}
           <SectionTitle
-            title={`5. Permisos Administrativos (${n.permits?.total ?? 0} registros)`}
+            title={`7. Permisos Administrativos (${n.permits?.total ?? 0} registros)`}
           />
           {(n.permits?.records || []).length === 0 ? (
             <View style={styles.cleanBanner}>
@@ -532,7 +660,7 @@ export default function ReporteVerificacionPDF({ data }) {
                   Documento
                 </Text>
                 <Text style={[styles.tableHeaderCell, { flex: 2 }]}>
-                  Categoría
+                  Categoria
                 </Text>
                 <Text style={[styles.tableHeaderCell, { flex: 2.5 }]}>
                   Autoridad
@@ -573,8 +701,8 @@ export default function ReporteVerificacionPDF({ data }) {
             </View>
           )}
 
-          {/* ── Sección 6: Riesgos ────────────────────────────────────── */}
-          <SectionTitle title="6. Riesgos y Antecedentes" />
+          {/* -- Seccion 8: Riesgos -------------------------------------- */}
+          <SectionTitle title="8. Riesgos y Antecedentes" />
 
           {/* Sanciones administrativas */}
           <View style={styles.card}>
@@ -591,7 +719,7 @@ export default function ReporteVerificacionPDF({ data }) {
             {(n.sanctions?.records || []).length === 0 ? (
               <View style={styles.cleanBanner}>
                 <Text style={styles.cleanBannerText}>
-                  ✓ Sin sanciones administrativas — empresa limpia.
+                  ✓ Sin sanciones administrativas -- empresa limpia.
                 </Text>
               </View>
             ) : (
@@ -616,7 +744,7 @@ export default function ReporteVerificacionPDF({ data }) {
             {(n.exceptions?.records || []).length === 0 ? (
               <View style={styles.cleanBanner}>
                 <Text style={styles.cleanBannerText}>
-                  ✓ Sin anomalías operativas registradas.
+                  ✓ Sin anomalias operativas registradas.
                 </Text>
               </View>
             ) : (
@@ -651,8 +779,8 @@ export default function ReporteVerificacionPDF({ data }) {
             )}
           </View>
 
-          {/* ── Sección 7: Interpretación ─────────────────────────────── */}
-          <SectionTitle title="7. Interpretación y Conclusión" />
+          {/* -- Seccion 9: Interpretacion -------------------------------- */}
+          <SectionTitle title="9. Interpretacion y Conclusion" />
 
           {(interp.positivos || []).length > 0 && (
             <>
@@ -690,7 +818,7 @@ export default function ReporteVerificacionPDF({ data }) {
               </Text>
               {(interp.neutrales || []).map((item, i) => (
                 <View key={i} style={styles.bulletItem}>
-                  <Text style={[styles.bulletDot, { color: C.steel }]}>·</Text>
+                  <Text style={[styles.bulletDot, { color: C.steel }]}>.</Text>
                   <Text style={styles.bulletText}>{item}</Text>
                 </View>
               ))}
@@ -730,7 +858,7 @@ export default function ReporteVerificacionPDF({ data }) {
   );
 }
 
-// ─── Sub-componentes ────────────────────────────────────────────────────────────
+// --- Sub-componentes ------------------------------------------------------------
 
 function SectionTitle({ title }) {
   return (

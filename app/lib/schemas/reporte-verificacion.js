@@ -11,6 +11,8 @@ export const reporteVerificacionSchema = z.object({
   business_license: obj.optional(),
   customs_registration: obj.optional(),
   credit_metrics_summary: obj.optional(),
+  risk_score: obj.optional(),
+  tax_credit: obj.optional(),
   administrative_permits: obj.optional(),
   administrative_sanctions: obj.optional(),
   operational_exception_list: obj.optional(),
