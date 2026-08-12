@@ -20,6 +20,7 @@ model User {
   articles        Article[]
   solicitudes     SolicitudProcura[]
   adquisiciones   SolicitudAdquisicion[]
+  contratos       ContratoCompra[]
 }
 
 model Category {
@@ -115,6 +116,7 @@ model Supplier {
   products         SupplierProduct[]
   catalogoProductos ProductoCatalogo[]
   contacts         ContactRequest[]
+  contratos        ContratoCompra[]
 }
 
 model SupplierProduct {
@@ -426,4 +428,141 @@ model ReporteVerificacion {
   updatedAt           DateTime @updatedAt
 
   @@index([createdAt])
+}
+
+// ─── Contratos de Compra Internacional (proveedores chinos) ──────────────────
+model ContratoCompra {
+  id String @id @default(uuid())
+
+  // 1. General
+  fecha  String
+  numero String?
+  status String  @default("borrador") // borrador | finalizado
+
+  // 2. PARTIES — Buyer
+  buyerLegalName      String
+  buyerTradeName      String?
+  buyerAddress        String?
+  buyerCountry        String  @default("Venezuela")
+  buyerTaxId          String?
+  buyerRepresentative String?
+  buyerPosition       String?
+  buyerEmail          String?
+
+  // 3. PARTIES — Supplier (snapshot + vínculo opcional al Directorio)
+  supplierId                  String?
+  supplier                    Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  supplierLegalName           String
+  supplierTradeName           String?
+  supplierAddress             String?
+  supplierCountry             String  @default("People's Republic of China")
+  supplierUscc                String?
+  supplierLegalRepresentative String?
+  supplierPosition            String?
+  supplierEmail               String?
+
+  // 4. PRODUCTS
+  partidas           ContratoPartida[]
+  totalContractValue String?
+
+  // 5. PRICE
+  currency      String @default("USD")
+  incoterm      String @default("FOB") // FOB | CIF | EXW | FCA | DDP | OTHER
+  incotermOther String?
+  namedPlace    String?
+
+  // 6. PAYMENT TERMS
+  pagos              ContratoPago[]
+  paymentMethod      String @default("T/T") // T/T | Alibaba Trade Assurance | L/C | OTHER
+  paymentMethodOther String?
+
+  // 7. PRODUCTION AND DELIVERY
+  productionDays           String?
+  productionStart          String? // DATE | RECEIPT OF ADVANCE PAYMENT | APPROVAL OF SPECIFICATIONS
+  productionStartDate      String?
+  estimatedReadyToShipDate String?
+
+  // 8. WARRANTY
+  warrantyMonths         String?
+  warrantyStart          String? // DATE OF SHIPMENT | DATE OF ARRIVAL | DATE OF INSTALLATION
+  warrantyResponseDays   String?
+  warrantyCorrectiveDays String?
+
+  // 9. DELAY AND LIQUIDATED DAMAGES
+  delayPercent         String?
+  delayPeriod          String? // per week | per day
+  delayCapPercent      String?
+  delayTerminationDays String?
+
+  // 10. NON-CIRCUMVENTION
+  ncDurationYears String?
+  ncTerritory     String?
+
+  // 11. LEGAL / LANGUAGE
+  governingLaw             String?
+  negotiationDays          String  @default("30")
+  arbitrationInstitution   String?
+  arbitrationSeat          String?
+  arbitrationLanguage      String?
+  arbitrationLanguageOther String?
+  executedIn               String? // EN | CN | EN+CN
+  controllingLanguage      String? // EN | CN
+
+  // 12. NOTICES
+  buyerNoticeName       String?
+  buyerNoticeEmail      String?
+  buyerNoticeAddress    String?
+  supplierNoticeName    String?
+  supplierNoticeEmail   String?
+  supplierNoticeAddress String?
+
+  // 13. SIGNATURES
+  buyerSigner             String?
+  buyerSignerPosition     String?
+  buyerSignDate           String?
+  supplierSigner          String?
+  supplierSignerPosition  String?
+  supplierSignDate        String?
+
+  // 14. ANNEXES
+  annexA                  Json? // {product, model, brand, specs[5], materials[], dimensions, performance[], certifications[], accessories[]}
+  annexB                  Json? // [{poNumber, product, quantity, unitPrice, total, incoterm, loadingPort, destination, productionLeadTime, paymentTerms, warranty}]
+  inspectionCompany       String?
+  inspectionLocation      String?
+  inspectionDate          String?
+  inspectionChecklist     String[]
+  inspectionStandard      String? // AQL | 100% INSPECTION | TECHNICAL TEST | OTHER
+  inspectionStandardOther String?
+  annexDDocs              String[]
+  annexDOther             String?
+
+  // Meta
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+
+  @@index([createdAt])
+}
+
+model ContratoPartida {
+  id             String         @id @default(uuid())
+  contratoId     String
+  contrato       ContratoCompra @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  producto       String         // Product/Model
+  especificacion String?
+  cantidad       String
+  precioUnitario String
+  total          String?
+  sortOrder      Int            @default(0)
+}
+
+model ContratoPago {
+  id         String         @id @default(uuid())
+  contratoId String
+  contrato   ContratoCompra @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  concepto   String         // Advance | Second | Final | ...
+  porcentaje String
+  monto      String
+  sortOrder  Int            @default(0)
 }

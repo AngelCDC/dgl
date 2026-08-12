@@ -10,6 +10,7 @@ const PERMISOS = {
   admin: {
     solicitudes:   'write',
     adquisiciones: 'write',
+    contratos:     'write',
     catalogo:      'write',
     proveedores:   'write',
     clientes:      'write',
@@ -22,6 +23,7 @@ const PERMISOS = {
   trabajador: {
     solicitudes:   'write',
     adquisiciones: 'write',
+    contratos:     'write',
     catalogo:      'write',
     proveedores:   'write',
     clientes:      'write',
@@ -34,6 +36,7 @@ const PERMISOS = {
   cliente: {
     solicitudes:   'write',    // solo las propias (filtradas por clienteId)
     adquisiciones: 'read',     // solo las propias (filtradas por clienteId)
+    contratos:     null,       // sin acceso
     catalogo:      'filtered', // filtrado por rubros del cliente
     proveedores:   'filtered', // filtrado por rubros del cliente
     clientes:      null,       // sin acceso
@@ -49,6 +52,7 @@ const PERMISOS = {
 const RUTA_A_MODULO = [
   { modulo: 'solicitudes',   pattern: /^\/admin\/solicitudes/ },
   { modulo: 'adquisiciones', pattern: /^\/admin\/adquisiciones/ },
+  { modulo: 'contratos',     pattern: /^\/admin\/contratos/ },
   { modulo: 'catalogo',      pattern: /^\/admin\/catalogo/ },
   { modulo: 'proveedores',   pattern: /^\/admin\/proveedores/ },
   { modulo: 'clientes',      pattern: /^\/admin\/clientes/ },
@@ -102,6 +106,7 @@ export function getNavForRole(role) {
   const links = {
     solicitudes:   { href: '/admin/solicitudes',   label: 'Solicitud de Adquisición', icon: 'solicitudes' },
     adquisiciones: { href: '/admin/adquisiciones', label: 'Estudio de Mercado',       icon: 'adquisicion' },
+    contratos:     { href: '/admin/contratos',     label: 'Contratos de Compra',      icon: 'contratos' },
     catalogo:      { href: '/admin/catalogo',      label: 'Catálogo',                 icon: 'catalogo' },
     proveedores:   { href: '/admin/proveedores',   label: 'Directorio',               icon: 'proveedores' },
     clientes:      { href: '/admin/clientes',      label: 'Base de Clientes',         icon: 'clientes' },
@@ -138,7 +143,7 @@ export function getNavForRole(role) {
     })
     nav.push({
       title: 'Documentos',
-      items: [links.solicitudes, links.adquisiciones],
+      items: [links.solicitudes, links.adquisiciones, links.contratos],
     })
     nav.push({
       title: 'Contenido',
@@ -163,7 +168,7 @@ export function getNavForRole(role) {
     })
     nav.push({
       title: 'Documentos',
-      items: [links.solicitudes, links.adquisiciones],
+      items: [links.solicitudes, links.adquisiciones, links.contratos],
     })
     nav.push({
       title: 'Contenido',
