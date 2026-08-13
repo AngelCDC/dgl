@@ -229,7 +229,7 @@ function TextListEditor({ items, onChange }) {
 }
 
 // ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
-export default function ContratoForm({ contrato, suppliers = [] }) {
+export default function ContratoForm({ contrato, reportes = [] }) {
   const router = useRouter();
   const isEdit = Boolean(contrato);
 
@@ -246,7 +246,7 @@ export default function ContratoForm({ contrato, suppliers = [] }) {
     buyerPosition: contrato?.buyerPosition ?? '',
     buyerEmail: contrato?.buyerEmail ?? '',
 
-    supplierId: contrato?.supplierId ?? '',
+    verificacionId: contrato?.verificacionId ?? '',
     supplierLegalName: contrato?.supplierLegalName ?? '',
     supplierTradeName: contrato?.supplierTradeName ?? '',
     supplierAddress: contrato?.supplierAddress ?? '',
@@ -374,16 +374,18 @@ export default function ContratoForm({ contrato, suppliers = [] }) {
   const addAnnexBRow = () => setAnnexB(p => [...p, defaultAnnexBRow(partidas, form)]);
   const removeAnnexBRow = (i) => setAnnexB(p => p.length > 1 ? [...p.slice(0, i), ...p.slice(i + 1)] : p);
 
-  // ── autofill desde el Directorio ───────────────────────────────────────────
-  const handleSupplierSelect = (supplierId) => {
-    const sup = suppliers.find(s => s.id === supplierId);
+  // ── autofill desde el Informe de Verificación ──────────────────────────────
+  const handleReporteSelect = (verificacionId) => {
+    const rep = reportes.find(r => r.id === verificacionId);
     setForm(p => ({
       ...p,
-      supplierId: supplierId || null,
-      ...(sup ? {
-        supplierLegalName: sup.name ?? '',
-        supplierAddress: [sup.city, sup.country].filter(Boolean).join(', '),
-        supplierEmail: sup.email ?? '',
+      verificacionId: verificacionId || null,
+      ...(rep ? {
+        supplierLegalName: rep.nombreEmpresa ?? '',
+        supplierTradeName: rep.nombreEmpresaZh ?? '',
+        supplierUscc: rep.codigoCreditoSocial ?? '',
+        supplierLegalRepresentative: rep.legalRepresentative ?? '',
+        supplierAddress: rep.domicile ?? '',
         supplierCountry: "People's Republic of China",
       } : {}),
     }));
@@ -549,13 +551,13 @@ export default function ContratoForm({ contrato, suppliers = [] }) {
           </EditGrid>
         </SectionCard>
 
-        {/* 2. PROVEEDOR DEL DIRECTORIO */}
-        <SectionCard n="2" title="Proveedor del Directorio (autocompletar)">
+        {/* 2. INFORME DE VERIFICACIÓN */}
+        <SectionCard n="2" title="Proveedor del Informe de Verificación (autocompletar)">
           <EditGrid>
-            <FieldWrap label="Seleccionar proveedor del Directorio" span2>
+            <FieldWrap label="Seleccionar informe de verificación" span2>
               <select
-                value={form.supplierId ?? ''}
-                onChange={e => handleSupplierSelect(e.target.value)}
+                value={form.verificacionId ?? ''}
+                onChange={e => handleReporteSelect(e.target.value)}
                 style={{
                   width: '100%', boxSizing: 'border-box',
                   border: '1px solid #e2e8f0', borderRadius: 8,
@@ -564,14 +566,14 @@ export default function ContratoForm({ contrato, suppliers = [] }) {
                 }}
               >
                 <option value="">— Sin vínculo / datos manuales —</option>
-                {suppliers.map(s => (
-                  <option key={s.id} value={s.id}>{s.name} · {s.country}</option>
+                {reportes.map(r => (
+                  <option key={r.id} value={r.id}>{r.nombreEmpresa}{r.nombreEmpresaZh ? ` · ${r.nombreEmpresaZh}` : ''}</option>
                 ))}
               </select>
             </FieldWrap>
           </EditGrid>
           <p style={{ margin: '10px 0 0', fontSize: 12, color: '#94a3b8' }}>
-            Al elegir un proveedor se rellenan automáticamente: legal name, dirección (ciudad + país), email y país (People&apos;s Republic of China). Los campos Trade Name, USCC y Legal Representative deben completarse a mano.
+            Al elegir un informe de verificación se rellenan automáticamente: legal name (nombre en inglés), trade name (nombre en chino), USCC, legal representative y dirección registrada. El email y la posición del representante deben completarse a mano.
           </p>
         </SectionCard>
 

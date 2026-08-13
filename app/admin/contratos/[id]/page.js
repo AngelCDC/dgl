@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { authOptions } from '../../../api/auth/[...nextauth]/route'
 import { buildAccessWhere } from '../../../lib/access'
 import prisma from '../../../lib/prisma'
+import { normalizeReporte } from '../../../lib/reportes/verificacion'
 import ContratoForm from '../ContratoForm'
 
 export default async function EditarContratoPage({ params }) {
@@ -11,7 +12,7 @@ export default async function EditarContratoPage({ params }) {
 
   const { id } = await params
 
-  const [contrato, suppliers] = await Promise.all([
+  const [contrato, reportesRaw] = await Promise.all([
     prisma.contratoCompra.findFirst({
       where: await buildAccessWhere(session, { id }),
       include: {
@@ -19,9 +20,9 @@ export default async function EditarContratoPage({ params }) {
         pagos:    { orderBy: { sortOrder: 'asc' } },
       },
     }),
-    prisma.supplier.findMany({
-      orderBy: { name: 'asc' },
-      select: { id: true, name: true, city: true, country: true, email: true },
+    prisma.reporteVerificacion.findMany({
+      where: { visible: true },
+      orderBy: { createdAt: 'desc' },
     }),
   ])
 
@@ -33,5 +34,17 @@ export default async function EditarContratoPage({ params }) {
     )
   }
 
-  return <ContratoForm contrato={contrato} suppliers={suppliers} />
+  const reportes = reportesRaw.map(r => {
+    const n = normalizeReporte(r.data)
+    return {
+      id: r.id,
+      nombreEmpresa: r.nombreEmpresa,
+      nombreEmpresaZh: r.nombreEmpresaZh,
+      codigoCreditoSocial: r.codigoCreditoSocial,
+      legalRepresentative: n.company.representanteLegal,
+      domicile: n.company.domicilio,
+    }
+  })
+
+  return <ContratoForm contrato={contrato} reportes={reportes} />
 }

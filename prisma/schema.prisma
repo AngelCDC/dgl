@@ -116,7 +116,6 @@ model Supplier {
   products         SupplierProduct[]
   catalogoProductos ProductoCatalogo[]
   contacts         ContactRequest[]
-  contratos        ContratoCompra[]
 }
 
 model SupplierProduct {
@@ -426,6 +425,7 @@ model ReporteVerificacion {
   createdById         String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+  contratos           ContratoCompra[]
 
   @@index([createdAt])
 }
@@ -449,9 +449,9 @@ model ContratoCompra {
   buyerPosition       String?
   buyerEmail          String?
 
-  // 3. PARTIES — Supplier (snapshot + vínculo opcional al Directorio)
-  supplierId                  String?
-  supplier                    Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  // 3. PARTIES — Supplier (snapshot + vínculo opcional al Informe de Verificación)
+  verificacionId              String?
+  verificacion                ReporteVerificacion? @relation(fields: [verificacionId], references: [id], onDelete: SetNull)
   supplierLegalName           String
   supplierTradeName           String?
   supplierAddress             String?

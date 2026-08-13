@@ -18,7 +18,7 @@ const ALLOWED_SCALAR = [
   'fecha', 'numero', 'status',
   'buyerLegalName', 'buyerTradeName', 'buyerAddress', 'buyerCountry',
   'buyerTaxId', 'buyerRepresentative', 'buyerPosition', 'buyerEmail',
-  'supplierId', 'supplierLegalName', 'supplierTradeName', 'supplierAddress',
+  'verificacionId', 'supplierLegalName', 'supplierTradeName', 'supplierAddress',
   'supplierCountry', 'supplierUscc', 'supplierLegalRepresentative',
   'supplierPosition', 'supplierEmail',
   'totalContractValue', 'currency', 'incoterm', 'incotermOther', 'namedPlace',
@@ -86,10 +86,10 @@ export async function POST(req) {
 
     const safeData = pickScalars(campos)
 
-    // Verificar que el proveedor del Directorio exista (si viene vinculado)
-    if (safeData.supplierId) {
-      const exists = await prisma.supplier.findUnique({ where: { id: safeData.supplierId }, select: { id: true } })
-      if (!exists) safeData.supplierId = null
+    // Verificar que el informe de verificación exista y sea visible (si viene vinculado)
+    if (safeData.verificacionId) {
+      const exists = await prisma.reporteVerificacion.findUnique({ where: { id: safeData.verificacionId, visible: true }, select: { id: true } })
+      if (!exists) safeData.verificacionId = null
     }
 
     const contrato = await prisma.contratoCompra.create({
