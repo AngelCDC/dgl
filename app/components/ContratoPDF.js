@@ -353,16 +353,8 @@ const BulletList = ({ items }) => (
 export const ContratoPDF = ({ data }) => {
   const partidas = Array.isArray(data.partidas) ? data.partidas : [];
   const pagos    = Array.isArray(data.pagos)    ? data.pagos    : [];
-  const annexA   = data.annexA && typeof data.annexA === "object" ? data.annexA : {};
-  const annexB   = Array.isArray(data.annexB) ? data.annexB : [];
   const checklistC = Array.isArray(data.inspectionChecklist) ? data.inspectionChecklist : [];
   const docsD      = Array.isArray(data.annexDDocs) ? data.annexDDocs : [];
-
-  const specsA    = Array.isArray(annexA.specs) ? annexA.specs.filter(Boolean) : [];
-  const materialsA = Array.isArray(annexA.materials) ? annexA.materials.filter(Boolean) : [];
-  const performanceA = Array.isArray(annexA.performance) ? annexA.performance.filter(Boolean) : [];
-  const certificationsA = Array.isArray(annexA.certifications) ? annexA.certifications.filter(Boolean) : [];
-  const accessoriesA = Array.isArray(annexA.accessories) ? annexA.accessories.filter(Boolean) : [];
 
   const totalValue = data.totalContractValue ||
     String(partidas.reduce((acc, p) => {
@@ -373,6 +365,15 @@ export const ContratoPDF = ({ data }) => {
   const method = data.paymentMethod === "OTHER"
     ? data.paymentMethodOther || "Other"
     : data.paymentMethod || "—";
+
+  // Resumen de condiciones de pago para el Annex B (derivado de los pagos del Artículo 6)
+  const paymentTermsSummary = [
+    method,
+    pagos
+      .filter(pg => pg.concepto || pg.porcentaje)
+      .map(pg => `${pg.concepto || "—"}${pg.porcentaje ? ` ${pg.porcentaje}%` : ""}`)
+      .join(" / "),
+  ].filter(Boolean).join(" — ");
 
   const incoterm = data.incoterm === "OTHER"
     ? data.incotermOther || "Other"
@@ -700,37 +701,39 @@ export const ContratoPDF = ({ data }) => {
         <Text style={styles.annexSub}>International Purchase Agreement {data.numero ? `· Contract No. ${data.numero}` : ""}</Text>
         <View style={styles.titleRule} />
 
-        <Labeled label="Product">{nbsp(annexA.product)}.</Labeled>
-        <Labeled label="Model">{nbsp(annexA.model)}.</Labeled>
-        <Labeled label="Brand">{nbsp(annexA.brand)}.</Labeled>
-        {specsA.map((s, i) => (
-          <Labeled key={i} label={`Specification ${i + 1}`}>{s}.</Labeled>
-        ))}
-        <Labeled label="Dimensions">{nbsp(annexA.dimensions)}.</Labeled>
-        {materialsA.length > 0 && (
+        <Para>
+          The technical specifications of the Products are those set forth in Article 3
+          (Products) of this Agreement, reproduced below for convenience:
+        </Para>
+
+        {partidas.length > 0 ? (
           <>
-            <Text style={styles.labeled}><Text style={{ fontFamily: "Times-Bold" }}>Materials:</Text></Text>
-            <BulletList items={materialsA} />
+            <LegalTable
+              header={["PRODUCT / MODEL", "SPECIFICATION", "QUANTITY", "UNIT PRICE (USD)", "TOTAL (USD)"]}
+              widths={[styles.cProduct, styles.cSpec, styles.cQty, styles.cPrice, styles.cTotal]}
+              rows={partidas.map(p => [
+                { text: p.producto },
+                { text: p.especificacion },
+                { text: p.cantidad },
+                { text: fmtUSD(p.precioUnitario) },
+                { text: fmtUSD(p.total) },
+              ])}
+            />
+            <Text style={styles.totalLine}>
+              Total Contract Value: {fmtUSD(totalValue)} {data.currency || "USD"}
+            </Text>
           </>
+        ) : (
+          <Para>{'—'}</Para>
         )}
-        {performanceA.length > 0 && (
-          <>
-            <Text style={styles.labeled}><Text style={{ fontFamily: "Times-Bold" }}>Performance requirements:</Text></Text>
-            <BulletList items={performanceA} />
-          </>
-        )}
-        {certificationsA.length > 0 && (
-          <>
-            <Text style={styles.labeled}><Text style={{ fontFamily: "Times-Bold" }}>Required certifications:</Text></Text>
-            <BulletList items={certificationsA} />
-          </>
-        )}
-        {accessoriesA.length > 0 && (
-          <>
-            <Text style={styles.labeled}><Text style={{ fontFamily: "Times-Bold" }}>Accessories:</Text></Text>
-            <BulletList items={accessoriesA} />
-          </>
-        )}
+
+        <Para>
+          The Products shall comply with the quality requirements, standards and
+          specifications set forth in Article 4 (Quality and Specifications) of this
+          Agreement. The Supplier shall not make material changes to the specifications,
+          materials, components or production processes without the Buyer’s prior written
+          approval.
+        </Para>
 
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>Annex A — Technical Specifications</Text>
@@ -747,21 +750,26 @@ export const ContratoPDF = ({ data }) => {
         <Text style={styles.annexSub}>International Purchase Agreement {data.numero ? `· Contract No. ${data.numero}` : ""}</Text>
         <View style={styles.titleRule} />
 
+        <Para>
+          The following commercial terms are those set forth in the main body of this
+          Agreement (Articles 3, 5, 6, 7 and 12), summarized by Product:
+        </Para>
+
         <LegalTable
           header={["PO NUMBER", "PRODUCT", "QTY", "UNIT PRICE", "TOTAL", "INCOTERM", "LOADING PORT", "DESTINATION", "LEAD TIME", "PAYMENT TERMS", "WARRANTY"]}
           widths={[styles.cB1, styles.cB2, styles.cB3, styles.cB4, styles.cB5, styles.cB6, styles.cB7, styles.cB8, styles.cB9, styles.cB10, styles.cB11]}
-          rows={annexB.map(row => [
-            { text: row.poNumber },
-            { text: row.product },
-            { text: row.quantity },
-            { text: fmtUSD(row.unitPrice) },
-            { text: fmtUSD(row.total) },
-            { text: row.incoterm },
-            { text: row.loadingPort },
-            { text: row.destination },
-            { text: row.productionLeadTime },
-            { text: row.paymentTerms },
-            { text: row.warranty },
+          rows={partidas.map(p => [
+            { text: data.numero },
+            { text: p.producto },
+            { text: p.cantidad },
+            { text: fmtUSD(p.precioUnitario) },
+            { text: fmtUSD(p.total) },
+            { text: incoterm },
+            { text: data.namedPlace },
+            { text: data.buyerCountry },
+            { text: data.productionDays ? `${data.productionDays} days` : "—" },
+            { text: paymentTermsSummary },
+            { text: data.warrantyMonths ? `${data.warrantyMonths} months` : "—" },
           ])}
         />
 

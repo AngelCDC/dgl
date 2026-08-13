@@ -31,25 +31,6 @@ const HOY = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() +
 
 const defaultPartida = () => ({ producto: '', especificacion: '', cantidad: '', precioUnitario: '', total: '' });
 const defaultPago    = () => ({ concepto: '', porcentaje: '', monto: '' });
-const defaultAnnexA  = () => ({
-  product: '', model: '', brand: '',
-  specs: ['', '', '', '', ''],
-  materials: [], performance: [], certifications: [], accessories: [],
-  dimensions: '',
-});
-const defaultAnnexBRow = (partidas, form) => ({
-  poNumber: '',
-  product: partidas[0]?.producto || '',
-  quantity: partidas[0]?.cantidad || '',
-  unitPrice: partidas[0]?.precioUnitario || '',
-  total: partidas[0]?.total || '',
-  incoterm: form?.incoterm || '',
-  loadingPort: form?.namedPlace || '',
-  destination: '',
-  productionLeadTime: '',
-  paymentTerms: '',
-  warranty: '',
-});
 
 // ─── PRIMITIVAS UI (patrón solicitudes/nueva) ─────────────────────────────────
 function FieldLabel({ children }) {
@@ -210,24 +191,6 @@ function AddRowBtn({ onClick, children }) {
   );
 }
 
-// Fila de lista dinámica de texto (para anexos A)
-function TextListEditor({ items, onChange }) {
-  const setItem = (i, v) => onChange([...items.slice(0, i), v, ...items.slice(i + 1)]);
-  const removeItem = (i) => onChange([...items.slice(0, i), ...items.slice(i + 1)]);
-  const addItem = () => onChange([...items, '']);
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {items.map((it, i) => (
-        <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Inp value={it} onChange={v => setItem(i, v)} placeholder={`Ítem ${i + 1}`} />
-          <RowRemoveBtn onClick={() => removeItem(i)} />
-        </div>
-      ))}
-      <AddRowBtn onClick={addItem}>+ Agregar</AddRowBtn>
-    </div>
-  );
-}
-
 // ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
 export default function ContratoForm({ contrato, reportes = [] }) {
   const router = useRouter();
@@ -333,23 +296,6 @@ export default function ContratoForm({ contrato, reportes = [] }) {
     ]
   );
 
-  const [annexA, setAnnexA] = useState(() => {
-    const a = contrato?.annexA && typeof contrato.annexA === 'object' && !Array.isArray(contrato.annexA)
-      ? contrato.annexA
-      : defaultAnnexA();
-    return {
-      ...defaultAnnexA(),
-      ...a,
-      specs: Array.isArray(a.specs) ? a.specs : ['', '', '', '', ''],
-    };
-  });
-
-  const [annexB, setAnnexB] = useState(
-    contrato?.annexB && Array.isArray(contrato.annexB) && contrato.annexB.length
-      ? contrato.annexB
-      : [defaultAnnexBRow(partidas, form)]
-  );
-
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
@@ -363,16 +309,6 @@ export default function ContratoForm({ contrato, reportes = [] }) {
   const setPago = (i, k, v) => setPagos(p => { const a = [...p]; a[i] = { ...a[i], [k]: v }; return a; });
   const addPago = () => setPagos(p => [...p, defaultPago()]);
   const removePago = (i) => setPagos(p => p.length > 1 ? [...p.slice(0, i), ...p.slice(i + 1)] : p);
-
-  // ── helpers de Annex A ─────────────────────────────────────────────────────
-  const setAnnexAField  = (k, v) => setAnnexA(p => ({ ...p, [k]: v }));
-  const setAnnexASpec   = (i, v) => setAnnexA(p => { const a = [...p.specs]; a[i] = v; return { ...p, specs: a }; });
-  const setAnnexAList   = (k, v) => setAnnexA(p => ({ ...p, [k]: v }));
-
-  // ── helpers de Annex B ─────────────────────────────────────────────────────
-  const setAnnexBRow = (i, k, v) => setAnnexB(p => { const a = [...p]; a[i] = { ...a[i], [k]: v }; return a; });
-  const addAnnexBRow = () => setAnnexB(p => [...p, defaultAnnexBRow(partidas, form)]);
-  const removeAnnexBRow = (i) => setAnnexB(p => p.length > 1 ? [...p.slice(0, i), ...p.slice(i + 1)] : p);
 
   // ── autofill desde el Informe de Verificación ──────────────────────────────
   const handleReporteSelect = (verificacionId) => {
@@ -403,6 +339,13 @@ export default function ContratoForm({ contrato, reportes = [] }) {
     return acc + (isNaN(t) ? 0 : t);
   }, 0);
 
+  // Monto de cada pago = % × Total Contract Value (Artículo 3)
+  const pagoMonto = (pg) => {
+    const pct = parseFloat(String(pg.porcentaje).replace(',', '.'));
+    if (isNaN(pct) || !sumaTotal) return '';
+    return ((sumaTotal * pct) / 100).toFixed(2);
+  };
+
   // ── acciones ──────────────────────────────────────────────────────────────
   const handleSave = async () => {
     if (!form.fecha || !form.buyerLegalName || !form.supplierLegalName) {
@@ -411,9 +354,10 @@ export default function ContratoForm({ contrato, reportes = [] }) {
     }
     setSaving(true); setError(null);
     try {
+      const totalFinal = sumaTotal ? sumaTotal.toFixed(2) : form.totalContractValue;
       const body = {
         ...form,
-        totalContractValue: sumaTotal ? sumaTotal.toFixed(2) : form.totalContractValue,
+        totalContractValue: totalFinal,
         partidas: partidas
           .filter(pt => pt.producto || pt.especificacion || pt.cantidad || pt.precioUnitario)
           .map((pt, i) => ({
@@ -422,10 +366,15 @@ export default function ContratoForm({ contrato, reportes = [] }) {
             sortOrder: i,
           })),
         pagos: pagos
-          .filter(pg => pg.concepto || pg.porcentaje || pg.monto)
-          .map((pg, i) => ({ ...pg, sortOrder: i })),
-        annexA,
-        annexB,
+          .filter(pg => pg.concepto || pg.porcentaje)
+          .map((pg, i) => {
+            // Monto recalculado: % × Total Contract Value (fallback al guardado si no hay suma)
+            const pct = parseFloat(String(pg.porcentaje).replace(',', '.'));
+            const monto = (!isNaN(pct) && sumaTotal)
+              ? ((parseFloat(totalFinal) * pct) / 100).toFixed(2)
+              : (pg.monto || '');
+            return { ...pg, monto, sortOrder: i };
+          }),
       };
       const res = await fetch(
         isEdit ? `/api/admin/contratos/${contrato.id}` : '/api/admin/contratos',
@@ -720,7 +669,7 @@ export default function ContratoForm({ contrato, reportes = [] }) {
             }}>
               <span>Concepto</span>
               <span>%</span>
-              <span>Monto (USD)</span>
+              <span>Monto (auto, USD)</span>
               <span />
             </div>
             {pagos.map((pg, i) => (
@@ -729,12 +678,26 @@ export default function ContratoForm({ contrato, reportes = [] }) {
               }}>
                 <Inp value={pg.concepto} onChange={v => setPago(i, 'concepto', v)} placeholder="Advance / Second / Final" />
                 <Inp value={pg.porcentaje} onChange={v => setPago(i, 'porcentaje', v)} placeholder="30" />
-                <Inp value={pg.monto} onChange={v => setPago(i, 'monto', v)} placeholder="0.00" />
+                <input
+                  value={pagoMonto(pg)}
+                  readOnly
+                  tabIndex={-1}
+                  placeholder="0.00"
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    border: '1px solid #e2e8f0', borderRadius: 8,
+                    padding: '8px 12px', fontSize: 13, color: '#64748b',
+                    background: '#f8fafc', fontFamily: 'inherit', outline: 'none',
+                  }}
+                />
                 <RowRemoveBtn onClick={() => removePago(i)} />
               </div>
             ))}
           </div>
           <AddRowBtn onClick={addPago}>+ Agregar pago</AddRowBtn>
+          <p style={{ margin: '8px 0 0', fontSize: 12, color: '#94a3b8' }}>
+            El monto se calcula automáticamente: % × Total Contract Value (Artículo 3). Edita los porcentajes o las partidas para actualizarlo.
+          </p>
           <div style={{ marginTop: 14 }}>
             <FieldLabel>Method (Método)</FieldLabel>
             <Chips options={PAYMENT_METHODS} value={form.paymentMethod} onChange={v => set('paymentMethod', v)} />
@@ -904,94 +867,8 @@ export default function ContratoForm({ contrato, reportes = [] }) {
           </p>
         </SectionCard>
 
-        {/* 16. ANNEX A */}
-        <SectionCard n="16" title="Annex A — Technical Specifications (Especificaciones Técnicas)">
-          <EditGrid>
-            <FieldWrap label="Product">
-              <Inp value={annexA.product} onChange={v => setAnnexAField('product', v)} placeholder="Nombre del producto" />
-            </FieldWrap>
-            <FieldWrap label="Model">
-              <Inp value={annexA.model} onChange={v => setAnnexAField('model', v)} placeholder="Modelo" />
-            </FieldWrap>
-            <FieldWrap label="Brand">
-              <Inp value={annexA.brand} onChange={v => setAnnexAField('brand', v)} placeholder="Marca" />
-            </FieldWrap>
-            <FieldWrap label="Dimensions">
-              <Inp value={annexA.dimensions} onChange={v => setAnnexAField('dimensions', v)} placeholder="Dimensiones" />
-            </FieldWrap>
-            {annexA.specs.map((s, i) => (
-              <FieldWrap key={i} label={`Specification ${i + 1}`}>
-                <Inp value={s} onChange={v => setAnnexASpec(i, v)} placeholder={`Requisito técnico ${i + 1}`} />
-              </FieldWrap>
-            ))}
-          </EditGrid>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 14 }}>
-            <FieldWrap label="Materials (Materiales)">
-              <TextListEditor items={annexA.materials} onChange={v => setAnnexAList('materials', v)} />
-            </FieldWrap>
-            <FieldWrap label="Performance requirements (Requisitos de desempeño)">
-              <TextListEditor items={annexA.performance} onChange={v => setAnnexAList('performance', v)} />
-            </FieldWrap>
-            <FieldWrap label="Required certifications (Certificaciones requeridas)">
-              <TextListEditor items={annexA.certifications} onChange={v => setAnnexAList('certifications', v)} />
-            </FieldWrap>
-            <FieldWrap label="Accessories (Accesorios)">
-              <TextListEditor items={annexA.accessories} onChange={v => setAnnexAList('accessories', v)} />
-            </FieldWrap>
-          </div>
-        </SectionCard>
-
-        {/* 17. ANNEX B */}
-        <SectionCard n="17" title="Annex B — Commercial Terms (Términos Comerciales)">
-          <div style={{ overflowX: 'auto' }}>
-            <div style={{ minWidth: 1250 }}>
-              <div style={{
-                display: 'grid', gridTemplateColumns: '110px 140px 80px 100px 110px 90px 110px 110px 100px 140px 90px 32px', gap: 8,
-                padding: '0 0 4px', fontSize: 11, fontWeight: 700, color: '#94a3b8',
-                textTransform: 'uppercase', letterSpacing: '.07em',
-              }}>
-                <span>PO Number</span>
-                <span>Product</span>
-                <span>Quantity</span>
-                <span>Unit Price</span>
-                <span>Total</span>
-                <span>Incoterm</span>
-                <span>Loading Port</span>
-                <span>Destination</span>
-                <span>Lead Time</span>
-                <span>Payment Terms</span>
-                <span>Warranty</span>
-                <span />
-              </div>
-              {annexB.map((row, i) => (
-                <div key={i} style={{
-                  display: 'grid', gridTemplateColumns: '110px 140px 80px 100px 110px 90px 110px 110px 100px 140px 90px 32px', gap: 8,
-                  alignItems: 'center', marginBottom: 8,
-                }}>
-                  <Inp value={row.poNumber} onChange={v => setAnnexBRow(i, 'poNumber', v)} placeholder="PO" />
-                  <Inp value={row.product} onChange={v => setAnnexBRow(i, 'product', v)} placeholder="Producto" />
-                  <Inp value={row.quantity} onChange={v => setAnnexBRow(i, 'quantity', v)} placeholder="Cant." />
-                  <Inp value={row.unitPrice} onChange={v => setAnnexBRow(i, 'unitPrice', v)} placeholder="0.00" />
-                  <Inp value={row.total} onChange={v => setAnnexBRow(i, 'total', v)} placeholder="0.00" />
-                  <Inp value={row.incoterm} onChange={v => setAnnexBRow(i, 'incoterm', v)} placeholder="FOB" />
-                  <Inp value={row.loadingPort} onChange={v => setAnnexBRow(i, 'loadingPort', v)} placeholder="Puerto" />
-                  <Inp value={row.destination} onChange={v => setAnnexBRow(i, 'destination', v)} placeholder="Destino" />
-                  <Inp value={row.productionLeadTime} onChange={v => setAnnexBRow(i, 'productionLeadTime', v)} placeholder="Días" />
-                  <Inp value={row.paymentTerms} onChange={v => setAnnexBRow(i, 'paymentTerms', v)} placeholder="T/T 30/70" />
-                  <Inp value={row.warranty} onChange={v => setAnnexBRow(i, 'warranty', v)} placeholder="Meses" />
-                  <RowRemoveBtn onClick={() => removeAnnexBRow(i)} />
-                </div>
-              ))}
-            </div>
-          </div>
-          <AddRowBtn onClick={addAnnexBRow}>+ Agregar fila</AddRowBtn>
-          <p style={{ margin: '8px 0 0', fontSize: 12, color: '#94a3b8' }}>
-            La nueva fila se prellena con la primera partida y el Incoterm/puerto del contrato. Desplaza horizontalmente para ver todas las columnas.
-          </p>
-        </SectionCard>
-
-        {/* 18. ANNEX C */}
-        <SectionCard n="18" title="Annex C — Inspection and Acceptance Protocol (Protocolo de Inspección)">
+        {/* 16. ANNEX C (A y B se generan automáticamente en el PDF desde Partidas/Pagos) */}
+        <SectionCard n="16" title="Annex C — Inspection and Acceptance Protocol (Protocolo de Inspección)">
           <EditGrid>
             <FieldWrap label="Inspection Company">
               <Inp value={form.inspectionCompany} onChange={v => set('inspectionCompany', v)} placeholder="Compañía de inspección" />
@@ -1016,8 +893,8 @@ export default function ContratoForm({ contrato, reportes = [] }) {
           </EditGrid>
         </SectionCard>
 
-        {/* 19. ANNEX D */}
-        <SectionCard n="19" title="Annex D — Shipping Documents (Documentos de Embarque)">
+        {/* 17. ANNEX D */}
+        <SectionCard n="17" title="Annex D — Shipping Documents (Documentos de Embarque)">
           <FieldWrap label="Documentos requeridos (marcar los que aplican)">
             <Chips multi options={ANNEX_D_DOCS} values={form.annexDDocs} onChange={v => set('annexDDocs', v)} />
           </FieldWrap>
