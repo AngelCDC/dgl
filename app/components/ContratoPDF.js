@@ -1,7 +1,10 @@
 // components/ContratoPDF.js — International Purchase Agreement (EN)
 // Formato legal tradicional: Times, texto justificado, sin branding corporativo.
+import fs from "fs";
+import path from "path";
 import {
   Document,
+  Font,
   Page,
   Text,
   View,
@@ -9,6 +12,37 @@ import {
 } from "@react-pdf/renderer";
 
 const INK = "#000000";
+
+// ─── Fuente para caracteres chinos ────────────────────────────────────────────
+// Times-Roman/Times-Bold no incluyen glifos CJK; se registra SimHei (chino
+// simplificado) y se usa solo cuando el texto contiene caracteres chinos.
+const CN_FONT = "SimHei";
+try {
+  const fontPath = path.join(process.cwd(), "fonts", "simhei.ttf");
+  if (fs.existsSync(fontPath)) {
+    Font.register({
+      family: CN_FONT,
+      fonts: [
+        { src: fontPath, fontWeight: "normal" },
+        { src: fontPath, fontWeight: "bold" },
+      ],
+    });
+  } else {
+    console.error(`SimHei font not found at ${fontPath} (Chinese text may not render)`);
+  }
+} catch (e) {
+  console.error("SimHei font not registered (Chinese text may not render):", e.message);
+}
+
+// Detecta ideogramas CJK / caracteres de ancho completo (chino simplificado)
+const CJK_RE = /[　-〿぀-ヿ㐀-䶿一-鿿豈-﫿＀-￯]/;
+const pickFont = (texto, fallback) =>
+  texto && CJK_RE.test(String(texto)) ? CN_FONT : fallback;
+
+// Texto que cambia automáticamente a la fuente china si contiene caracteres CJK
+const CNText = ({ children, fallback = "Times-Roman" }) => (
+  <Text style={{ fontFamily: pickFont(children, fallback) }}>{children}</Text>
+);
 
 const styles = StyleSheet.create({
   page: {
@@ -292,7 +326,7 @@ const Para = ({ children }) => <Text style={styles.para}>{children}</Text>;
 // Párrafo con etiqueta en negrita ("Label: value.")
 const Labeled = ({ label, children }) => (
   <Text style={styles.labeled}>
-    <Text style={{ fontFamily: "Times-Bold" }}>{label}:</Text> {children}
+    <Text style={{ fontFamily: "Times-Bold" }}>{label}:</Text> <CNText>{children}</CNText>
   </Text>
 );
 
@@ -317,6 +351,7 @@ const LegalTable = ({ header, rows, widths }) => (
             style={[
               ci === row.length - 1 ? styles.tableCellLast : styles.tableCell,
               widths[ci],
+              pickFont(cell?.text) ? { fontFamily: CN_FONT } : null,
             ]}
           >
             {cell?.text ?? "—"}
@@ -419,12 +454,13 @@ export const ContratoPDF = ({ data }) => {
         </Text>
         <Text style={styles.paraIndent}>
           (2)&nbsp;&nbsp;
-          <Text style={{ fontFamily: "Times-Bold" }}>{nbsp(data.supplierLegalName)}</Text>
-          {data.supplierTradeName ? ` (${data.supplierTradeName}),` : ","} a company duly organized and
+          <CNText fallback="Times-Bold">{nbsp(data.supplierLegalName)}</CNText>
+          {data.supplierTradeName ? <> (<CNText>{data.supplierTradeName}</CNText>),</> : ","} a company duly organized and
           validly existing under the laws of the People’s Republic of China, holding Unified Social
           Credit Code No. {nbsp(data.supplierUscc)}, with its registered address at{" "}
-          {nbsp(data.supplierAddress)}, represented by {nbsp(data.supplierLegalRepresentative)},{" "}
-          {nbsp(data.supplierPosition)} (hereinafter referred to as the
+          <CNText>{nbsp(data.supplierAddress)}</CNText>, represented by{" "}
+          <CNText>{nbsp(data.supplierLegalRepresentative)}</CNText>,{" "}
+          <CNText>{nbsp(data.supplierPosition)}</CNText> (hereinafter referred to as the
           “<Text style={{ fontFamily: "Times-Bold" }}>Supplier</Text>”).
         </Text>
         <Text style={styles.para}>
@@ -644,9 +680,9 @@ export const ContratoPDF = ({ data }) => {
             </View>
             <View style={styles.noticeBox}>
               <Text style={styles.noticeTitle}>THE SUPPLIER</Text>
-              <Text style={styles.noticeLine}>Name: {nbsp(data.supplierNoticeName)}</Text>
+              <Text style={styles.noticeLine}>Name: <CNText>{nbsp(data.supplierNoticeName)}</CNText></Text>
               <Text style={styles.noticeLine}>Email: {nbsp(data.supplierNoticeEmail)}</Text>
-              <Text style={styles.noticeLine}>Address: {nbsp(data.supplierNoticeAddress)}</Text>
+              <Text style={styles.noticeLine}>Address: <CNText>{nbsp(data.supplierNoticeAddress)}</CNText></Text>
             </View>
           </View>
           <Para>{FIXED_TEXT.noticesBoilerplate}</Para>
@@ -676,9 +712,9 @@ export const ContratoPDF = ({ data }) => {
             <View style={styles.signatureBox}>
               <Text style={styles.signatureFor}>For and on behalf of{"\n"}THE SUPPLIER:</Text>
               <View style={styles.signatureLine} />
-              <Text style={styles.signatureParty}>{nbsp(data.supplierLegalName)}</Text>
-              <Text style={styles.signatureMeta}>Name: {nbsp(data.supplierSigner)}</Text>
-              <Text style={styles.signatureMeta}>Title: {nbsp(data.supplierSignerPosition)}</Text>
+              <Text style={styles.signatureParty}><CNText fallback="Times-Bold">{nbsp(data.supplierLegalName)}</CNText></Text>
+              <Text style={styles.signatureMeta}>Name: <CNText>{nbsp(data.supplierSigner)}</CNText></Text>
+              <Text style={styles.signatureMeta}>Title: <CNText>{nbsp(data.supplierSignerPosition)}</CNText></Text>
               <Text style={styles.signatureMeta}>Date: {nbsp(data.supplierSignDate)}</Text>
               <Text style={styles.signatureMeta}>(Company stamp / seal)</Text>
             </View>
