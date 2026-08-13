@@ -17,7 +17,7 @@ export default async function ContratosPage() {
     orderBy: { createdAt: 'desc' },
     include: {
       _count: { select: { partidas: true, pagos: true } },
-      supplier: { select: { name: true } },
+      verificacion: { select: { nombreEmpresa: true } },
     },
   })
 
@@ -53,7 +53,7 @@ export default async function ContratosPage() {
               </div>
               <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: '#888', flexWrap: 'wrap' }}>
                 <span>📅 {c.fecha}</span>
-                <span>🏭 {c.supplier?.name ?? c.supplierLegalName}</span>
+                <span>🏭 {c.verificacion?.nombreEmpresa ?? c.supplierLegalName}</span>
                 {c.totalContractValue && <span>💰 {c.totalContractValue} {c.currency}</span>}
                 <span>📦 {c._count.partidas} partidas</span>
               </div>
