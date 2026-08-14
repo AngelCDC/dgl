@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   Cell, LabelList, PieChart, Pie, ScatterChart, Scatter,
@@ -8,6 +8,7 @@ import {
 
 /* ─── Paleta de series (orden fijo, validada) ──────────────────────────────── */
 const SERIES = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948']
+const LS_KEY = 'inteligencia-proveedores-json'
 
 /* ─── Utilidades ────────────────────────────────────────────────────────────── */
 const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null }
@@ -239,20 +240,20 @@ function processData(data) {
   return {
     proveedores, fecha, version, sectores,
     kpis: [
-      { label: 'Proveedores contactados', value: fmtNum(totalProv), sub: `${proveedores.length} con ficha en este dataset` },
-      { label: 'Mensajes intercambiados', value: fmtNum(totalMensajes), sub: 'comunicaciones registradas' },
-      { label: 'Productos con precio', value: fmtNum(totalProdConPrecio), sub: `${impresorasConPrecio.length} impresoras · ${tintasConPrecio.length} ofertas de tinta` },
-      { label: 'Proveedores con precio', value: fmtNum(conPrecio), sub: `${fmtPct(pctConPrecio)} del total contactado` },
-      { label: 'Precio mín. impresora', value: fmtUSD(minImp), sub: minOferta ? `${shortNombre(minOferta.proveedor)} · ${minOferta.termino ?? '—'}` : '—' },
-      { label: `Precio prom. (${promLabel})`, value: fmtUSD(promVal), sub: 'según estadísticas del dataset' },
-      { label: 'Precio máx. impresora', value: fmtUSD(maxImp), sub: maxOferta ? `${shortNombre(maxOferta.proveedor)} · ${maxOferta.termino ?? '—'}` : '—' },
-      { label: 'Tintas (rango)', value: minTinta != null && maxTinta != null ? `${fmtUSD(minTinta)} – ${fmtUSD(maxTinta)}` : 'N/D', sub: 'precio mínimo y máximo por litro' },
+      { label: 'Proveedores contactados', value: fmtNum(totalProv), sub: `${proveedores.length} con ficha en el JSON`, icon: '📊', color: '#2563eb' },
+      { label: 'Mensajes intercambiados', value: fmtNum(totalMensajes), sub: 'comunicaciones registradas', icon: '💬', color: '#0891b2' },
+      { label: 'Productos con precio', value: fmtNum(totalProdConPrecio), sub: `${impresorasConPrecio.length} impresoras · ${tintasConPrecio.length} ofertas de tinta`, icon: '🏷️', color: '#0d9488' },
+      { label: 'Proveedores con precio', value: fmtNum(conPrecio), sub: `${fmtPct(pctConPrecio)} del total contactado`, icon: '💵', color: '#7c3aed' },
+      { label: 'Precio mín. impresora', value: fmtUSD(minImp), sub: minOferta ? `${shortNombre(minOferta.proveedor)} · ${minOferta.termino ?? '—'}` : '—', icon: '📉', color: '#16a34a' },
+      { label: `Precio prom. (${promLabel})`, value: fmtUSD(promVal), sub: 'según estadísticas del JSON', icon: '📈', color: '#d97706' },
+      { label: 'Precio máx. impresora', value: fmtUSD(maxImp), sub: maxOferta ? `${shortNombre(maxOferta.proveedor)} · ${maxOferta.termino ?? '—'}` : '—', icon: '🔺', color: '#dc2626' },
+      { label: 'Tintas (rango)', value: minTinta != null && maxTinta != null ? `${fmtUSD(minTinta)} – ${fmtUSD(maxTinta)}` : 'N/D', sub: 'precio mínimo y máximo por litro', icon: '🧪', color: '#0ea5e9' },
     ],
     compKey, compRows,
     compLegend: [...new Set(compRows.map(r => r.tipo))].map(t => ({ name: t, color: colorOf(t) })),
     pieData, totalProductos,
     cabData,
-    tintasConPrecio, minTinta, maxTinta,
+    tintasConPrecio,
     statusRows, agentes, paisAgente,
     scatterRows,
     scatterLegend: [...new Set(scatterRows.map(r => r.tipo))].map(t => ({ name: t, color: colorOf(t) })),
@@ -261,36 +262,26 @@ function processData(data) {
 }
 
 /* ─── Piezas de UI ─────────────────────────────────────────────────────────── */
-function KpiCard({ label, value, sub, title }) {
+function BiCardHead({ n, title, sub }) {
   return (
-    <div className="di-card p-4" title={title || label}>
-      <div className="text-[11px] uppercase tracking-wide" style={{ color: 'var(--di-steel)', fontWeight: 700 }}>{label}</div>
-      <div className="di-kpi-value font-bold text-[22px] mt-1 leading-tight">{value}</div>
-      {sub ? <div className="text-[11px] mt-1" style={{ color: 'var(--di-steel)' }}>{sub}</div> : null}
+    <div className="bi-card-header">
+      <span className="bi-card-num">{n}</span>
+      <div style={{ minWidth: 0 }}>
+        <div className="bi-card-title">{title}</div>
+        {sub ? <div style={{ fontSize: 12, color: 'var(--steel)', marginBottom: 16 }}>{sub}</div> : null}
+      </div>
     </div>
   )
 }
 
-function CardHead({ n, title, sub }) {
-  return (
-    <div className="mb-4">
-      <h2 className="di-title font-bold text-[15px] flex items-center gap-2">
-        <span className="di-chip" style={{ background: 'var(--di-navy)', color: '#fff' }}>{n}</span>
-        {title}
-      </h2>
-      {sub ? <p className="text-[12px] mt-1" style={{ color: 'var(--di-steel)' }}>{sub}</p> : null}
-    </div>
-  )
-}
-
-function ChartLegend({ items }) {
+function BiLegend({ items }) {
   if (!items.length) return null
   return (
-    <div className="flex flex-wrap gap-2 justify-center mt-3">
+    <div className="bi-legend">
       {items.map(it => (
-        <span key={it.name} className="di-chip" style={{ background: '#fff', border: '1px solid var(--di-border)' }}>
-          <span style={{ width: 8, height: 8, borderRadius: 2, background: it.color, display: 'inline-block', flexShrink: 0 }} />
-          <span style={{ color: 'var(--di-ink)' }}>{it.name}{it.value != null ? ' · ' + it.value : ''}</span>
+        <span key={it.name} className="bi-legend-item">
+          <span className="bi-legend-swatch" style={{ background: it.color }} />
+          {it.name}{it.value != null ? ' · ' + it.value : ''}
         </span>
       ))}
     </div>
@@ -302,12 +293,12 @@ function TipBar({ active, payload }) {
   if (!active || !payload?.length) return null
   const r = payload[0].payload
   return (
-    <div className="di-tooltip">
-      <div className="di-tt-title">{r.proveedor}</div>
-      <div className="di-tt-row"><span>Precio</span><b>{fmtUSD(r.precio)}</b></div>
-      <div className="di-tt-row"><span>Incoterm</span><b>{r.termino || '—'}</b></div>
-      <div className="di-tt-row"><span>Tipo</span><b>{r.tipo}</b></div>
-      {r.oferta ? <div className="di-tt-row"><span>Oferta</span><b>{r.oferta}</b></div> : null}
+    <div className="bi-tip">
+      <div className="bi-tip-title">{r.proveedor}</div>
+      <div className="bi-tip-row"><span>Precio</span><b>{fmtUSD(r.precio)}</b></div>
+      <div className="bi-tip-row"><span>Incoterm</span><b>{r.termino || '—'}</b></div>
+      <div className="bi-tip-row"><span>Tipo</span><b>{r.tipo}</b></div>
+      {r.oferta ? <div className="bi-tip-row"><span>Oferta</span><b>{r.oferta}</b></div> : null}
     </div>
   )
 }
@@ -316,10 +307,10 @@ function TipPie({ active, payload }) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
   return (
-    <div className="di-tooltip">
-      <div className="di-tt-title">{d.name}</div>
-      <div className="di-tt-row"><span>Productos</span><b>{d.value}</b></div>
-      <div className="di-tt-row"><span>Participación</span><b>{d.pct}%</b></div>
+    <div className="bi-tip">
+      <div className="bi-tip-title">{d.name}</div>
+      <div className="bi-tip-row"><span>Productos</span><b>{d.value}</b></div>
+      <div className="bi-tip-row"><span>Participación</span><b>{d.pct}%</b></div>
     </div>
   )
 }
@@ -327,9 +318,9 @@ function TipPie({ active, payload }) {
 function TipCab({ active, payload }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="di-tooltip">
-      <div className="di-tt-title">{payload[0].payload.label}</div>
-      <div className="di-tt-row"><span>Productos</span><b>{payload[0].value}</b></div>
+    <div className="bi-tip">
+      <div className="bi-tip-title">{payload[0].payload.label}</div>
+      <div className="bi-tip-row"><span>Productos</span><b>{payload[0].value}</b></div>
     </div>
   )
 }
@@ -338,19 +329,19 @@ function TipScatter({ active, payload }) {
   if (!active || !payload?.length) return null
   const r = payload[0].payload
   return (
-    <div className="di-tooltip">
-      <div className="di-tt-title">{r.proveedor}</div>
-      <div className="di-tt-row"><span>Modelo</span><b>{r.modelo || '—'}</b></div>
-      <div className="di-tt-row"><span>Cabezales</span><b>{r.cabezales}</b></div>
-      <div className="di-tt-row"><span>Precio</span><b>{fmtUSD(r.precio)}</b></div>
-      <div className="di-tt-row"><span>Incoterm</span><b>{r.termino || '—'}</b></div>
-      <div className="di-tt-row"><span>Tipo</span><b>{r.tipo}</b></div>
+    <div className="bi-tip">
+      <div className="bi-tip-title">{r.proveedor}</div>
+      <div className="bi-tip-row"><span>Modelo</span><b>{r.modelo || '—'}</b></div>
+      <div className="bi-tip-row"><span>Cabezales</span><b>{r.cabezales}</b></div>
+      <div className="bi-tip-row"><span>Precio</span><b>{fmtUSD(r.precio)}</b></div>
+      <div className="bi-tip-row"><span>Incoterm</span><b>{r.termino || '—'}</b></div>
+      <div className="bi-tip-row"><span>Tipo</span><b>{r.tipo}</b></div>
     </div>
   )
 }
 
 const BarLabel = ({ x, y, width, height, value }) => (
-  <text x={x + width + 6} y={y + height / 2} dominantBaseline="middle" fill="#1B3A6B" fontSize={11} fontWeight={600}>
+  <text x={x + width + 6} y={y + height / 2} dominantBaseline="middle" fill="#0a1628" fontSize={11} fontWeight={600}>
     {fmtUSD(value)}
   </text>
 )
@@ -359,57 +350,93 @@ const DotShape = ({ cx, cy, payload }) => (
   <circle cx={cx} cy={cy} r={5} fill={payload.color} stroke="#fff" strokeWidth={2} />
 )
 
-/* ─── Componente principal ─────────────────────────────────────────────────── */
-export default function SupplierDashboard({ data, error }) {
-  const model = useMemo(() => (data ? processData(data) : null), [data])
-
-  if (error || !model || !model.proveedores.length) {
-    return (
-      <div className="di-root min-h-[60vh] p-6">
-        <div className="di-card max-w-xl mx-auto p-8 text-center">
-          <div className="di-title font-bold text-[15px] mb-2">Inteligencia de Proveedores</div>
-          <div className="text-[13px]" style={{ color: 'var(--di-steel)' }}>
-            {error || 'No se pudieron procesar los datos (JSON vacío o inválido). Verifica data/inteligencia-proveedores.json.'}
-          </div>
+/* ─── Pantalla de carga del JSON ───────────────────────────────────────────── */
+function LoadScreen({ raw, setRaw, error, onProcess, onFile, onClear }) {
+  return (
+    <div className="dash-page">
+      <div className="dash-welcome">
+        <div>
+          <h1 className="dash-welcome-title">Inteligencia de Proveedores</h1>
+          <p className="dash-welcome-sub">Dashboard analítico de equipos de impresión de gran formato</p>
         </div>
       </div>
-    )
-  }
 
+      <div className="bi-load-card">
+        <div className="bi-load-title">Cargar JSON de inteligencia</div>
+        <p className="bi-load-sub">
+          Adjunta o pega el JSON de inteligencia de proveedores (Alibaba y otras plataformas B2B chinas).
+          La página lo procesa y genera el dashboard automáticamente. El JSON se guarda en este navegador.
+        </p>
+
+        <label className="bi-drop-zone">
+          <input type="file" accept=".json,application/json" onChange={onFile} />
+          📄 Clic para seleccionar el archivo .json
+        </label>
+
+        <textarea
+          className="bi-textarea"
+          placeholder={'{\n  "version": "1.0",\n  "fecha_actualizacion": "2026-08-14",\n  "metadata": { ... },\n  "proveedores": [ ... ],\n  "comparativas": { ... },\n  "estadisticas": { ... }\n}'}
+          value={raw}
+          onChange={(e) => setRaw(e.target.value)}
+          spellCheck={false}
+        />
+
+        {error ? <div className="sol-error" style={{ marginTop: 12 }}>{error}</div> : null}
+
+        <div className="bi-actions">
+          <button className="sol-btn-preview" onClick={onProcess}>Procesar JSON</button>
+          <button className="sol-btn-cancel" onClick={onClear}>Limpiar</button>
+        </div>
+
+        <p className="bi-hint">
+          Estructura esperada: version · fecha_actualizacion · metadata · proveedores[] · comparativas · estadisticas
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Vista del dashboard ──────────────────────────────────────────────────── */
+function DashboardView({ data, fileName, onReload }) {
+  const model = useMemo(() => processData(data), [data])
   const { kpis, compRows, compLegend, pieData, totalProductos, cabData, tintasConPrecio, statusRows, scatterRows, scatterLegend, resumen } = model
   const hayMinMaxTinta = tintasConPrecio.length > 1
 
   return (
-    <div className="di-root min-h-full p-6">
+    <div className="dash-page">
+
       {/* Encabezado */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+      <div className="dash-welcome">
         <div>
-          <h1 className="di-title font-bold text-[20px]">Inteligencia de Proveedores</h1>
-          <p className="text-[12px] mt-0.5" style={{ color: 'var(--di-steel)' }}>
-            Equipos de impresión de gran formato · Fuentes B2B chinas (Alibaba y plataformas similares)
-          </p>
+          <h1 className="dash-welcome-title">Inteligencia de Proveedores</h1>
+          <p className="dash-welcome-sub">Análisis generado a partir del JSON cargado</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <span className="di-chip" style={{ background: 'var(--di-navy)', color: '#fff' }}>
-            Actualizado: {model.fecha || 'N/D'}
-          </span>
-          {model.sectores.map(s => (
-            <span key={s} className="di-chip" style={{ background: '#fff', border: '1px solid var(--di-border)' }}>{s}</span>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span className="bi-chip bi-chip-navy">Actualizado: {model.fecha || 'N/D'}</span>
+          {model.sectores.map(s => <span key={s} className="bi-chip">{s}</span>)}
+          {fileName ? <span className="bi-chip">📄 {fileName}</span> : null}
+          <button className="sol-btn-cancel" onClick={onReload}>Cargar otro JSON</button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* 1 ── KPIs */}
-        <section className="lg:col-span-3">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {kpis.map(k => <KpiCard key={k.label} {...k} />)}
+      {/* 1 ── KPIs */}
+      <div className="dash-stats">
+        {kpis.map(k => (
+          <div key={k.label} className="dash-stat-card" style={{ '--stat-color': k.color }}>
+            <div className="dash-stat-top">
+              <span className="dash-stat-icon">{k.icon}</span>
+            </div>
+            <div className="dash-stat-value">{k.value}</div>
+            <div className="dash-stat-label">{k.label}</div>
+            {k.sub ? <div className="bi-stat-sub">{k.sub}</div> : null}
           </div>
-        </section>
+        ))}
+      </div>
 
-        {/* 2 ── Comparativa de precios por proveedor */}
-        <section className="di-card p-5 lg:col-span-2">
-          <CardHead
+      {/* 2 + 3 ── Comparativa y donut */}
+      <div className="bi-grid">
+        <div className="bi-card">
+          <BiCardHead
             n={2}
             title="Comparativa de precios por proveedor"
             sub={`${model.compKey ? model.compKey.replace(/_/g, ' ') + ' · ' : ''}ofertas ordenadas de menor a mayor (incluye PROMO y ORIGINAL cuando existen)`}
@@ -417,24 +444,24 @@ export default function SupplierDashboard({ data, error }) {
           <div style={{ height: Math.max(220, compRows.length * 30 + 50) }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={compRows} layout="vertical" margin={{ top: 4, right: 92, bottom: 4, left: 0 }}>
-                <CartesianGrid horizontal={false} stroke="#e1e0d9" strokeWidth={1} />
+                <CartesianGrid horizontal={false} stroke="#eee" strokeWidth={1} />
                 <XAxis
                   type="number"
                   domain={[0, (dataMax) => Math.ceil(dataMax * 1.15 / 500) * 500]}
                   tickFormatter={fmtUSD}
                   tickLine={false}
-                  axisLine={{ stroke: '#c3c2b7' }}
-                  tick={{ fontSize: 11, fill: '#898781' }}
+                  axisLine={{ stroke: '#eee' }}
+                  tick={{ fontSize: 11, fill: '#aaa' }}
                 />
                 <YAxis
                   type="category"
                   dataKey="nombre"
                   width={192}
                   tickLine={false}
-                  axisLine={{ stroke: '#c3c2b7' }}
-                  tick={{ fontSize: 11, fill: '#52514e' }}
+                  axisLine={{ stroke: '#eee' }}
+                  tick={{ fontSize: 11, fill: '#888' }}
                 />
-                <Tooltip content={<TipBar />} cursor={{ fill: 'rgba(27, 58, 107, 0.04)' }} />
+                <Tooltip content={<TipBar />} cursor={{ fill: 'rgba(37, 99, 235, 0.04)' }} />
                 <Bar dataKey="precio" barSize={16} radius={[0, 4, 4, 0]} isAnimationActive={false}>
                   {compRows.map(r => <Cell key={r.nombre + r.precio} fill={compLegend.find(l => l.name === r.tipo)?.color ?? '#2a78d6'} />)}
                   <LabelList dataKey="precio" content={<BarLabel />} />
@@ -442,13 +469,12 @@ export default function SupplierDashboard({ data, error }) {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <ChartLegend items={compLegend} />
-        </section>
+          <BiLegend items={compLegend} />
+        </div>
 
-        {/* 3 ── Donut por tipo */}
-        <section className="di-card p-5 lg:col-span-1">
-          <CardHead n={3} title="Distribución por tipo" sub="Todos los productos catalogados" />
-          <div className="relative h-64">
+        <div className="bi-card">
+          <BiCardHead n={3} title="Distribución por tipo" sub="Todos los productos catalogados" />
+          <div style={{ position: 'relative', height: 260 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -461,49 +487,50 @@ export default function SupplierDashboard({ data, error }) {
                 <Tooltip content={<TipPie />} />
               </PieChart>
             </ResponsiveContainer>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <div className="di-kpi-value font-bold text-[26px] leading-none">{totalProductos}</div>
-              <div className="text-[11px] uppercase tracking-wide" style={{ color: 'var(--di-steel)' }}>productos</div>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+              <div style={{ fontSize: 26, fontWeight: 800, color: '#111', lineHeight: 1 }}>{totalProductos}</div>
+              <div style={{ fontSize: 10, color: '#aaa', textTransform: 'uppercase', letterSpacing: '.06em', fontFamily: 'var(--font-dm)' }}>productos</div>
             </div>
           </div>
-          <ChartLegend items={pieData.map(d => ({ name: d.name, color: d.color, value: `${d.value} · ${d.pct}%` }))} />
-        </section>
+          <BiLegend items={pieData.map(d => ({ name: d.name, color: d.color, value: `${d.value} · ${d.pct}%` }))} />
+        </div>
+      </div>
 
-        {/* 4 ── Distribución por cabezal */}
-        <section className="di-card p-5 lg:col-span-1">
-          <CardHead n={4} title="Distribución por cabezal" sub="Productos por modelo de cabezal (se ignoran nulos)" />
+      {/* 4 + 5 ── Cabezales y tabla de tintas */}
+      <div className="bi-grid-rev">
+        <div className="bi-card">
+          <BiCardHead n={4} title="Distribución por cabezal" sub="Productos por modelo de cabezal (se ignoran nulos)" />
           <div style={{ height: Math.max(200, cabData.length * 34 + 30) }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={cabData} layout="vertical" margin={{ top: 4, right: 34, bottom: 4, left: 0 }}>
-                <CartesianGrid horizontal={false} stroke="#e1e0d9" strokeWidth={1} />
+                <CartesianGrid horizontal={false} stroke="#eee" strokeWidth={1} />
                 <XAxis
                   type="number" allowDecimals={false}
-                  tickLine={false} axisLine={{ stroke: '#c3c2b7' }}
-                  tick={{ fontSize: 11, fill: '#898781' }}
+                  tickLine={false} axisLine={{ stroke: '#eee' }}
+                  tick={{ fontSize: 11, fill: '#aaa' }}
                 />
                 <YAxis
                   type="category" dataKey="label" width={116}
-                  tickLine={false} axisLine={{ stroke: '#c3c2b7' }}
-                  tick={{ fontSize: 11, fill: '#52514e' }}
+                  tickLine={false} axisLine={{ stroke: '#eee' }}
+                  tick={{ fontSize: 11, fill: '#888' }}
                 />
-                <Tooltip content={<TipCab />} cursor={{ fill: 'rgba(27, 58, 107, 0.04)' }} />
+                <Tooltip content={<TipCab />} cursor={{ fill: 'rgba(37, 99, 235, 0.04)' }} />
                 <Bar dataKey="count" fill="#2a78d6" barSize={14} radius={[0, 4, 4, 0]} isAnimationActive={false}>
-                  <LabelList dataKey="count" position="right" fill="#1B3A6B" fontSize={11} fontWeight={600} />
+                  <LabelList dataKey="count" position="right" fill="#0a1628" fontSize={11} fontWeight={600} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </section>
+        </div>
 
-        {/* 5 ── Tabla comparativa de tintas */}
-        <section className="di-card p-5 lg:col-span-2">
-          <CardHead
+        <div className="bi-card">
+          <BiCardHead
             n={5}
             title="Comparativa de precios de tinta"
             sub="Ofertas de tinta/ink ordenadas de menor a mayor · fila verde = mínimo · fila roja = máximo"
           />
-          <div className="overflow-x-auto">
-            <table className="di-table min-w-[560px]">
+          <div className="bi-table-wrap">
+            <table className="bi-table">
               <thead>
                 <tr>
                   <th>Proveedor</th>
@@ -519,151 +546,202 @@ export default function SupplierDashboard({ data, error }) {
                   const esMin = hayMinMaxTinta && i === 0
                   const esMax = hayMinMaxTinta && i === tintasConPrecio.length - 1
                   return (
-                    <tr key={r.proveedor + r.nota + i} style={esMin ? { background: '#EAF7F0' } : esMax ? { background: '#FDECEC' } : undefined}
+                    <tr key={r.proveedor + r.nota + i}
+                        className={esMin ? 'bi-row-min' : esMax ? 'bi-row-max' : undefined}
                         title={`${r.proveedor} — ${r.nota || r.tipoTinta}`}>
-                      <td className="font-medium" style={{ color: 'var(--di-navy)' }}>
+                      <td className="bi-prov">
                         {r.proveedor}
-                        {esMin ? <span className="di-chip di-badge-min ml-2">Mín</span> : null}
-                        {esMax ? <span className="di-chip di-badge-max ml-2">Máx</span> : null}
+                        {esMin ? <span className="bi-chip bi-badge-min" style={{ marginLeft: 8 }}>Mín</span> : null}
+                        {esMax ? <span className="bi-chip bi-badge-max" style={{ marginLeft: 8 }}>Máx</span> : null}
                       </td>
                       <td>{r.tipoTinta}</td>
-                      <td className="di-num font-semibold">{fmtUSD(r.precio)}</td>
-                      <td style={{ color: 'var(--di-steel)' }}>{r.unidad || 'N/D'}</td>
+                      <td className="bi-num" style={{ fontWeight: 600 }}>{fmtUSD(r.precio)}</td>
+                      <td style={{ color: 'var(--steel)' }}>{r.unidad || 'N/D'}</td>
                       <td>{r.termino || 'N/D'}</td>
-                      <td style={{ color: 'var(--di-steel)' }}>{r.nota || '—'}</td>
+                      <td style={{ color: 'var(--steel)' }}>{r.nota || '—'}</td>
                     </tr>
                   )
                 })}
               </tbody>
             </table>
           </div>
-        </section>
+        </div>
+      </div>
 
-        {/* 6 ── Estado de proveedores */}
-        <section className="di-card p-5 lg:col-span-3">
-          <CardHead
-            n={6}
-            title="Estado de proveedores"
-            sub="Fila verde = proveedor con agente local · ✅ = sí · ❌ = no"
-          />
-          <div className="overflow-x-auto">
-            <table className="di-table min-w-[640px]">
+      {/* 6 ── Estado de proveedores */}
+      <div className="bi-stack">
+        <div className="bi-card">
+          <BiCardHead n={6} title="Estado de proveedores" sub="Fila verde = proveedor con agente local · ✅ = sí · ❌ = no" />
+          <div className="bi-table-wrap">
+            <table className="bi-table">
               <thead>
                 <tr>
                   <th>Proveedor</th>
-                  <th className="text-center">Precio confirmado</th>
-                  <th className="text-center">Vende impresoras</th>
-                  <th className="text-center">Agente local</th>
+                  <th className="bi-th-center">Precio confirmado</th>
+                  <th className="bi-th-center">Vende impresoras</th>
+                  <th className="bi-th-center">Agente local</th>
                   <th>Ubicación</th>
                 </tr>
               </thead>
               <tbody>
                 {statusRows.map(r => (
-                  <tr key={r.nombre} style={r.agente ? { background: '#EAF7F0' } : undefined}
+                  <tr key={r.nombre} className={r.agente ? 'bi-row-agente' : undefined}
                       title={`${r.nombre}${r.contacto ? ' · Contacto: ' + r.contacto : ''}${r.agente && model.paisAgente ? ' · Agente en ' + model.paisAgente : ''}`}>
-                    <td className="font-medium" style={{ color: 'var(--di-navy)' }}>{r.nombre}</td>
-                    <td className="text-center">{r.tienePrecio ? '✅' : '❌'}</td>
-                    <td className="text-center">{r.vendeImpresoras ? '✅' : '❌'}</td>
-                    <td className="text-center">{r.agente ? '✅' : '❌'}</td>
-                    <td style={{ color: 'var(--di-steel)' }}>{r.ubicacion || 'N/D'}</td>
+                    <td className="bi-prov">{r.nombre}</td>
+                    <td style={{ textAlign: 'center' }}>{r.tienePrecio ? '✅' : '❌'}</td>
+                    <td style={{ textAlign: 'center' }}>{r.vendeImpresoras ? '✅' : '❌'}</td>
+                    <td style={{ textAlign: 'center' }}>{r.agente ? '✅' : '❌'}</td>
+                    <td style={{ color: 'var(--steel)' }}>{r.ubicacion || 'N/D'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </section>
+        </div>
+      </div>
 
-        {/* 7 ── Scatter precio vs cabezales */}
-        <section className="di-card p-5 lg:col-span-3">
-          <CardHead
+      {/* 7 ── Scatter precio vs cabezales */}
+      <div className="bi-stack">
+        <div className="bi-card">
+          <BiCardHead
             n={7}
             title="Precio vs número de cabezales"
             sub="Cada punto es una impresora con precio · X = cabezales · Y = precio (USD) · pasar el cursor para detalles"
           />
-          <div className="h-80">
+          <div style={{ height: 320 }}>
             <ResponsiveContainer width="100%" height="100%">
               <ScatterChart margin={{ top: 8, right: 28, bottom: 12, left: 8 }}>
-                <CartesianGrid stroke="#e1e0d9" strokeWidth={1} />
+                <CartesianGrid stroke="#eee" strokeWidth={1} />
                 <XAxis
                   type="number" dataKey="x" name="Cabezales"
                   domain={[1.4, 4.6]} ticks={[2, 3, 4]}
-                  tickLine={false} axisLine={{ stroke: '#c3c2b7' }}
-                  tick={{ fontSize: 11, fill: '#898781' }}
+                  tickLine={false} axisLine={{ stroke: '#eee' }}
+                  tick={{ fontSize: 11, fill: '#aaa' }}
                 />
                 <YAxis
                   type="number" dataKey="precio" name="Precio"
                   domain={['dataMin - 400', 'dataMax + 400']}
                   tickFormatter={fmtUSD} width={72}
-                  tickLine={false} axisLine={{ stroke: '#c3c2b7' }}
-                  tick={{ fontSize: 11, fill: '#898781' }}
+                  tickLine={false} axisLine={{ stroke: '#eee' }}
+                  tick={{ fontSize: 11, fill: '#aaa' }}
                 />
-                <Tooltip content={<TipScatter />} cursor={{ stroke: '#898781', strokeDasharray: '3 3' }} />
+                <Tooltip content={<TipScatter />} cursor={{ stroke: '#aaa', strokeDasharray: '3 3' }} />
                 <Scatter data={scatterRows} shape={<DotShape />} isAnimationActive={false} />
               </ScatterChart>
             </ResponsiveContainer>
           </div>
-          <ChartLegend items={scatterLegend} />
-        </section>
-
-        {/* 8 ── Resumen ejecutivo */}
-        <section className="lg:col-span-3">
-          <div className="di-summary p-6">
-            <h2 className="font-bold text-[15px] mb-4 flex items-center gap-2">
-              <span className="di-chip" style={{ background: '#4A90D9', color: '#fff' }}>8</span>
-              Resumen ejecutivo
-            </h2>
-            <div className="grid md:grid-cols-2 gap-x-10 gap-y-3 text-[13px] leading-relaxed">
-              <div className="flex gap-2">
-                <span style={{ color: '#7FB3E8' }}>▸</span>
-                <span>Mejor precio absoluto:{' '}
-                  <span className="di-acc">{resumen.mejorAbs ? `${fmtUSD(resumen.mejorAbs.precio)} ofrecido por ${resumen.mejorAbs.proveedor} (${resumen.mejorAbs.termino || '—'})` : 'N/D'}</span>
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <span style={{ color: '#7FB3E8' }}>▸</span>
-                <span>Mejor precio FOB:{' '}
-                  <span className="di-acc">{resumen.mejorFob ? `${fmtUSD(resumen.mejorFob.precio)} de ${resumen.mejorFob.proveedor}` : 'N/D — ningún proveedor ofreció precio FOB'}</span>
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <span style={{ color: '#7FB3E8' }}>▸</span>
-                <span>Brecha entre precio mínimo y máximo:{' '}
-                  <span className="di-acc">{fmtPct(resumen.brecha)}</span>
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <span style={{ color: '#7FB3E8' }}>▸</span>
-                <span>Proveedores con precio confirmado:{' '}
-                  <span className="di-acc">{resumen.conPrecio} de {resumen.totalProv} ({fmtPct(resumen.pctConPrecio)})</span>
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <span style={{ color: '#7FB3E8' }}>▸</span>
-                <span>Presencia local:{' '}
-                  <span className="di-acc">{resumen.agentes.length
-                    ? `${resumen.agentes.length} proveedor(es) con agente en ${resumen.paisAgente || 'el país'}: ${resumen.agentes.join(', ')}`
-                    : 'N/D — sin confirmar'}</span>
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <span style={{ color: '#7FB3E8' }}>▸</span>
-                <span>Mejor relación precio/cabezal:{' '}
-                  <span className="di-acc">{resumen.topRelacion.length
-                    ? resumen.topRelacion.map(r => `${r.nombre} (${fmtUSD(r.precio)} ÷ ${r.cabezales} cab. = ${fmtUSD(r.ratio)}/cabezal)`).join(' · ')
-                    : 'N/D'}</span>
-                </span>
-              </div>
-            </div>
-            <div className="text-[11px] mt-5" style={{ color: '#9DB8DC' }}>
-              Datos actualizados al {model.fecha || 'N/D'}{model.version ? ' · v' + model.version : ''}
-            </div>
-          </div>
-        </section>
+          <BiLegend items={scatterLegend} />
+        </div>
       </div>
 
-      <p className="text-[11px] mt-4 text-center" style={{ color: 'var(--di-steel)' }}>
-        Los datos se cargan dinámicamente desde data/inteligencia-proveedores.json en cada carga de página — nada está hardcodeado.
-      </p>
+      {/* 8 ── Resumen ejecutivo */}
+      <div className="bi-stack">
+        <div className="bi-summary">
+          <div className="bi-summary-title">8 · Resumen ejecutivo</div>
+          <div className="bi-summary-grid">
+            <div className="bi-summary-item">
+              <span>▸</span>
+              <span>Mejor precio absoluto: <span className="bi-acc">{resumen.mejorAbs ? `${fmtUSD(resumen.mejorAbs.precio)} ofrecido por ${resumen.mejorAbs.proveedor} (${resumen.mejorAbs.termino || '—'})` : 'N/D'}</span></span>
+            </div>
+            <div className="bi-summary-item">
+              <span>▸</span>
+              <span>Mejor precio FOB: <span className="bi-acc">{resumen.mejorFob ? `${fmtUSD(resumen.mejorFob.precio)} de ${resumen.mejorFob.proveedor}` : 'N/D — ningún proveedor ofreció precio FOB'}</span></span>
+            </div>
+            <div className="bi-summary-item">
+              <span>▸</span>
+              <span>Brecha entre precio mínimo y máximo: <span className="bi-acc">{fmtPct(resumen.brecha)}</span></span>
+            </div>
+            <div className="bi-summary-item">
+              <span>▸</span>
+              <span>Proveedores con precio confirmado: <span className="bi-acc">{resumen.conPrecio} de {resumen.totalProv} ({fmtPct(resumen.pctConPrecio)})</span></span>
+            </div>
+            <div className="bi-summary-item">
+              <span>▸</span>
+              <span>Presencia local: <span className="bi-acc">{resumen.agentes.length
+                ? `${resumen.agentes.length} proveedor(es) con agente en ${resumen.paisAgente || 'el país'}: ${resumen.agentes.join(', ')}`
+                : 'N/D — sin confirmar'}</span></span>
+            </div>
+            <div className="bi-summary-item">
+              <span>▸</span>
+              <span>Mejor relación precio/cabezal: <span className="bi-acc">{resumen.topRelacion.length
+                ? resumen.topRelacion.map(r => `${r.nombre} (${fmtUSD(r.precio)} ÷ ${r.cabezales} cab. = ${fmtUSD(r.ratio)}/cabezal)`).join(' · ')
+                : 'N/D'}</span></span>
+            </div>
+          </div>
+          <div className="bi-summary-foot">
+            Datos actualizados al {model.fecha || 'N/D'}{model.version ? ' · v' + model.version : ''}
+          </div>
+        </div>
+      </div>
     </div>
   )
+}
+
+/* ─── Componente principal ─────────────────────────────────────────────────── */
+export default function SupplierDashboard() {
+  const [raw, setRaw] = useState('')
+  const [data, setData] = useState(null)
+  const [fileName, setFileName] = useState('')
+  const [error, setError] = useState(null)
+
+  // Restaurar el último JSON procesado (guardado en este navegador)
+  useEffect(() => {
+    try {
+      const s = localStorage.getItem(LS_KEY)
+      if (!s) return
+      const d = JSON.parse(s)
+      if (d && Array.isArray(d.proveedores) && d.proveedores.length) {
+        setData(d)
+        setRaw(s)
+      }
+    } catch { /* silencioso */ }
+  }, [])
+
+  const procesar = (texto, nombre) => {
+    try {
+      const d = JSON.parse(texto)
+      if (!d || !Array.isArray(d.proveedores) || !d.proveedores.length) {
+        setError('El JSON debe contener un arreglo "proveedores" con al menos un elemento. Revisa la estructura y vuelve a intentar.')
+        return
+      }
+      setData(d)
+      setError(null)
+      if (nombre) setFileName(nombre)
+      try { localStorage.setItem(LS_KEY, texto) } catch { /* silencioso */ }
+    } catch (e) {
+      setError('JSON inválido: ' + e.message)
+    }
+  }
+
+  const onFile = (e) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const texto = String(reader.result || '')
+      setRaw(texto)
+      procesar(texto, f.name)
+    }
+    reader.readAsText(f)
+  }
+
+  const cargarOtro = () => {
+    setData(null)
+    setError(null)
+  }
+
+  if (!data) {
+    return (
+      <LoadScreen
+        raw={raw}
+        setRaw={setRaw}
+        error={error}
+        onProcess={() => procesar(raw)}
+        onFile={onFile}
+        onClear={() => { setRaw(''); setError(null) }}
+      />
+    )
+  }
+
+  return <DashboardView data={data} fileName={fileName} onReload={cargarOtro} />
 }
