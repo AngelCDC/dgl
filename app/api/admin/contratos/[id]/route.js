@@ -14,8 +14,9 @@ async function canWrite(session) {
 }
 
 // Whitelist de campos escalares (previene mass assignment)
+// Nota: 'numero' es inmutable — se asigna secuencialmente al crear el contrato.
 const ALLOWED_SCALAR = [
-  'fecha', 'numero', 'status',
+  'fecha', 'status',
   'buyerLegalName', 'buyerTradeName', 'buyerAddress', 'buyerCountry',
   'buyerTaxId', 'buyerRepresentative', 'buyerPosition', 'buyerEmail',
   'verificacionId', 'supplierLegalName', 'supplierTradeName', 'supplierAddress',

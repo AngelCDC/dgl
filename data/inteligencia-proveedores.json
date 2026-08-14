@@ -1,0 +1,884 @@
+{
+  "version": "1.0",
+  "fecha_actualizacion": "2026-08-14",
+  "metadata": {
+    "total_proveedores": 55,
+    "total_mensajes": 340,
+    "total_productos_con_precio": 12,
+    "sectores_cubiertos": ["impresoras", "tintas", "consumibles"],
+    "tipos_de_impresora": ["Eco-solvent", "UV", "Sublimación", "DTF"],
+    "cabezales_disponibles": ["i3200-E1", "i3200-U1", "i3200-A1", "XP600"]
+  },
+  "proveedores": [
+    {
+      "id": "sinocolor",
+      "nombre": "SinoColor Printing Equipment (Shanghai) Co., Ltd.",
+      "contacto": "Nancy Tse",
+      "ubicacion": "Shanghai, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "sinocolor_001",
+          "tipo": "Eco-solvent Printer",
+          "modelo": "SJ-780S Pro",
+          "ancho": "1.98m",
+          "cabezales": 4,
+          "modelo_cabezal": "Epson i3200-E",
+          "resolucion": "2400 dpi",
+          "velocidad": null,
+          "software": "Maintop RIP",
+          "caracteristicas": [
+            "Auto cleaning",
+            "Anti-clogging flashing",
+            "Italian Megadyne belt",
+            "German Ultra wide Igus drag chain",
+            "Printhead anti-collision",
+            "Variable dot print technology"
+          ],
+          "precios": [
+            {
+              "tipo": "PROMOCION",
+              "valor": 9000,
+              "moneda": "USD",
+              "termino": "FOB",
+              "costo_local": 450,
+              "incluye_envio": false,
+              "validez": null
+            },
+            {
+              "tipo": "ORIGINAL",
+              "valor": 9900,
+              "moneda": "USD",
+              "termino": "FOB",
+              "costo_local": 450,
+              "incluye_envio": false,
+              "validez": null
+            }
+          ],
+          "garantia": "15 meses (tarjetas y motores)",
+          "materiales": ["Flex banners", "Vinyl", "PP paper", "Photo paper"]
+        },
+        {
+          "id": "sinocolor_002",
+          "tipo": "Tinta Eco-solvent",
+          "modelo": null,
+          "presentacion": "Por litro",
+          "precios": [
+            {
+              "tipo": "ESTANDAR",
+              "valor": 20,
+              "moneda": "USD",
+              "termino": "EXW",
+              "incluye_envio": false,
+              "validez": null
+            },
+            {
+              "tipo": "VOLUMEN (50+ litros)",
+              "valor": 18,
+              "moneda": "USD",
+              "termino": "EXW",
+              "incluye_envio": false,
+              "validez": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shenzhen_liyu_digital",
+      "nombre": "Shenzhen Liyu Digital Technology Co., Limited",
+      "contacto": "Lisa Su",
+      "ubicacion": "Shenzhen, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "liyu_001",
+          "tipo": "UV Printer",
+          "modelo": "Galaxy 1.80m",
+          "ancho": "1.80m",
+          "cabezales": 3,
+          "modelo_cabezal": "Epson i3200-U1",
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [],
+          "precios": [
+            {
+              "tipo": "ESTANDAR",
+              "valor": 10300,
+              "moneda": "USD",
+              "termino": "EXW",
+              "incluye_envio": false,
+              "validez": null
+            }
+          ],
+          "garantia": null
+        },
+        {
+          "id": "liyu_002",
+          "tipo": "Tinta UV",
+          "modelo": null,
+          "presentacion": "Por litro",
+          "precios": [
+            {
+              "tipo": "ESTANDAR",
+              "valor": 25,
+              "moneda": "USD",
+              "termino": "EXW",
+              "incluye_envio": false,
+              "validez": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guangzhou_kaiou",
+      "nombre": "Guangzhou Kaiou Digital Technology Co., Ltd.",
+      "contacto": null,
+      "ubicacion": "Guangzhou, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "kaiou_001",
+          "tipo": "Eco-solvent Printer",
+          "modelo": "1.8m con 3 cabezales",
+          "ancho": "1.8m",
+          "cabezales": 3,
+          "modelo_cabezal": "Epson i3200-E1",
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [],
+          "precios": [
+            {
+              "tipo": "ESTANDAR",
+              "valor": 8403,
+              "moneda": "USD",
+              "termino": "FOB",
+              "destino": "Guangzhou",
+              "incluye_envio": false,
+              "validez": null
+            }
+          ],
+          "garantia": null
+        },
+        {
+          "id": "kaiou_002",
+          "tipo": "Tinta Eco-solvent",
+          "modelo": "Kit CMYK",
+          "presentacion": "4 botellas / 4 litros",
+          "precios": [
+            {
+              "tipo": "ESTANDAR",
+              "valor": 60,
+              "moneda": "USD",
+              "termino": "EXW",
+              "incluye_envio": false,
+              "validez": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "henan_yinneng",
+      "nombre": "Henan Yinneng Electronic Technology Co., Ltd.",
+      "contacto": "Riley",
+      "ubicacion": "Henan, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "yinneng_001",
+          "tipo": "Eco-solvent Printer",
+          "modelo": "1.8m con 3 cabezales",
+          "ancho": "1.8m",
+          "cabezales": 3,
+          "modelo_cabezal": "Epson i3200",
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [
+            "Puede configurarse con 4 cabezales"
+          ],
+          "precios": [
+            {
+              "tipo": "ESTANDAR",
+              "valor": 7400,
+              "moneda": "USD",
+              "termino": "EXW",
+              "incluye_envio": false,
+              "validez": null
+            }
+          ],
+          "garantia": null,
+          "materiales": [
+            "Vinyl",
+            "Banners",
+            "Carteles",
+            "Lonas publicitarias",
+            "Adhesivos para autos"
+          ]
+        },
+        {
+          "id": "yinneng_002",
+          "tipo": "Tinta Eco-solvent",
+          "modelo": null,
+          "presentacion": "Por litro",
+          "precios": [
+            {
+              "tipo": "ESTANDAR",
+              "valor": 8,
+              "moneda": "USD",
+              "termino": "EXW",
+              "incluye_envio": false,
+              "validez": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "zhengzhou_msthermic",
+      "nombre": "Zhengzhou Msthermic Intelligent Technology Co., Ltd.",
+      "contacto": null,
+      "ubicacion": "Zhengzhou, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "msthermic_001",
+          "tipo": "Plotter Eco-solvent",
+          "modelo": "1.8m con 3 cabezales",
+          "ancho": "1.8m",
+          "cabezales": 3,
+          "modelo_cabezal": "Epson i3200",
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [],
+          "precios": [
+            {
+              "tipo": "ESTANDAR",
+              "valor": 7360,
+              "moneda": "USD",
+              "termino": "EXW",
+              "incluye_envio": true,
+              "destino_envio": "Foshan, China (agente)",
+              "validez": null
+            }
+          ],
+          "garantia": null
+        }
+      ]
+    },
+    {
+      "id": "guangzhou_inqi",
+      "nombre": "Guangzhou Inqi Electronic Instruments Co., Ltd.",
+      "contacto": "Angel",
+      "ubicacion": "Guangzhou, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "inqi_001",
+          "tipo": "Eco-solvent Printer",
+          "modelo": "1.8m con 3 cabezales",
+          "ancho": "1.8m",
+          "cabezales": 3,
+          "modelo_cabezal": "Epson i3200E1",
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [],
+          "precios": [
+            {
+              "tipo": "ESTANDAR (4+ unidades)",
+              "valor": 7600,
+              "moneda": "USD",
+              "termino": "EXW",
+              "incluye_envio": false,
+              "validez": null
+            }
+          ],
+          "garantia": null
+        }
+      ]
+    },
+    {
+      "id": "henan_united_color",
+      "nombre": "Henan United Color Co., Ltd.",
+      "contacto": null,
+      "ubicacion": "Henan, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "united_color_001",
+          "tipo": "Plotter Eco-solvent",
+          "modelo": "1.8m con 3 cabezales",
+          "ancho": "1.8m",
+          "cabezales": 3,
+          "modelo_cabezal": "Epson i3200",
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [],
+          "precios": [
+            {
+              "tipo": "ESTANDAR",
+              "valor": 7340,
+              "moneda": "USD",
+              "termino": "FOB",
+              "incluye_envio": false,
+              "validez": null
+            }
+          ],
+          "garantia": null,
+          "logistica": {
+            "peso": "470 USD (estimado)",
+            "volumen": "3.4 CBM"
+          }
+        }
+      ]
+    },
+    {
+      "id": "guangdong_shuanghao",
+      "nombre": "Guangdong Shuanghao Technology Co., Ltd.",
+      "contacto": null,
+      "ubicacion": "Guangdong, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "shuanghao_001",
+          "tipo": "Eco-solvent Printer",
+          "modelo": "2.0m con 3 cabezales",
+          "ancho": "2.0m",
+          "cabezales": 3,
+          "modelo_cabezal": "Epson i3200",
+          "resolucion": null,
+          "velocidad": null,
+          "software": "Hoson board",
+          "caracteristicas": [],
+          "precios": [
+            {
+              "tipo": "ESTANDAR",
+              "valor": 7000,
+              "moneda": "USD",
+              "termino": "EXW",
+              "incluye_envio": true,
+              "destino_envio": "Foshan, China",
+              "validez": null
+            }
+          ],
+          "garantia": null,
+          "nota": "Solo máquinas de 2.0m tienen opción de 3 cabezales"
+        }
+      ]
+    },
+    {
+      "id": "henan_qianduan",
+      "nombre": "Henan Qianduan Intelligent Technology Co., Ltd.",
+      "contacto": null,
+      "ubicacion": "Henan, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "qianduan_001",
+          "tipo": "Eco-solvent Printer",
+          "modelo": "1.8m con 2 cabezales",
+          "ancho": "1.8m",
+          "cabezales": 2,
+          "modelo_cabezal": "Epson i3200",
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [],
+          "precios": [
+            {
+              "tipo": "ESTANDAR",
+              "valor": 4950,
+              "moneda": "USD",
+              "termino": "EXW",
+              "incluye_envio": false,
+              "validez": null
+            }
+          ],
+          "garantia": null,
+          "nota": "Máximo 2 cabezales - NO hay versión de 3 cabezales",
+          "tamanos_disponibles": ["0.7m", "1.3m", "1.6m", "1.8m", "2.5m", "3.2m"],
+          "materiales": [
+            "Flex Banner",
+            "Vinyl Sticker",
+            "One Way Vision",
+            "Tarpaulin",
+            "Banner Cloth",
+            "Window Film",
+            "Mesh",
+            "Eco Solvent PP Paper",
+            "Canvas",
+            "Eco Solvent Photo Paper",
+            "Roll up",
+            "Billboard"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "zhengzhou_hongcai",
+      "nombre": "Zhengzhou Hongcai Digital Technology Co., Ltd.",
+      "contacto": "Sophia",
+      "ubicacion": "Zhengzhou, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "hongcai_001",
+          "tipo": "Eco-solvent Printer",
+          "modelo": "1.8m con 3 cabezales",
+          "ancho": "1.8m",
+          "cabezales": 3,
+          "modelo_cabezal": "Epson i3200",
+          "resolucion": null,
+          "velocidad": "50 m²/hora",
+          "software": null,
+          "caracteristicas": [],
+          "precios": [],
+          "garantia": null,
+          "estado_precio": "Pendiente"
+        }
+      ]
+    },
+    {
+      "id": "guangzhou_disene",
+      "nombre": "Guangzhou Disen Electronic Equipment Co., Ltd.",
+      "contacto": "Tom",
+      "ubicacion": "Guangzhou, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "disen_001",
+          "tipo": "Eco-solvent Printer",
+          "modelo": "DS-Y1802Q",
+          "ancho": "1.8m",
+          "cabezales": "Variable",
+          "modelo_cabezal": "Epson I3200",
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [
+            "Opciones: 1, 2 o 4 cabezales",
+            "Incluye consumibles"
+          ],
+          "precios": [],
+          "garantia": "Por confirmar",
+          "estado_precio": "Pendiente (FOB por confirmar)"
+        }
+      ]
+    },
+    {
+      "id": "hangzhou_aily",
+      "nombre": "Hangzhou Aily Digital Printing Technology Co., Ltd.",
+      "contacto": "Grace",
+      "ubicacion": "Hangzhou, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "aily_001",
+          "tipo": "Eco-solvent Printer",
+          "modelo": "Pro version 1.8m",
+          "ancho": "1.8m",
+          "cabezales": null,
+          "modelo_cabezal": "Epson I3200",
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [],
+          "precios": [],
+          "garantia": "Por confirmar",
+          "estado_precio": "Pendiente (manager confirmará)",
+          "experiencia": "15 años de fábrica"
+        }
+      ]
+    },
+    {
+      "id": "i_color_group",
+      "nombre": "I COLOR GROUP CO., LIMITED",
+      "contacto": "Abby",
+      "ubicacion": null,
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "icolor_001",
+          "tipo": "UV Hybrid Printer",
+          "modelo": "1.8m con 3 cabezales",
+          "ancho": "1.8m",
+          "cabezales": 3,
+          "modelo_cabezal": "Epson I3200",
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [
+            "Incluye tinta compatible",
+            "Incluye telas de impresión",
+            "Incluye consumibles"
+          ],
+          "precios": [],
+          "garantia": null,
+          "estado_precio": "Pendiente (cotización enviada)"
+        }
+      ]
+    },
+    {
+      "id": "shenzhen_liyu_tech",
+      "nombre": "Shenzhen Liyu Technology Co., Limited",
+      "contacto": "Joy Lu",
+      "ubicacion": "Shenzhen, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "liyutech_001",
+          "tipo": "Impresora",
+          "modelo": null,
+          "ancho": null,
+          "cabezales": null,
+          "modelo_cabezal": null,
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [
+            "Suministra tintas y materiales (blockout banner, vinyl)"
+          ],
+          "precios": [],
+          "garantia": null,
+          "estado_precio": "Por especificar (ecosolvent o UV)"
+        }
+      ]
+    },
+    {
+      "id": "henan_tiffan",
+      "nombre": "Henan Tiffan Machinery Co., Ltd.",
+      "contacto": null,
+      "ubicacion": "Henan, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "tiffan_001",
+          "tipo": "Impresora",
+          "modelo": "1.80m con 3 cabezales i3200",
+          "ancho": "1.80m",
+          "cabezales": 3,
+          "modelo_cabezal": "Epson i3200",
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [
+            "Para sublimación o eco-solvent (preguntar)"
+          ],
+          "precios": [],
+          "garantia": null,
+          "estado_precio": "Pendiente (manager confirmará)"
+        }
+      ]
+    },
+    {
+      "id": "kenteer",
+      "nombre": "Kenteer (Xiamen) Digital Technology Co., Ltd.",
+      "contacto": null,
+      "ubicacion": "Xiamen, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "kenteer_001",
+          "tipo": "Impresora Digital",
+          "modelo": "Múltiples opciones",
+          "ancho": null,
+          "cabezales": null,
+          "modelo_cabezal": null,
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [
+            "DTF",
+            "UV DTF",
+            "Heat Transfer",
+            "Advertising products"
+          ],
+          "certificaciones": ["SGS", "RSL", "MSDS", "OEKO-TEX", "REACH", "CE", "RoHS", "Disney audit"],
+          "patentes": 16,
+          "precios": [],
+          "garantia": null,
+          "estado_precio": "Pendiente (cotización enviada)"
+        }
+      ]
+    },
+    {
+      "id": "guangzhou_tosun",
+      "nombre": "Guangzhou Tosun Digital Equipment Co., Ltd.",
+      "contacto": "Angel",
+      "ubicacion": "Guangzhou, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "tosun_001",
+          "tipo": "Impresora",
+          "modelo": "1.8m 3 cabezales",
+          "ancho": "1.8m",
+          "cabezales": 3,
+          "modelo_cabezal": null,
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [
+            "Eco-solvent o UV roll-to-roll (preguntar)"
+          ],
+          "precios": [],
+          "garantia": "1 año (cabezales sin garantía)",
+          "estado_precio": "Pendiente (FOB por confirmar)",
+          "servicios": [
+            "Soporte técnico online",
+            "Grupo técnico post-venta"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shandong_sena",
+      "nombre": "Shandong Sena Printing Group Co., Ltd.",
+      "contacto": null,
+      "ubicacion": "Shandong, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "sena_001",
+          "tipo": "Impresora",
+          "modelo": "1.8m con cabezales I3200",
+          "ancho": "1.8m",
+          "cabezales": null,
+          "modelo_cabezal": "Epson I3200",
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [],
+          "precios": [],
+          "garantia": "1 año (placas y componentes mecánicos)",
+          "estado_precio": "Pendiente (catalog enviado)",
+          "nota_garantia": "Cabezales, tintas y consumibles no cubiertos"
+        }
+      ]
+    },
+    {
+      "id": "shenze_jiamei",
+      "nombre": "Shenze Jiamei Screen Printing Equipment Co., Ltd.",
+      "contacto": null,
+      "ubicacion": "Shenze, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "jiamei_001",
+          "tipo": "Eco-solvent Printer",
+          "modelo": "1.8m",
+          "ancho": "1.8m",
+          "cabezales": null,
+          "modelo_cabezal": null,
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [
+            "Incluye tintas compatibles",
+            "Incluye PET film"
+          ],
+          "precios": [],
+          "garantia": "Por confirmar",
+          "estado_precio": "Pendiente (manager confirmará)"
+        }
+      ]
+    },
+    {
+      "id": "sino_universal",
+      "nombre": "Sino Universal Digital Equipment (Jiangsu) CO., LTD",
+      "contacto": "Eva",
+      "ubicacion": "Jiangsu, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "sino_universal_001",
+          "tipo": "Impresora",
+          "modelo": "1.8m con cabezales I3200",
+          "ancho": "1.8m",
+          "cabezales": null,
+          "modelo_cabezal": "Epson I3200",
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [
+            "Incluye tintas compatibles",
+            "Incluye medios de impresión"
+          ],
+          "precios": [],
+          "garantia": null,
+          "estado_precio": "Pendiente (FOB por confirmar)"
+        }
+      ]
+    },
+    {
+      "id": "guangzhou_ky",
+      "nombre": "Guangzhou Ky Technology Ltd.",
+      "contacto": null,
+      "ubicacion": "Guangzhou, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "ky_001",
+          "tipo": "Impresora",
+          "modelo": "1.8m",
+          "ancho": "1.8m",
+          "cabezales": null,
+          "modelo_cabezal": null,
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [
+            "Incluye tinta",
+            "Incluye materiales de impresión"
+          ],
+          "precios": [],
+          "garantia": null,
+          "estado_precio": "Pendiente (manager confirmará)"
+        }
+      ]
+    },
+    {
+      "id": "guangzhou_jihui",
+      "nombre": "Guangzhou Jihui Electronic Equipment Co., Ltd.",
+      "contacto": null,
+      "ubicacion": "Guangzhou, China",
+      "sector": "impresoras",
+      "productos": [
+        {
+          "id": "jihui_001",
+          "tipo": "Eco-solvent Printer",
+          "modelo": null,
+          "ancho": null,
+          "cabezales": null,
+          "modelo_cabezal": null,
+          "resolucion": null,
+          "velocidad": null,
+          "software": null,
+          "caracteristicas": [],
+          "precios": [],
+          "garantia": null,
+          "estado_precio": "Pendiente (manager enviará)"
+        }
+      ]
+    },
+    {
+      "id": "guangzhou_senhai",
+      "nombre": "Guangzhou Senhai Digital Equipment Co., Ltd.",
+      "contacto": null,
+      "ubicacion": "Guangzhou, China",
+      "sector": "consumibles",
+      "productos": [
+        {
+          "id": "senhai_001",
+          "tipo": "Cabezales de impresión",
+          "modelo": "Epson i3200E1",
+          "especificaciones": "Cabezal Epson i3200E1",
+          "precios": [],
+          "estado_precio": "Pendiente"
+        },
+        {
+          "id": "senhai_002",
+          "tipo": "Cabezales de impresión",
+          "modelo": "Epson i3200U1",
+          "especificaciones": "Cabezal Epson i3200U1",
+          "precios": [],
+          "estado_precio": "Pendiente"
+        },
+        {
+          "id": "senhai_003",
+          "tipo": "Cabezales de impresión",
+          "modelo": "Epson i3200A1",
+          "especificaciones": "Cabezal Epson i3200A1",
+          "precios": [],
+          "estado_precio": "Pendiente"
+        }
+      ]
+    }
+  ],
+  "comparativas": {
+    "impresoras_1.8m_3cabezales": [
+      {
+        "proveedor": "Henan Yinneng",
+        "precio": 7400,
+        "termino": "EXW",
+        "tipo": "Eco-solvent"
+      },
+      {
+        "proveedor": "Henan United Color",
+        "precio": 7340,
+        "termino": "FOB",
+        "tipo": "Eco-solvent"
+      },
+      {
+        "proveedor": "Zhengzhou Msthermic",
+        "precio": 7360,
+        "termino": "EXW (envío a Foshan)",
+        "tipo": "Eco-solvent"
+      },
+      {
+        "proveedor": "Guangzhou Inqi",
+        "precio": 7600,
+        "termino": "EXW",
+        "tipo": "Eco-solvent"
+      },
+      {
+        "proveedor": "Guangzhou Kaiou",
+        "precio": 8403,
+        "termino": "FOB",
+        "tipo": "Eco-solvent"
+      },
+      {
+        "proveedor": "Shenzhen Liyu",
+        "precio": 10300,
+        "termino": "EXW",
+        "tipo": "UV"
+      }
+    ],
+    "tintas": [
+      {
+        "proveedor": "Henan Yinneng",
+        "tipo": "Eco-solvent",
+        "precio": 8,
+        "unidad": "USD/litro"
+      },
+      {
+        "proveedor": "SinoColor",
+        "tipo": "Eco-solvent",
+        "precio": 20,
+        "unidad": "USD/litro",
+        "nota": "18 USD/litro >50L"
+      },
+      {
+        "proveedor": "Guangzhou Kaiou",
+        "tipo": "Eco-solvent",
+        "precio": 15,
+        "unidad": "USD/litro",
+        "nota": "60 USD/4L"
+      },
+      {
+        "proveedor": "Shenzhen Liyu",
+        "tipo": "UV",
+        "precio": 25,
+        "unidad": "USD/litro"
+      }
+    ]
+  },
+  "estadisticas": {
+    "precio_minimo_impresora": 4950,
+    "precio_maximo_impresora": 10300,
+    "precio_promedio_1.8m_3cabezales": 7688,
+    "precio_minimo_tinta": 8,
+    "precio_maximo_tinta": 25,
+    "proveedores_con_precio": 8,
+    "proveedores_sin_precio": 35,
+    "proveedores_que_no_venden_impresoras": ["Shenzhen Teneth", "Shenzhen Bascocut", "Redsail (pendiente)"],
+    "proveedores_con_agente_en_venezuela": ["Henan Yindu Digital", "Shanghai Min Yang"]
+  }
+}

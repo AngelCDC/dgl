@@ -18,6 +18,7 @@ const PERMISOS = {
     mensajes:      'write',
     reportes:      'write',
     sistema:       'write',
+    inteligencia:  'read',      // dashboard BI (solo lectura)
     perfil:        'write',
   },
   trabajador: {
@@ -31,6 +32,7 @@ const PERMISOS = {
     mensajes:      'write',
     reportes:      null,       // sin acceso
     sistema:       null,       // sin acceso
+    inteligencia:  null,       // sin acceso — solo administrador
     perfil:        'write',
   },
   cliente: {
@@ -44,6 +46,7 @@ const PERMISOS = {
     mensajes:      'write',
     reportes:      null,       // sin acceso
     sistema:       null,       // sin acceso
+    inteligencia:  null,       // sin acceso
     perfil:        'write',
   },
 }
@@ -59,6 +62,7 @@ const RUTA_A_MODULO = [
   { modulo: 'articulos',     pattern: /^\/admin\/(articulos|categorias)/ },
   { modulo: 'mensajes',      pattern: /^\/admin\/contactos/ },
   { modulo: 'reportes',      pattern: /^\/admin\/reportes/ },
+  { modulo: 'inteligencia',  pattern: /^\/admin\/inteligencia/ },
   { modulo: 'sistema',       pattern: /^\/admin\/(equipo|planes|configuracion|roles)/ },
   { modulo: 'perfil',        pattern: /^\/admin\/equipo\/perfil/ },
 ]
@@ -112,6 +116,7 @@ export function getNavForRole(role) {
     clientes:      { href: '/admin/clientes',      label: 'Base de Clientes',         icon: 'clientes' },
     articulos:     { href: '/admin/articulos',     label: 'Artículos',                icon: 'articulos' },
     mensajes:      { href: '/admin/contactos',     label: 'Mensajes',                 icon: 'mensajes' },
+    inteligencia:  { href: '/admin/inteligencia',  label: 'Inteligencia de Proveedores', icon: 'inteligencia' },
   }
 
   const nav = []
@@ -185,6 +190,10 @@ export function getNavForRole(role) {
     nav.push({
       title: 'Verificación',
       items: [{ href: '/admin/reportes', label: 'Informes de Verificación', icon: 'reportes' }],
+    })
+    nav.push({
+      title: 'Inteligencia',
+      items: [links.inteligencia],
     })
     nav.push({
       title: 'Sistema',

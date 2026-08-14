@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]/route'
 import { buildAccessWhere } from '../../../lib/access'
+import { proximoNumeroContrato, yearFromFecha } from '../../../lib/contratos'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 async function canWrite(session) {
@@ -14,8 +15,9 @@ async function canWrite(session) {
 }
 
 // Whitelist de campos escalares (previene mass assignment)
+// Nota: 'numero' NO se acepta del cliente — se asigna secuencialmente en el servidor.
 const ALLOWED_SCALAR = [
-  'fecha', 'numero', 'status',
+  'fecha', 'status',
   'buyerLegalName', 'buyerTradeName', 'buyerAddress', 'buyerCountry',
   'buyerTaxId', 'buyerRepresentative', 'buyerPosition', 'buyerEmail',
   'verificacionId', 'supplierLegalName', 'supplierTradeName', 'supplierAddress',
@@ -92,9 +94,20 @@ export async function POST(req) {
       if (!exists) safeData.verificacionId = null
     }
 
+    // Número secuencial: DGL-<año de la fecha>-NNN según lo almacenado en BD.
+    // Se re-verifica existencia para evitar colisiones con creaciones concurrentes.
+    const year = yearFromFecha(safeData.fecha) ?? new Date().getFullYear()
+    let numero = await proximoNumeroContrato(prisma, year)
+    for (let i = 0; i < 10; i++) {
+      const existente = await prisma.contratoCompra.findFirst({ where: { numero }, select: { id: true } })
+      if (!existente) break
+      numero = await proximoNumeroContrato(prisma, year)
+    }
+
     const contrato = await prisma.contratoCompra.create({
       data: {
         ...safeData,
+        numero,
         createdById: session.user.id,
         ...(Array.isArray(partidas) && partidas.length > 0
           ? {

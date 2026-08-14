@@ -8,7 +8,10 @@
       "PowerShell(node scripts/importar-catalogo.js \"C:\\\\Users\\\\itach\\\\Downloads\\\\VEHICULOS\\\\base_datos_productos.xlsx\" reemplazar)",
       "PowerShell(node -e \"const p = require\\('@prisma/client'\\); const prisma = new p.PrismaClient\\(\\); \\(async \\(\\) => { const totalP = await prisma.productoCatalogo.count\\(\\); const totalV = await prisma.varianteCatalogo.count\\(\\); const sample = await prisma.productoCatalogo.findFirst\\({ include: { variantes: true } }\\); console.log\\('Total productos:', totalP\\); console.log\\('Total variantes:', totalV\\); console.log\\('Ejemplo:', sample.nombre\\); console.log\\('Proveedor:', sample.proveedor\\); console.log\\('Variantes:', sample.variantes.length\\); console.log\\('Primera variante codigo:', sample.variantes[0].codigo\\); await prisma.$disconnect\\(\\); }\\)\\(\\);\")",
       "Bash(node -e 'const { PrismaClient } = require\\(\"@prisma/client\"\\); const p = new PrismaClient\\(\\); \\(async \\(\\) => { const totalP = await p.productoCatalogo.count\\(\\); const totalV = await p.varianteCatalogo.count\\(\\); const sample = await p.productoCatalogo.findFirst\\({ include: { variantes: true } }\\); console.log\\(\"Total productos:\", totalP\\); console.log\\(\"Total variantes:\", totalV\\); console.log\\(\"Ejemplo:\", sample.nombre\\); console.log\\(\"Proveedor:\", sample.proveedor\\); console.log\\(\"Variantes:\", sample.variantes.length\\); console.log\\(\"Codigo 1a variante:\", sample.variantes[0].codigo\\); await p.$disconnect\\(\\); }\\)\\(\\);')",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Read(//c/Users/itach/AppData/Local/Temp/claude/bundled-skills/2.1.229/666675b9c95dae0adae6c8686ea0b4bc/dataviz/**)",
+      "Bash(node scripts/validate_palette.js \"#008300,#2a78d6\" --mode light --surface \"#ffffff\")",
+      "Bash(node scripts/validate_palette.js \"#008300,#eb6834\" --mode light --surface \"#ffffff\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\itach\\Downloads\\dgl-platform"

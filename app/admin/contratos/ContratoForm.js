@@ -192,7 +192,7 @@ function AddRowBtn({ onClick, children }) {
 }
 
 // ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
-export default function ContratoForm({ contrato, reportes = [] }) {
+export default function ContratoForm({ contrato, reportes = [], siguienteNumero }) {
   const router = useRouter();
   const isEdit = Boolean(contrato);
 
@@ -494,10 +494,23 @@ export default function ContratoForm({ contrato, reportes = [] }) {
             <FieldWrap label="Fecha (dd/mm/aaaa)">
               <Inp value={form.fecha} onChange={v => set('fecha', v)} placeholder="12/08/2026" />
             </FieldWrap>
-            <FieldWrap label="Número de contrato (opcional)">
-              <Inp value={form.numero} onChange={v => set('numero', v)} placeholder="Ej: DGL-2026-001" />
+            <FieldWrap label="Número de contrato (automático)">
+              <input
+                value={isEdit ? (form.numero || '—') : (siguienteNumero || 'Se asignará al guardar')}
+                readOnly
+                tabIndex={-1}
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  border: '1px solid #e2e8f0', borderRadius: 8,
+                  padding: '8px 12px', fontSize: 13, color: '#64748b',
+                  background: '#f8fafc', fontFamily: 'inherit', outline: 'none',
+                }}
+              />
             </FieldWrap>
           </EditGrid>
+          <p style={{ margin: '10px 0 0', fontSize: 12, color: '#94a3b8' }}>
+            El número se asigna automáticamente de forma secuencial (DGL-año-NNN) según los contratos almacenados en la base de datos y no se puede editar. El valor mostrado es una vista previa; el número definitivo se asigna al guardar.
+          </p>
         </SectionCard>
 
         {/* 2. INFORME DE VERIFICACIÓN */}
