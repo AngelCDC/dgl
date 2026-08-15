@@ -1443,3 +1443,32 @@ img {
 @media (max-width: 768px) {
   .bi-summary-grid { grid-template-columns: 1fr; }
 }
+
+/* ─── INTELIGENCIA: FILTROS E INTERACTIVIDAD ────────────────────────────────── */
+.bi-filters { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
+.bi-filter-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.bi-filter-label { font-family: var(--font-dm); font-size: 10px; font-weight: 600; color: var(--steel); text-transform: uppercase; letter-spacing: .06em; margin-right: 2px; }
+.bi-input, .bi-select { padding: 7px 10px; border: 1px solid var(--border); border-radius: 2px; font-size: 12.5px; font-family: inherit; color: var(--ink); background: #fff; outline: none; transition: border-color .15s, box-shadow .15s; }
+.bi-input:focus, .bi-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, .1); }
+.bi-input { min-width: 220px; }
+.bi-select { min-width: 200px; max-width: 320px; }
+.bi-chip-toggle { cursor: pointer; border: 1px solid var(--border); user-select: none; transition: background .15s, color .15s, border-color .15s; }
+.bi-chip-toggle:hover { border-color: var(--accent); }
+.bi-chip-toggle.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+.bi-filter-results { margin-left: auto; font-size: 12px; color: var(--steel); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.bi-filter-results b { color: var(--navy); font-variant-numeric: tabular-nums; }
+/* Tablas: encabezados ordenables y filas clicables */
+.bi-sort-th { cursor: pointer; user-select: none; }
+.bi-sort-th:hover { text-decoration: underline; }
+.bi-row-click { cursor: pointer; }
+/* Leyendas clicables (filtro por tipo) */
+.bi-legend-item-click { cursor: pointer; padding: 2px 6px; border-radius: 2px; border: 1px solid transparent; transition: opacity .15s, border-color .15s; }
+.bi-legend-item-click:hover { border-color: var(--border); }
+.bi-legend-item-click.off { opacity: .4; }
+/* Explorador de ofertas */
+.bi-exp-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.bi-exp-stat { background: var(--bg); border-radius: 8px; padding: 8px 12px; font-size: 12px; color: var(--steel); }
+.bi-exp-stat b { color: var(--navy); font-family: var(--font-dm); font-variant-numeric: tabular-nums; }
+.bi-exp-panel { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.bi-fixed-chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-dm); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: var(--navy); color: #fff; cursor: pointer; border: none; letter-spacing: .04em; }
+.bi-fixed-chip:hover { background: #16315c; }
