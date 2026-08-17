@@ -200,6 +200,11 @@ export default function ContratoForm({ contrato, reportes = [], clientes = [], s
   const router = useRouter();
   const isEdit = Boolean(contrato);
 
+  // Entidades vinculadas al contrato: prellenan Notices y Signatures al editar
+  // contratos cuyos campos aún están vacíos.
+  const clienteVinculado = clientes.find(c => c.id === contrato?.buyerClientId);
+  const reporteVinculado = reportes.find(r => r.id === contrato?.verificacionId);
+
   const [form, setForm] = useState({
     fecha: contrato?.fecha ?? HOY,
     numero: contrato?.numero ?? '',
@@ -261,17 +266,17 @@ export default function ContratoForm({ contrato, reportes = [], clientes = [], s
     executedIn: contrato?.executedIn ?? 'EN',
     controllingLanguage: contrato?.controllingLanguage ?? 'EN',
 
-    buyerNoticeName: contrato?.buyerNoticeName ?? '',
-    buyerNoticeEmail: contrato?.buyerNoticeEmail ?? '',
-    buyerNoticeAddress: contrato?.buyerNoticeAddress ?? '',
-    supplierNoticeName: contrato?.supplierNoticeName ?? '',
+    buyerNoticeName: contrato?.buyerNoticeName ?? clienteVinculado?.contactoNombre ?? clienteVinculado?.representanteLegal ?? '',
+    buyerNoticeEmail: contrato?.buyerNoticeEmail ?? clienteVinculado?.contactoEmail ?? '',
+    buyerNoticeAddress: contrato?.buyerNoticeAddress ?? clienteVinculado?.direccion ?? '',
+    supplierNoticeName: contrato?.supplierNoticeName ?? reporteVinculado?.legalRepresentative ?? '',
     supplierNoticeEmail: contrato?.supplierNoticeEmail ?? '',
-    supplierNoticeAddress: contrato?.supplierNoticeAddress ?? '',
+    supplierNoticeAddress: contrato?.supplierNoticeAddress ?? reporteVinculado?.domicile ?? '',
 
-    buyerSigner: contrato?.buyerSigner ?? '',
-    buyerSignerPosition: contrato?.buyerSignerPosition ?? '',
+    buyerSigner: contrato?.buyerSigner ?? clienteVinculado?.representanteLegal ?? clienteVinculado?.contactoNombre ?? '',
+    buyerSignerPosition: contrato?.buyerSignerPosition ?? clienteVinculado?.representanteCargo ?? clienteVinculado?.contactoCargo ?? '',
     buyerSignDate: contrato?.buyerSignDate ?? '',
-    supplierSigner: contrato?.supplierSigner ?? '',
+    supplierSigner: contrato?.supplierSigner ?? reporteVinculado?.legalRepresentative ?? '',
     supplierSignerPosition: contrato?.supplierSignerPosition ?? '',
     supplierSignDate: contrato?.supplierSignDate ?? '',
 
@@ -340,6 +345,11 @@ export default function ContratoForm({ contrato, reportes = [], clientes = [], s
         supplierLegalRepresentative: rep.legalRepresentative ?? '',
         supplierAddress: rep.domicile ?? '',
         supplierCountry: "People's Republic of China",
+        // Notices y firmas del proveedor desde el informe de verificación
+        // (conserva lo escrito a mano cuando el informe no tiene el dato)
+        supplierNoticeName: rep.legalRepresentative || p.supplierNoticeName,
+        supplierNoticeAddress: rep.domicile || p.supplierNoticeAddress,
+        supplierSigner: rep.legalRepresentative || p.supplierSigner,
       } : {}),
     }));
   };
@@ -356,6 +366,13 @@ export default function ContratoForm({ contrato, reportes = [], clientes = [], s
     buyerRepresentative: c.representanteLegal ?? c.contactoNombre ?? '',
     buyerPosition: c.representanteCargo ?? c.contactoCargo ?? '',
     buyerEmail: c.contactoEmail ?? '',
+    // Notices y firmas del comprador desde la base de clientes
+    // (conserva lo escrito a mano cuando la base no tiene el dato)
+    buyerNoticeName: c.contactoNombre || c.representanteLegal || p.buyerNoticeName,
+    buyerNoticeEmail: c.contactoEmail || p.buyerNoticeEmail,
+    buyerNoticeAddress: c.direccion || p.buyerNoticeAddress,
+    buyerSigner: c.representanteLegal || c.contactoNombre || p.buyerSigner,
+    buyerSignerPosition: c.representanteCargo || c.contactoCargo || p.buyerSignerPosition,
   }));
 
   const handleClienteSelect = (id) => {
@@ -1035,6 +1052,10 @@ export default function ContratoForm({ contrato, reportes = [], clientes = [], s
               <Inp value={form.supplierNoticeAddress} onChange={v => set('supplierNoticeAddress', v)} placeholder="Dirección" />
             </FieldWrap>
           </EditGrid>
+          <p style={{ margin: '10px 0 0', fontSize: 12, color: '#94a3b8' }}>
+            Los datos del comprador se autocompletan desde la Base de Clientes (contacto, email y dirección)
+            y los del proveedor desde el Informe de Verificación seleccionado.
+          </p>
         </SectionCard>
 
         {/* 15. SIGNATURES */}
@@ -1060,6 +1081,7 @@ export default function ContratoForm({ contrato, reportes = [], clientes = [], s
             </FieldWrap>
           </EditGrid>
           <p style={{ margin: '10px 0 0', fontSize: 12, color: '#94a3b8' }}>
+            El firmante se autocompleta con el representante legal de la Base de Clientes / Informe de Verificación.
             Al emitir el documento, las fechas de firma vacías se completan automáticamente con la fecha actual.
           </p>
         </SectionCard>
