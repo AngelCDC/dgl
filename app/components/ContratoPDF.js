@@ -352,6 +352,7 @@ const LegalTable = ({ header, rows, widths }) => (
               ci === row.length - 1 ? styles.tableCellLast : styles.tableCell,
               widths[ci],
               pickFont(cell?.text) ? { fontFamily: CN_FONT } : null,
+              cell?.bold ? { fontFamily: "Times-Bold" } : null,
             ]}
           >
             {cell?.text ?? "—"}
@@ -491,11 +492,11 @@ export const ContratoPDF = ({ data }) => {
             header={["PRODUCT / MODEL", "SPECIFICATION", "QUANTITY", "UNIT PRICE (USD)", "TOTAL (USD)"]}
             widths={[styles.cProduct, styles.cSpec, styles.cQty, styles.cPrice, styles.cTotal]}
             rows={partidas.map(p => [
-              { text: p.producto },
-              { text: p.especificacion },
-              { text: p.cantidad },
-              { text: fmtUSD(p.precioUnitario) },
-              { text: fmtUSD(p.total) },
+              { text: p.producto, bold: p.esFlete },
+              { text: p.especificacion, bold: p.esFlete },
+              { text: p.cantidad, bold: p.esFlete },
+              { text: fmtUSD(p.precioUnitario), bold: p.esFlete },
+              { text: fmtUSD(p.total), bold: p.esFlete },
             ])}
           />
           <Text style={styles.totalLine}>
@@ -533,6 +534,11 @@ export const ContratoPDF = ({ data }) => {
             ])}
           />
           <Labeled label="Method">{method}.</Labeled>
+          <Labeled label="Freight">
+            {data.fletePago === "final"
+              ? "The freight amount is payable upon completion and is included in the final installment above."
+              : "The freight amount is included within the installment percentages above."}
+          </Labeled>
           <Para>{FIXED_TEXT.payment}</Para>
         </Article>
 

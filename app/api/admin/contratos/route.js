@@ -18,13 +18,14 @@ async function canWrite(session) {
 // Nota: 'numero' NO se acepta del cliente — se asigna secuencialmente en el servidor.
 const ALLOWED_SCALAR = [
   'fecha', 'status',
+  'buyerClientId',
   'buyerLegalName', 'buyerTradeName', 'buyerAddress', 'buyerCountry',
   'buyerTaxId', 'buyerRepresentative', 'buyerPosition', 'buyerEmail',
   'verificacionId', 'supplierLegalName', 'supplierTradeName', 'supplierAddress',
   'supplierCountry', 'supplierUscc', 'supplierLegalRepresentative',
   'supplierPosition', 'supplierEmail',
   'totalContractValue', 'currency', 'incoterm', 'incotermOther', 'namedPlace',
-  'paymentMethod', 'paymentMethodOther',
+  'paymentMethod', 'paymentMethodOther', 'fletePago',
   'productionDays', 'productionStart', 'productionStartDate', 'estimatedReadyToShipDate',
   'warrantyMonths', 'warrantyStart', 'warrantyResponseDays', 'warrantyCorrectiveDays',
   'delayPercent', 'delayPeriod', 'delayCapPercent', 'delayTerminationDays',
@@ -94,6 +95,12 @@ export async function POST(req) {
       if (!exists) safeData.verificacionId = null
     }
 
+    // Verificar que el cliente de la base exista (si el buyer viene vinculado)
+    if (safeData.buyerClientId) {
+      const exists = await prisma.cliente.findUnique({ where: { id: safeData.buyerClientId }, select: { id: true } })
+      if (!exists) safeData.buyerClientId = null
+    }
+
     // Número secuencial: DGL-<año de la fecha>-NNN según lo almacenado en BD.
     // Se re-verifica existencia para evitar colisiones con creaciones concurrentes.
     const year = yearFromFecha(safeData.fecha) ?? new Date().getFullYear()
@@ -118,6 +125,7 @@ export async function POST(req) {
                   cantidad:       p.cantidad,
                   precioUnitario: p.precioUnitario,
                   total:          p.total ?? null,
+                  esFlete:        Boolean(p.esFlete),
                   sortOrder:      i,
                 })),
               },

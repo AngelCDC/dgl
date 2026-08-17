@@ -11,7 +11,8 @@
       "Bash(node -e ' *)",
       "Read(//c/Users/itach/AppData/Local/Temp/claude/bundled-skills/2.1.229/666675b9c95dae0adae6c8686ea0b4bc/dataviz/**)",
       "Bash(node scripts/validate_palette.js \"#008300,#2a78d6\" --mode light --surface \"#ffffff\")",
-      "Bash(node scripts/validate_palette.js \"#008300,#eb6834\" --mode light --surface \"#ffffff\")"
+      "Bash(node scripts/validate_palette.js \"#008300,#eb6834\" --mode light --surface \"#ffffff\")",
+      "Bash(npx esbuild *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\itach\\Downloads\\dgl-platform"

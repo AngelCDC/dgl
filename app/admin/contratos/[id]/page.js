@@ -12,7 +12,7 @@ export default async function EditarContratoPage({ params }) {
 
   const { id } = await params
 
-  const [contrato, reportesRaw] = await Promise.all([
+  const [contrato, reportesRaw, clientes] = await Promise.all([
     prisma.contratoCompra.findFirst({
       where: await buildAccessWhere(session, { id }),
       include: {
@@ -23,6 +23,16 @@ export default async function EditarContratoPage({ params }) {
     prisma.reporteVerificacion.findMany({
       where: { visible: true },
       orderBy: { createdAt: 'desc' },
+    }),
+    // Base de clientes para el autofill del Buyer por coincidencia exacta de TAX ID
+    prisma.cliente.findMany({
+      select: {
+        id: true, cedulaRif: true, razonSocial: true, nombreComercial: true,
+        direccion: true, pais: true,
+        contactoNombre: true, contactoCargo: true, contactoEmail: true,
+        representanteLegal: true, representanteCargo: true,
+      },
+      orderBy: { razonSocial: 'asc' },
     }),
   ])
 
@@ -46,5 +56,5 @@ export default async function EditarContratoPage({ params }) {
     }
   })
 
-  return <ContratoForm contrato={contrato} reportes={reportes} />
+  return <ContratoForm contrato={contrato} reportes={reportes} clientes={clientes} />
 }

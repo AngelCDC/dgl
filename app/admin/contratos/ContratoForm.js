@@ -25,6 +25,10 @@ const ANNEX_D_DOCS = [
   'Warranty Certificate', 'Technical Datasheet', 'User Manual',
   'MSDS/SDS', 'UN38.3', 'Export Documentation', 'Inspection Certificate',
 ];
+const FLETE_OPCIONES = [
+  { value: 'porcentaje', label: 'Flete incluido en los porcentajes' },
+  { value: 'final',      label: 'Flete pagado al finalizar' },
+];
 
 const now = new Date();
 const HOY = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getFullYear())}`;
@@ -192,7 +196,7 @@ function AddRowBtn({ onClick, children }) {
 }
 
 // ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
-export default function ContratoForm({ contrato, reportes = [], siguienteNumero }) {
+export default function ContratoForm({ contrato, reportes = [], clientes = [], siguienteNumero }) {
   const router = useRouter();
   const isEdit = Boolean(contrato);
 
@@ -200,6 +204,7 @@ export default function ContratoForm({ contrato, reportes = [], siguienteNumero 
     fecha: contrato?.fecha ?? HOY,
     numero: contrato?.numero ?? '',
 
+    buyerClientId: contrato?.buyerClientId ?? '',
     buyerLegalName: contrato?.buyerLegalName ?? '',
     buyerTradeName: contrato?.buyerTradeName ?? '',
     buyerAddress: contrato?.buyerAddress ?? '',
@@ -227,6 +232,7 @@ export default function ContratoForm({ contrato, reportes = [], siguienteNumero 
 
     paymentMethod: contrato?.paymentMethod ?? 'T/T',
     paymentMethodOther: contrato?.paymentMethodOther ?? '',
+    fletePago: contrato?.fletePago ?? 'porcentaje',
 
     productionDays: contrato?.productionDays ?? '',
     productionStart: contrato?.productionStart ?? 'RECEIPT OF ADVANCE PAYMENT',
@@ -279,12 +285,23 @@ export default function ContratoForm({ contrato, reportes = [], siguienteNumero 
     annexDOther: contrato?.annexDOther ?? '',
   });
 
-  const [partidas, setPartidas] = useState(
-    contrato?.partidas?.length ? contrato.partidas.map(p => ({
-      producto: p.producto, especificacion: p.especificacion ?? '',
-      cantidad: p.cantidad, precioUnitario: p.precioUnitario, total: p.total ?? '',
-    })) : [defaultPartida()]
-  );
+  // El flete vive como partida aparte (obligatoria, siempre al final de la lista)
+  const fleteInicial = contrato?.partidas?.find(p => p.esFlete);
+  const partidasIniciales = contrato?.partidas?.length
+    ? contrato.partidas.filter(p => !p.esFlete).map(p => ({
+        producto: p.producto, especificacion: p.especificacion ?? '',
+        cantidad: p.cantidad, precioUnitario: p.precioUnitario, total: p.total ?? '',
+      }))
+    : null;
+
+  const [partidas, setPartidas] = useState(partidasIniciales?.length ? partidasIniciales : [defaultPartida()]);
+  const [flete, setFlete] = useState({
+    producto: 'Flete',
+    especificacion: fleteInicial?.especificacion ?? '',
+    cantidad: '1',
+    precioUnitario: fleteInicial?.precioUnitario ?? '',
+    total: fleteInicial?.total ?? '',
+  });
 
   const [pagos, setPagos] = useState(
     contrato?.pagos?.length ? contrato.pagos.map(pg => ({
@@ -327,6 +344,36 @@ export default function ContratoForm({ contrato, reportes = [], siguienteNumero 
     }));
   };
 
+  // ── autofill del Buyer desde la Base de Clientes ────────────────────────────
+  const fillFromCliente = (c) => setForm(p => ({
+    ...p,
+    buyerClientId: c.id ?? '',
+    buyerLegalName: c.razonSocial ?? '',
+    buyerTradeName: c.nombreComercial ?? '',
+    buyerAddress: c.direccion ?? '',
+    buyerCountry: c.pais || 'Venezuela',
+    buyerTaxId: c.cedulaRif ?? '',
+    buyerRepresentative: c.representanteLegal ?? c.contactoNombre ?? '',
+    buyerPosition: c.representanteCargo ?? c.contactoCargo ?? '',
+    buyerEmail: c.contactoEmail ?? '',
+  }));
+
+  const handleClienteSelect = (id) => {
+    const c = clientes.find(x => x.id === id);
+    if (c) fillFromCliente(c);
+  };
+
+  // Coincidencia EXACTA de TAX ID contra la base de clientes (trim + mayúsculas)
+  const clienteMatch = clientes.find(c =>
+    String(c.cedulaRif ?? '').trim().toLowerCase() === String(form.buyerTaxId ?? '').trim().toLowerCase()
+  );
+  const handleBuyerTaxId = (v) => {
+    const t = String(v).trim().toLowerCase();
+    const c = t ? clientes.find(x => String(x.cedulaRif ?? '').trim().toLowerCase() === t) : null;
+    if (c) fillFromCliente(c);
+    else setForm(p => ({ ...p, buyerTaxId: v, buyerClientId: '' }));
+  };
+
   // ── totales ────────────────────────────────────────────────────────────────
   const partidaTotal = (pt) => {
     const c = parseFloat(String(pt.cantidad).replace(',', '.'));
@@ -338,12 +385,22 @@ export default function ContratoForm({ contrato, reportes = [], siguienteNumero 
     const t = parseFloat(partidaTotal(pt));
     return acc + (isNaN(t) ? 0 : t);
   }, 0);
+  // Flete: ítem adicional obligatorio (cantidad fija 1 → monto = precio unitario)
+  const fleteMonto = (() => {
+    const u = parseFloat(String(flete.precioUnitario).replace(/[^0-9.-]/g, ''));
+    return isNaN(u) ? 0 : u;
+  })();
+  const totalConFlete = sumaTotal + fleteMonto;
 
-  // Monto de cada pago = % × Total Contract Value (Artículo 3)
-  const pagoMonto = (pg) => {
+  // Monto de cada pago = % × base (subtotal sin flete si el flete se paga al finalizar)
+  // En modo 'final', la última cuota suma el flete automáticamente.
+  const pagoMonto = (pg, i) => {
     const pct = parseFloat(String(pg.porcentaje).replace(',', '.'));
-    if (isNaN(pct) || !sumaTotal) return '';
-    return ((sumaTotal * pct) / 100).toFixed(2);
+    if (isNaN(pct)) return '';
+    const base = form.fletePago === 'final' ? sumaTotal : totalConFlete;
+    let monto = (base * pct) / 100;
+    if (form.fletePago === 'final' && i === pagos.length - 1) monto += fleteMonto;
+    return monto.toFixed(2);
   };
 
   // ── acciones ──────────────────────────────────────────────────────────────
@@ -352,28 +409,39 @@ export default function ContratoForm({ contrato, reportes = [], siguienteNumero 
       alert('Faltan campos requeridos: Fecha, Comprador (legal name) y Proveedor (legal name).');
       return;
     }
+    if (fleteMonto <= 0) {
+      alert('El flete es obligatorio: completa el precio unitario del flete en Products.');
+      return;
+    }
     setSaving(true); setError(null);
     try {
-      const totalFinal = sumaTotal ? sumaTotal.toFixed(2) : form.totalContractValue;
+      const totalFinal = totalConFlete ? totalConFlete.toFixed(2) : form.totalContractValue;
+      // El flete siempre va como última partida (ítem adicional obligatorio)
+      const partidasPayload = partidas
+        .filter(pt => pt.producto || pt.especificacion || pt.cantidad || pt.precioUnitario)
+        .map((pt, i) => ({
+          ...pt,
+          total: pt.total || partidaTotal(pt),
+          sortOrder: i,
+        }));
+      partidasPayload.push({
+        producto: 'Flete',
+        especificacion: flete.especificacion || null,
+        cantidad: '1',
+        precioUnitario: flete.precioUnitario,
+        total: fleteMonto.toFixed(2),
+        esFlete: true,
+        sortOrder: partidasPayload.length,
+      });
       const body = {
         ...form,
         totalContractValue: totalFinal,
-        partidas: partidas
-          .filter(pt => pt.producto || pt.especificacion || pt.cantidad || pt.precioUnitario)
-          .map((pt, i) => ({
-            ...pt,
-            total: pt.total || partidaTotal(pt),
-            sortOrder: i,
-          })),
+        partidas: partidasPayload,
         pagos: pagos
           .filter(pg => pg.concepto || pg.porcentaje)
           .map((pg, i) => {
-            // Monto recalculado: % × Total Contract Value (fallback al guardado si no hay suma)
-            const pct = parseFloat(String(pg.porcentaje).replace(',', '.'));
-            const monto = (!isNaN(pct) && sumaTotal)
-              ? ((parseFloat(totalFinal) * pct) / 100).toFixed(2)
-              : (pg.monto || '');
-            return { ...pg, monto, sortOrder: i };
+            // Monto recalculado con la regla de flete activa (fallback al guardado)
+            return { ...pg, monto: pagoMonto(pg, i) || (pg.monto || ''), sortOrder: i };
           }),
       };
       const res = await fetch(
@@ -542,6 +610,23 @@ export default function ContratoForm({ contrato, reportes = [], siguienteNumero 
         {/* 3. BUYER */}
         <SectionCard n="3" title="Parties — Buyer (Comprador)">
           <EditGrid>
+            <FieldWrap label="Cliente de la Base de Clientes (autofill)" span2>
+              <select
+                value={form.buyerClientId ?? ''}
+                onChange={e => handleClienteSelect(e.target.value)}
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  border: '1px solid #e2e8f0', borderRadius: 8,
+                  padding: '8px 12px', fontSize: 13, color: '#1e293b',
+                  background: '#fff', outline: 'none', fontFamily: 'inherit',
+                }}
+              >
+                <option value="">— Sin vínculo / datos manuales —</option>
+                {clientes.map(c => (
+                  <option key={c.id} value={c.id}>{c.razonSocial} · {c.cedulaRif}</option>
+                ))}
+              </select>
+            </FieldWrap>
             <FieldWrap label="Legal Name *">
               <Inp value={form.buyerLegalName} onChange={v => set('buyerLegalName', v)} placeholder="Razón social del comprador" />
             </FieldWrap>
@@ -555,7 +640,7 @@ export default function ContratoForm({ contrato, reportes = [], siguienteNumero 
               <Inp value={form.buyerCountry} onChange={v => set('buyerCountry', v)} placeholder="Venezuela" />
             </FieldWrap>
             <FieldWrap label="Registration / Tax ID">
-              <Inp value={form.buyerTaxId} onChange={v => set('buyerTaxId', v)} placeholder="RIF / Tax ID" />
+              <Inp value={form.buyerTaxId} onChange={v => handleBuyerTaxId(v)} placeholder="RIF / Tax ID (coincidencia exacta con la base)" />
             </FieldWrap>
             <FieldWrap label="Representative">
               <Inp value={form.buyerRepresentative} onChange={v => set('buyerRepresentative', v)} placeholder="Nombre del representante" />
@@ -567,6 +652,18 @@ export default function ContratoForm({ contrato, reportes = [], siguienteNumero 
               <Inp value={form.buyerEmail} onChange={v => set('buyerEmail', v)} type="email" placeholder="correo@ejemplo.com" />
             </FieldWrap>
           </EditGrid>
+          {String(form.buyerTaxId ?? '').trim() && (
+            <p style={{
+              margin: '12px 0 0', fontSize: 12, fontWeight: 600, padding: '8px 12px', borderRadius: 8,
+              background: clienteMatch ? '#f0fdf4' : '#fffbeb',
+              border: `1px solid ${clienteMatch ? '#86efac' : '#fde68a'}`,
+              color: clienteMatch ? '#166534' : '#92400e',
+            }}>
+              {clienteMatch
+                ? `✓ Coincidencia exacta de TAX ID: ${clienteMatch.razonSocial}. Datos del comprador completados desde la Base de Clientes.`
+                : 'Sin coincidencia exacta en la Base de Clientes: los datos del comprador quedan manuales.'}
+            </p>
+          )}
         </SectionCard>
 
         {/* 4. SUPPLIER */}
@@ -636,19 +733,66 @@ export default function ContratoForm({ contrato, reportes = [], siguienteNumero 
                 <RowRemoveBtn onClick={() => removePartida(i)} />
               </div>
             ))}
+
+            {/* Flete: ítem adicional obligatorio, siempre al final de la lista */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: '1fr 1fr 90px 130px 130px 32px', gap: 8, alignItems: 'center',
+              background: '#eff6ff', border: '1px dashed #93c5fd', borderRadius: 8, padding: 6,
+            }}>
+              <input
+                value="Flete"
+                readOnly
+                tabIndex={-1}
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  border: '1px solid #e2e8f0', borderRadius: 8,
+                  padding: '8px 12px', fontSize: 13, fontWeight: 700, color: '#1d4ed8',
+                  background: '#fff', fontFamily: 'inherit', outline: 'none',
+                }}
+              />
+              <Inp value={flete.especificacion} onChange={v => setFlete(f => ({ ...f, especificacion: v }))} placeholder="Ej: FOB Shanghai – La Guaira" />
+              <input
+                value="1"
+                readOnly
+                tabIndex={-1}
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  border: '1px solid #e2e8f0', borderRadius: 8,
+                  padding: '8px 12px', fontSize: 13, color: '#64748b',
+                  background: '#f8fafc', fontFamily: 'inherit', outline: 'none',
+                }}
+              />
+              <Inp value={flete.precioUnitario} onChange={v => setFlete(f => ({ ...f, precioUnitario: v }))} placeholder="0.00 *" />
+              <input
+                value={fleteMonto ? fleteMonto.toFixed(2) : ''}
+                readOnly
+                tabIndex={-1}
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  border: '1px solid #e2e8f0', borderRadius: 8,
+                  padding: '8px 12px', fontSize: 13, color: '#64748b',
+                  background: '#f8fafc', fontFamily: 'inherit', outline: 'none',
+                }}
+              />
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#1d4ed8', textAlign: 'center' }} title="Ítem obligatorio — no se puede eliminar">🔒</span>
+            </div>
           </div>
           <AddRowBtn onClick={addPartida}>+ Agregar partida</AddRowBtn>
           <div style={{
             marginTop: 14, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8,
             padding: '10px 14px', background: '#f8fafc', borderRadius: 10,
           }}>
+            <span style={{ fontSize: 12, color: '#64748b' }}>
+              Subtotal productos: {sumaTotal ? `${sumaTotal.toFixed(2)} USD` : '—'} · Flete: {fleteMonto ? `${fleteMonto.toFixed(2)} USD` : '—'}
+            </span>
             <span style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>Total Contract Value:</span>
             <span style={{ fontSize: 14, fontWeight: 800, color: '#2563eb' }}>
-              {sumaTotal ? `${sumaTotal.toFixed(2)} USD` : '—'}
+              {totalConFlete ? `${totalConFlete.toFixed(2)} USD` : '—'}
             </span>
           </div>
           <p style={{ margin: '8px 0 0', fontSize: 12, color: '#94a3b8' }}>
-            El total se calcula automáticamente (Quantity × Unit Price) y se guarda en el contrato.
+            El total se calcula automáticamente (Quantity × Unit Price) y se guarda en el contrato. El <b>Flete</b> es un ítem adicional
+            obligatorio: va siempre al final de la lista y su precio unitario es requerido para guardar.
           </p>
         </SectionCard>
 
@@ -685,31 +829,71 @@ export default function ContratoForm({ contrato, reportes = [], siguienteNumero 
               <span>Monto (auto, USD)</span>
               <span />
             </div>
-            {pagos.map((pg, i) => (
-              <div key={i} style={{
-                display: 'grid', gridTemplateColumns: '1fr 120px 1fr 32px', gap: 8, alignItems: 'center',
-              }}>
-                <Inp value={pg.concepto} onChange={v => setPago(i, 'concepto', v)} placeholder="Advance / Second / Final" />
-                <Inp value={pg.porcentaje} onChange={v => setPago(i, 'porcentaje', v)} placeholder="30" />
-                <input
-                  value={pagoMonto(pg)}
-                  readOnly
-                  tabIndex={-1}
-                  placeholder="0.00"
-                  style={{
-                    width: '100%', boxSizing: 'border-box',
-                    border: '1px solid #e2e8f0', borderRadius: 8,
-                    padding: '8px 12px', fontSize: 13, color: '#64748b',
-                    background: '#f8fafc', fontFamily: 'inherit', outline: 'none',
-                  }}
-                />
-                <RowRemoveBtn onClick={() => removePago(i)} />
-              </div>
-            ))}
+            {pagos.map((pg, i) => {
+              const esUltima = form.fletePago === 'final' && i === pagos.length - 1;
+              return (
+                <div key={i} style={{
+                  display: 'grid', gridTemplateColumns: '1fr 120px 1fr 32px', gap: 8, alignItems: 'center',
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+                    <Inp value={pg.concepto} onChange={v => setPago(i, 'concepto', v)} placeholder="Advance / Second / Final" />
+                    {esUltima && fleteMonto > 0 && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, color: '#1d4ed8',
+                        background: '#eff6ff', border: '1px solid #bfdbfe',
+                        borderRadius: 6, padding: '3px 8px', alignSelf: 'flex-start',
+                      }}>
+                        + incluye flete ({fleteMonto.toFixed(2)} USD)
+                      </span>
+                    )}
+                  </div>
+                  <Inp value={pg.porcentaje} onChange={v => setPago(i, 'porcentaje', v)} placeholder="30" />
+                  <input
+                    value={pagoMonto(pg, i)}
+                    readOnly
+                    tabIndex={-1}
+                    placeholder="0.00"
+                    style={{
+                      width: '100%', boxSizing: 'border-box',
+                      border: '1px solid #e2e8f0', borderRadius: 8,
+                      padding: '8px 12px', fontSize: 13, color: '#64748b',
+                      background: '#f8fafc', fontFamily: 'inherit', outline: 'none',
+                    }}
+                  />
+                  <RowRemoveBtn onClick={() => removePago(i)} />
+                </div>
+              );
+            })}
           </div>
           <AddRowBtn onClick={addPago}>+ Agregar pago</AddRowBtn>
+          <div style={{ marginTop: 14 }}>
+            <FieldLabel>Flete — ¿cómo se paga? (flete: {fleteMonto ? `${fleteMonto.toFixed(2)} USD` : '—'})</FieldLabel>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {FLETE_OPCIONES.map(op => {
+                const active = form.fletePago === op.value;
+                return (
+                  <button
+                    key={op.value}
+                    type="button"
+                    onClick={() => set('fletePago', op.value)}
+                    style={{
+                      padding: '7px 16px',
+                      border: `1px solid ${active ? '#3b82f6' : '#e2e8f0'}`,
+                      borderRadius: 8,
+                      background: active ? '#3b82f6' : '#fff',
+                      color: active ? '#fff' : '#64748b',
+                      cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+                      transition: 'all .15s',
+                    }}
+                  >{op.label}</button>
+                );
+              })}
+            </div>
+          </div>
           <p style={{ margin: '8px 0 0', fontSize: 12, color: '#94a3b8' }}>
-            El monto se calcula automáticamente: % × Total Contract Value (Artículo 3). Edita los porcentajes o las partidas para actualizarlo.
+            {form.fletePago === 'final'
+              ? 'El flete se paga al finalizar: los porcentajes se aplican sobre el subtotal de productos y la última cuota suma el flete automáticamente.'
+              : 'El flete está incluido dentro de los porcentajes: cada cuota se calcula como % × Total Contract Value (productos + flete).'}
           </p>
           <div style={{ marginTop: 14 }}>
             <FieldLabel>Method (Método)</FieldLabel>

@@ -16,6 +16,10 @@ export default function ClientesPage() {
   const [result,    setResult]    = useState({ clientes: [], total: 0, pages: 1 });
   const [loading,   setLoading]   = useState(true);
   const [detail,    setDetail]    = useState(null); // cliente seleccionado
+  const [editMode,  setEditMode]  = useState(false);
+  const [editForm,  setEditForm]  = useState({});
+  const [saving,    setSaving]    = useState(false);
+  const [saveError, setSaveError] = useState(null);
   const debounce    = useRef(null);
 
   // ── fetch ─────────────────────────────────────────────────────────────────
@@ -44,6 +48,64 @@ export default function ClientesPage() {
     document.addEventListener('keydown', fn);
     return () => document.removeEventListener('keydown', fn);
   }, []);
+
+  // ── edición del cliente ────────────────────────────────────────────────────
+  const abrirEdicion = () => {
+    setEditForm({
+      razonSocial: detail.razonSocial ?? '',
+      nombreComercial: detail.nombreComercial ?? '',
+      ciudad: detail.ciudad ?? '',
+      direccion: detail.direccion ?? '',
+      pais: detail.pais ?? '',
+      sectorIndustria: detail.sectorIndustria ?? '',
+      canalComercializacion: detail.canalComercializacion ?? '',
+      contactoNombre: detail.contactoNombre ?? '',
+      contactoCargo: detail.contactoCargo ?? '',
+      contactoTelefono: detail.contactoTelefono ?? '',
+      contactoEmail: detail.contactoEmail ?? '',
+      representanteLegal: detail.representanteLegal ?? '',
+      representanteCargo: detail.representanteCargo ?? '',
+    });
+    setSaveError(null);
+    setEditMode(true);
+  };
+
+  const guardarEdicion = async () => {
+    if (!editForm.razonSocial?.trim()) { setSaveError('La razón social es requerida'); return; }
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const res = await fetch('/api/admin/clientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cedulaRif: detail.cedulaRif, ...editForm }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Error al guardar');
+      setDetail({ ...data.cliente, _count: detail._count ?? {} });
+      setEditMode(false);
+      load(q, page); // refrescar la lista
+    } catch (e) {
+      setSaveError(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Campo de formulario (label + input)
+  const F = ({ label, k, required, width }) => (
+    <div style={{ width }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>
+        {label}{required ? <span style={{ color: '#dc2626' }}> *</span> : null}
+      </div>
+      <input
+        className="sol-input"
+        style={{ width: '100%', boxSizing: 'border-box' }}
+        value={editForm[k] ?? ''}
+        onChange={e => setEditForm(f => ({ ...f, [k]: e.target.value }))}
+      />
+    </div>
+  );
 
   return (
     <div className="main-content">
@@ -139,63 +201,126 @@ export default function ClientesPage() {
         </div>
       )}
 
-      {/* ── Modal de detalle ── */}
+      {/* ── Modal de detalle / edición ── */}
       {detail && (
         <div
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
-          onClick={e => { if (e.target === e.currentTarget) setDetail(null); }}
+          onClick={e => { if (e.target === e.currentTarget) { setDetail(null); setEditMode(false); } }}
         >
-          <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 560, boxShadow: '0 20px 60px rgba(0,0,0,.15)', overflow: 'hidden' }}>
+          <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }}>
             {/* header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', color: '#94a3b8', textTransform: 'uppercase', marginBottom: 4 }}>Ficha de Cliente</div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', color: '#94a3b8', textTransform: 'uppercase', marginBottom: 4 }}>
+                  {editMode ? 'Editar Cliente' : 'Ficha de Cliente'}
+                </div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a' }}>{detail.razonSocial}</div>
                 <div style={{ fontFamily: 'monospace', fontSize: 13, color: '#3b82f6', marginTop: 2 }}>{detail.cedulaRif}</div>
               </div>
-              <button onClick={() => setDetail(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#94a3b8', lineHeight: 1 }}>✕</button>
+              <button onClick={() => { setDetail(null); setEditMode(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#94a3b8', lineHeight: 1 }}>✕</button>
             </div>
 
-            {/* body */}
-            <div style={{ padding: '20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 24px' }}>
-              {[
-                ['Ciudad',       detail.ciudad],
-                ['Dirección',    detail.direccion],
-                ['Sector',       detail.sectorIndustria],
-                ['Canal comercialización', detail.canalComercializacion],
-              ].map(([label, val]) => (
-                <div key={label}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>{label}</div>
-                  <div style={{ fontSize: 13, color: val ? '#1e293b' : '#cbd5e1' }}>{val || '—'}</div>
+            {editMode ? (
+              <>
+                {/* body: formulario */}
+                <div style={{ padding: '20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 24px' }}>
+                  <F label="Razón Social" k="razonSocial" required />
+                  <F label="Nombre Comercial" k="nombreComercial" />
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>Cédula / RIF</div>
+                    <input className="sol-input" style={{ width: '100%', boxSizing: 'border-box', background: '#f8fafc', color: '#64748b' }} value={detail.cedulaRif} disabled />
+                  </div>
+                  <F label="Ciudad" k="ciudad" />
+                  <F label="Dirección" k="direccion" />
+                  <F label="País" k="pais" />
+                  <F label="Sector / Industria" k="sectorIndustria" />
+                  <F label="Canal de Comercialización" k="canalComercializacion" />
+                  <F label="Contacto — Nombre" k="contactoNombre" />
+                  <F label="Contacto — Cargo" k="contactoCargo" />
+                  <F label="Contacto — Teléfono" k="contactoTelefono" />
+                  <F label="Contacto — Email" k="contactoEmail" />
+                  <F label="Representante Legal" k="representanteLegal" />
+                  <F label="Cargo del Representante" k="representanteCargo" />
                 </div>
-              ))}
-            </div>
 
-            {/* contacto principal */}
-            {(detail.contactoNombre || detail.contactoEmail) && (
-              <div style={{ margin: '0 24px 20px', padding: '14px 16px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>Contacto Principal</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px', fontSize: 13 }}>
+                {/* footer: acciones */}
+                {saveError && <div className="sol-error" style={{ margin: '0 24px 12px' }}>{saveError}</div>}
+                <div style={{ padding: '14px 24px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                  <button className="sol-btn-cancel" onClick={() => { setEditMode(false); setSaveError(null); }}>Cancelar</button>
+                  <button className="sol-btn-preview" onClick={guardarEdicion} disabled={saving}>
+                    {saving ? 'Guardando…' : 'Guardar'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* body: detalle */}
+                <div style={{ padding: '20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 24px' }}>
                   {[
-                    ['Nombre',   detail.contactoNombre],
-                    ['Cargo',    detail.contactoCargo],
-                    ['Teléfono', detail.contactoTelefono],
-                    ['Email',    detail.contactoEmail],
-                  ].map(([label, val]) => val ? (
+                    ['Nombre comercial', detail.nombreComercial],
+                    ['Ciudad',       detail.ciudad],
+                    ['Dirección',    detail.direccion],
+                    ['País',         detail.pais],
+                    ['Sector',       detail.sectorIndustria],
+                    ['Canal comercialización', detail.canalComercializacion],
+                  ].map(([label, val]) => (
                     <div key={label}>
-                      <span style={{ color: '#94a3b8', fontSize: 11, display: 'block' }}>{label}</span>
-                      <span style={{ color: '#1e293b' }}>{val}</span>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>{label}</div>
+                      <div style={{ fontSize: 13, color: val ? '#1e293b' : '#cbd5e1' }}>{val || '—'}</div>
                     </div>
-                  ) : null)}
+                  ))}
                 </div>
-              </div>
-            )}
 
-            {/* footer */}
-            <div style={{ padding: '14px 24px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: '#94a3b8' }}>
-              <span>{detail._count?.solicitudes ?? 0} solicitud(es) registrada(s)</span>
-              <span>Registrado: {fmtDate(detail.createdAt)}</span>
-            </div>
+                {/* contacto principal */}
+                {(detail.contactoNombre || detail.contactoEmail) && (
+                  <div style={{ margin: '0 24px 16px', padding: '14px 16px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>Contacto Principal</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px', fontSize: 13 }}>
+                      {[
+                        ['Nombre',   detail.contactoNombre],
+                        ['Cargo',    detail.contactoCargo],
+                        ['Teléfono', detail.contactoTelefono],
+                        ['Email',    detail.contactoEmail],
+                      ].map(([label, val]) => val ? (
+                        <div key={label}>
+                          <span style={{ color: '#94a3b8', fontSize: 11, display: 'block' }}>{label}</span>
+                          <span style={{ color: '#1e293b' }}>{val}</span>
+                        </div>
+                      ) : null)}
+                    </div>
+                  </div>
+                )}
+
+                {/* representante legal (para contratos) */}
+                {(detail.representanteLegal || detail.representanteCargo) && (
+                  <div style={{ margin: '0 24px 20px', padding: '14px 16px', background: '#eff6ff', borderRadius: 10, border: '1px solid #dbeafe' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>Representante Legal (contratos)</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px', fontSize: 13 }}>
+                      {[
+                        ['Nombre', detail.representanteLegal],
+                        ['Cargo',  detail.representanteCargo],
+                      ].map(([label, val]) => val ? (
+                        <div key={label}>
+                          <span style={{ color: '#94a3b8', fontSize: 11, display: 'block' }}>{label}</span>
+                          <span style={{ color: '#1e293b' }}>{val}</span>
+                        </div>
+                      ) : null)}
+                    </div>
+                  </div>
+                )}
+
+                {/* footer */}
+                <div style={{ padding: '14px 24px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: '#94a3b8' }}>
+                  <span>
+                    {detail._count?.solicitudes ?? 0} solicitud(es) · {detail._count?.contratos ?? 0} contrato(s)
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <span>Registrado: {fmtDate(detail.createdAt)}</span>
+                    <button className="sol-btn-preview" style={{ fontSize: 12, padding: '6px 16px' }} onClick={abrirEdicion}>Editar</button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

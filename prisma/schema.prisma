@@ -200,8 +200,10 @@ model Cliente {
   id                    String   @id @default(uuid())
   cedulaRif             String   @unique
   razonSocial           String
+  nombreComercial       String?
   ciudad                String?
   direccion             String?
+  pais                  String?
   sectorIndustria       String?
   canalComercializacion String?
 
@@ -211,6 +213,10 @@ model Cliente {
   contactoTelefono String?
   contactoEmail    String?
 
+  // Representante legal (para contratos de compra)
+  representanteLegal String?
+  representanteCargo String?
+
   // Rubros asignados para acceso de clientes (filtra catálogo y proveedores)
   rubros  String[]
 
@@ -218,6 +224,7 @@ model Cliente {
   updatedAt DateTime @updatedAt
 
   solicitudes SolicitudProcura[]
+  contratos   ContratoCompra[]
 
   @@index([cedulaRif])
 }
@@ -439,7 +446,9 @@ model ContratoCompra {
   numero String?
   status String  @default("borrador") // borrador | finalizado
 
-  // 2. PARTIES — Buyer
+  // 2. PARTIES — Buyer (snapshot + vínculo opcional a la Base de Clientes)
+  buyerClientId       String?
+  buyerCliente        Cliente? @relation(fields: [buyerClientId], references: [id], onDelete: SetNull)
   buyerLegalName      String
   buyerTradeName      String?
   buyerAddress        String?
@@ -475,6 +484,7 @@ model ContratoCompra {
   pagos              ContratoPago[]
   paymentMethod      String @default("T/T") // T/T | Alibaba Trade Assurance | L/C | OTHER
   paymentMethodOther String?
+  fletePago          String @default("porcentaje") // porcentaje | final — el flete va incluido en los porcentajes o se paga con la última cuota
 
   // 7. PRODUCTION AND DELIVERY
   productionDays           String?
@@ -554,6 +564,7 @@ model ContratoPartida {
   cantidad       String
   precioUnitario String
   total          String?
+  esFlete        Boolean        @default(false) // fila obligatoria de flete (siempre al final)
   sortOrder      Int            @default(0)
 }
 

@@ -22,7 +22,7 @@ export async function GET(req) {
     const cliente = await prisma.cliente.findUnique({
       where: { cedulaRif: cedula },
       include: {
-        _count: { select: { solicitudes: true } },
+        _count: { select: { solicitudes: true, contratos: true } },
       },
     })
     return NextResponse.json({ cliente: cliente ?? null })
@@ -45,29 +45,48 @@ export async function GET(req) {
       orderBy: { updatedAt: 'desc' },
       skip:  (page - 1) * limit,
       take:  limit,
-      include: { _count: { select: { solicitudes: true } } },
+      include: { _count: { select: { solicitudes: true, contratos: true } } },
     }),
   ])
 
   return NextResponse.json({ total, page, pages: Math.ceil(total / limit), clientes })
 }
 
-// ── POST — crear cliente manualmente ──────────────────────────────────────────
+// ── POST — crear / actualizar cliente (upsert por cédula/RIF) ─────────────────
+// Whitelist de campos editables (previene mass assignment)
+const CAMPOS_CLIENTE = [
+  'razonSocial', 'nombreComercial', 'ciudad', 'direccion', 'pais',
+  'sectorIndustria', 'canalComercializacion',
+  'contactoNombre', 'contactoCargo', 'contactoTelefono', 'contactoEmail',
+  'representanteLegal', 'representanteCargo',
+]
+
+function pickCampos(body) {
+  const out = {}
+  for (const k of CAMPOS_CLIENTE) {
+    if (body[k] === undefined) continue
+    out[k] = body[k] === '' ? null : body[k]
+  }
+  return out
+}
+
 export async function POST(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   try {
     const body = await req.json()
-    const { cedulaRif, razonSocial, ...rest } = body
+    const { cedulaRif } = body
 
     if (!cedulaRif?.trim()) return NextResponse.json({ error: 'Cédula/RIF es requerido' }, { status: 400 })
-    if (!razonSocial?.trim()) return NextResponse.json({ error: 'Razón social es requerida' }, { status: 400 })
+    if (!body.razonSocial?.trim()) return NextResponse.json({ error: 'Razón social es requerida' }, { status: 400 })
+
+    const datos = pickCampos(body)
 
     const cliente = await prisma.cliente.upsert({
       where:  { cedulaRif: cedulaRif.trim() },
-      update: { razonSocial: razonSocial.trim(), ...rest, updatedAt: new Date() },
-      create: { cedulaRif: cedulaRif.trim(), razonSocial: razonSocial.trim(), ...rest },
+      update: { ...datos, updatedAt: new Date() },
+      create: { cedulaRif: cedulaRif.trim(), ...datos },
     })
 
     return NextResponse.json({ ok: true, cliente })

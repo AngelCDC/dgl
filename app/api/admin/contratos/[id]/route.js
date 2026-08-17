@@ -17,13 +17,14 @@ async function canWrite(session) {
 // Nota: 'numero' es inmutable — se asigna secuencialmente al crear el contrato.
 const ALLOWED_SCALAR = [
   'fecha', 'status',
+  'buyerClientId',
   'buyerLegalName', 'buyerTradeName', 'buyerAddress', 'buyerCountry',
   'buyerTaxId', 'buyerRepresentative', 'buyerPosition', 'buyerEmail',
   'verificacionId', 'supplierLegalName', 'supplierTradeName', 'supplierAddress',
   'supplierCountry', 'supplierUscc', 'supplierLegalRepresentative',
   'supplierPosition', 'supplierEmail',
   'totalContractValue', 'currency', 'incoterm', 'incotermOther', 'namedPlace',
-  'paymentMethod', 'paymentMethodOther',
+  'paymentMethod', 'paymentMethodOther', 'fletePago',
   'productionDays', 'productionStart', 'productionStartDate', 'estimatedReadyToShipDate',
   'warrantyMonths', 'warrantyStart', 'warrantyResponseDays', 'warrantyCorrectiveDays',
   'delayPercent', 'delayPeriod', 'delayCapPercent', 'delayTerminationDays',
@@ -96,6 +97,12 @@ export async function PUT(req, { params }) {
       if (!exists) safeData.verificacionId = null
     }
 
+    // Verificar que el cliente de la base exista (si el buyer viene vinculado)
+    if (safeData.buyerClientId) {
+      const exists = await prisma.cliente.findUnique({ where: { id: safeData.buyerClientId }, select: { id: true } })
+      if (!exists) safeData.buyerClientId = null
+    }
+
     const contrato = await prisma.$transaction(async (tx) => {
 
       // 1. Actualizar campos escalares
@@ -116,6 +123,7 @@ export async function PUT(req, { params }) {
               cantidad:       p.cantidad,
               precioUnitario: p.precioUnitario,
               total:          p.total ?? null,
+              esFlete:        Boolean(p.esFlete),
               sortOrder:      i,
             })),
           })
