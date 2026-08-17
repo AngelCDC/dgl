@@ -20,6 +20,7 @@ export default function ClientesPage() {
   const [editForm,  setEditForm]  = useState({});
   const [saving,    setSaving]    = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [nuevo,     setNuevo]     = useState(false); // modal en modo creación
   const debounce    = useRef(null);
 
   // ── fetch ─────────────────────────────────────────────────────────────────
@@ -70,20 +71,50 @@ export default function ClientesPage() {
     setEditMode(true);
   };
 
+  // ── creación de cliente ────────────────────────────────────────────────────
+  const abrirNuevo = () => {
+    setEditForm({
+      cedulaRif: '', razonSocial: '', nombreComercial: '', ciudad: '', direccion: '', pais: '',
+      sectorIndustria: '', canalComercializacion: '',
+      contactoNombre: '', contactoCargo: '', contactoTelefono: '', contactoEmail: '',
+      representanteLegal: '', representanteCargo: '',
+    });
+    setSaveError(null);
+    setNuevo(true);
+    setDetail(null);
+    setEditMode(true);
+  };
+
+  const cerrarModal = () => { setDetail(null); setEditMode(false); setNuevo(false); };
+
   const guardarEdicion = async () => {
     if (!editForm.razonSocial?.trim()) { setSaveError('La razón social es requerida'); return; }
+    const rif = (nuevo ? editForm.cedulaRif : detail.cedulaRif)?.trim();
+    if (!rif) { setSaveError('La cédula/RIF es requerida'); return; }
     setSaving(true);
     setSaveError(null);
     try {
+      // Al crear: no sobrescribir un cliente existente con el mismo RIF
+      if (nuevo) {
+        const chk = await fetch(`/api/admin/clientes?cedula=${encodeURIComponent(rif)}`).then(r => r.json());
+        if (chk.cliente) {
+          setSaveError(`Ya existe un cliente con la cédula/RIF ${rif}. Ábrelo en la lista y usa "Editar".`);
+          return;
+        }
+      }
       const res = await fetch('/api/admin/clientes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cedulaRif: detail.cedulaRif, ...editForm }),
+        body: JSON.stringify({ cedulaRif: rif, ...editForm }),
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'Error al guardar');
-      setDetail({ ...data.cliente, _count: detail._count ?? {} });
-      setEditMode(false);
+      if (nuevo) {
+        cerrarModal();
+      } else {
+        setDetail({ ...data.cliente, _count: detail._count ?? {} });
+        setEditMode(false);
+      }
       load(q, page); // refrescar la lista
     } catch (e) {
       setSaveError(e.message);
@@ -112,7 +143,10 @@ export default function ClientesPage() {
       {/* ── Header ── */}
       <div className="section-title-row" style={{ marginBottom: 24 }}>
         <span className="section-title-text">Clientes</span>
-        <span className="mono-sm">{fmt(result.total)} registros</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <span className="mono-sm">{fmt(result.total)} registros</span>
+          <button className="sol-btn-preview" onClick={abrirNuevo}>✚ Nuevo Cliente</button>
+        </div>
       </div>
 
       {/* ── Buscador ── */}
@@ -201,23 +235,27 @@ export default function ClientesPage() {
         </div>
       )}
 
-      {/* ── Modal de detalle / edición ── */}
-      {detail && (
+      {/* ── Modal de detalle / edición / creación ── */}
+      {(detail || nuevo) && (
         <div
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
-          onClick={e => { if (e.target === e.currentTarget) { setDetail(null); setEditMode(false); } }}
+          onClick={e => { if (e.target === e.currentTarget) cerrarModal(); }}
         >
           <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }}>
             {/* header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', color: '#94a3b8', textTransform: 'uppercase', marginBottom: 4 }}>
-                  {editMode ? 'Editar Cliente' : 'Ficha de Cliente'}
+                  {nuevo ? 'Nuevo Cliente' : editMode ? 'Editar Cliente' : 'Ficha de Cliente'}
                 </div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a' }}>{detail.razonSocial}</div>
-                <div style={{ fontFamily: 'monospace', fontSize: 13, color: '#3b82f6', marginTop: 2 }}>{detail.cedulaRif}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a' }}>
+                  {nuevo ? (editForm.razonSocial?.trim() || 'Nuevo cliente') : detail.razonSocial}
+                </div>
+                {!nuevo && (
+                  <div style={{ fontFamily: 'monospace', fontSize: 13, color: '#3b82f6', marginTop: 2 }}>{detail.cedulaRif}</div>
+                )}
               </div>
-              <button onClick={() => { setDetail(null); setEditMode(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#94a3b8', lineHeight: 1 }}>✕</button>
+              <button onClick={cerrarModal} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#94a3b8', lineHeight: 1 }}>✕</button>
             </div>
 
             {editMode ? (
@@ -226,10 +264,14 @@ export default function ClientesPage() {
                 <div style={{ padding: '20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 24px' }}>
                   <F label="Razón Social" k="razonSocial" required />
                   <F label="Nombre Comercial" k="nombreComercial" />
-                  <div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>Cédula / RIF</div>
-                    <input className="sol-input" style={{ width: '100%', boxSizing: 'border-box', background: '#f8fafc', color: '#64748b' }} value={detail.cedulaRif} disabled />
-                  </div>
+                  {nuevo ? (
+                    <F label="Cédula / RIF" k="cedulaRif" required />
+                  ) : (
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>Cédula / RIF</div>
+                      <input className="sol-input" style={{ width: '100%', boxSizing: 'border-box', background: '#f8fafc', color: '#64748b' }} value={detail.cedulaRif} disabled />
+                    </div>
+                  )}
                   <F label="Ciudad" k="ciudad" />
                   <F label="Dirección" k="direccion" />
                   <F label="País" k="pais" />
@@ -246,7 +288,7 @@ export default function ClientesPage() {
                 {/* footer: acciones */}
                 {saveError && <div className="sol-error" style={{ margin: '0 24px 12px' }}>{saveError}</div>}
                 <div style={{ padding: '14px 24px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                  <button className="sol-btn-cancel" onClick={() => { setEditMode(false); setSaveError(null); }}>Cancelar</button>
+                  <button className="sol-btn-cancel" onClick={() => { setEditMode(false); setSaveError(null); if (nuevo) setNuevo(false); }}>Cancelar</button>
                   <button className="sol-btn-preview" onClick={guardarEdicion} disabled={saving}>
                     {saving ? 'Guardando…' : 'Guardar'}
                   </button>
