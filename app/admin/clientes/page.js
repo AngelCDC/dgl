@@ -9,6 +9,25 @@ function fmtDate(d) {
   return new Date(d).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
+// Campo de formulario (label + input). Vive a nivel de módulo: si se definiera
+// dentro del componente, cada pulsación de tecla crearía una referencia nueva,
+// React remontaría el input y este perdería el foco.
+function Campo({ label, k, required, form, setForm }) {
+  return (
+    <div>
+      <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>
+        {label}{required ? <span style={{ color: '#dc2626' }}> *</span> : null}
+      </div>
+      <input
+        className="sol-input"
+        style={{ width: '100%', boxSizing: 'border-box' }}
+        value={form[k] ?? ''}
+        onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))}
+      />
+    </div>
+  );
+}
+
 // ─── Página ──────────────────────────────────────────────────────────────────
 export default function ClientesPage() {
   const [q,         setQ]         = useState('');
@@ -122,21 +141,6 @@ export default function ClientesPage() {
       setSaving(false);
     }
   };
-
-  // Campo de formulario (label + input)
-  const F = ({ label, k, required, width }) => (
-    <div style={{ width }}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>
-        {label}{required ? <span style={{ color: '#dc2626' }}> *</span> : null}
-      </div>
-      <input
-        className="sol-input"
-        style={{ width: '100%', boxSizing: 'border-box' }}
-        value={editForm[k] ?? ''}
-        onChange={e => setEditForm(f => ({ ...f, [k]: e.target.value }))}
-      />
-    </div>
-  );
 
   return (
     <div className="main-content">
@@ -262,27 +266,27 @@ export default function ClientesPage() {
               <>
                 {/* body: formulario */}
                 <div style={{ padding: '20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 24px' }}>
-                  <F label="Razón Social" k="razonSocial" required />
-                  <F label="Nombre Comercial" k="nombreComercial" />
+                  <Campo form={editForm} setForm={setEditForm} label="Razón Social" k="razonSocial" required />
+                  <Campo form={editForm} setForm={setEditForm} label="Nombre Comercial" k="nombreComercial" />
                   {nuevo ? (
-                    <F label="Cédula / RIF" k="cedulaRif" required />
+                    <Campo form={editForm} setForm={setEditForm} label="Cédula / RIF" k="cedulaRif" required />
                   ) : (
                     <div>
                       <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>Cédula / RIF</div>
                       <input className="sol-input" style={{ width: '100%', boxSizing: 'border-box', background: '#f8fafc', color: '#64748b' }} value={detail.cedulaRif} disabled />
                     </div>
                   )}
-                  <F label="Ciudad" k="ciudad" />
-                  <F label="Dirección" k="direccion" />
-                  <F label="País" k="pais" />
-                  <F label="Sector / Industria" k="sectorIndustria" />
-                  <F label="Canal de Comercialización" k="canalComercializacion" />
-                  <F label="Contacto — Nombre" k="contactoNombre" />
-                  <F label="Contacto — Cargo" k="contactoCargo" />
-                  <F label="Contacto — Teléfono" k="contactoTelefono" />
-                  <F label="Contacto — Email" k="contactoEmail" />
-                  <F label="Representante Legal" k="representanteLegal" />
-                  <F label="Cargo del Representante" k="representanteCargo" />
+                  <Campo form={editForm} setForm={setEditForm} label="Ciudad" k="ciudad" />
+                  <Campo form={editForm} setForm={setEditForm} label="Dirección" k="direccion" />
+                  <Campo form={editForm} setForm={setEditForm} label="País" k="pais" />
+                  <Campo form={editForm} setForm={setEditForm} label="Sector / Industria" k="sectorIndustria" />
+                  <Campo form={editForm} setForm={setEditForm} label="Canal de Comercialización" k="canalComercializacion" />
+                  <Campo form={editForm} setForm={setEditForm} label="Contacto — Nombre" k="contactoNombre" />
+                  <Campo form={editForm} setForm={setEditForm} label="Contacto — Cargo" k="contactoCargo" />
+                  <Campo form={editForm} setForm={setEditForm} label="Contacto — Teléfono" k="contactoTelefono" />
+                  <Campo form={editForm} setForm={setEditForm} label="Contacto — Email" k="contactoEmail" />
+                  <Campo form={editForm} setForm={setEditForm} label="Representante Legal" k="representanteLegal" />
+                  <Campo form={editForm} setForm={setEditForm} label="Cargo del Representante" k="representanteCargo" />
                 </div>
 
                 {/* footer: acciones */}
