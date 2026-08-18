@@ -263,7 +263,7 @@ export default function ContratoForm({ contrato, reportes = [], clientes = [], s
     arbitrationSeat: contrato?.arbitrationSeat ?? '',
     arbitrationLanguage: contrato?.arbitrationLanguage ?? 'English',
     arbitrationLanguageOther: contrato?.arbitrationLanguageOther ?? '',
-    executedIn: contrato?.executedIn ?? 'EN+CN',
+    executedIn: contrato?.executedIn ?? 'EN',
     controllingLanguage: contrato?.controllingLanguage ?? 'EN',
 
     buyerNoticeName: contrato?.buyerNoticeName ?? clienteVinculado?.contactoNombre ?? clienteVinculado?.representanteLegal ?? '',
