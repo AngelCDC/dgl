@@ -33,6 +33,17 @@ export async function PUT(req, { params }) {
     const updateData = {}
     if (typeof body.visible === 'boolean') updateData.visible = body.visible
 
+    // Asignación a grupo empresarial (null = quitar del grupo)
+    if (body.grupoId !== undefined) {
+      if (body.grupoId === null) {
+        updateData.grupoId = null
+      } else {
+        const grupo = await prisma.grupoEmpresarial.findUnique({ where: { id: body.grupoId } })
+        if (!grupo) return NextResponse.json({ error: 'Grupo no encontrado' }, { status: 404 })
+        updateData.grupoId = body.grupoId
+      }
+    }
+
     const reporte = await prisma.reporteVerificacion.update({ where: { id }, data: updateData })
     return NextResponse.json(reporte)
   } catch {

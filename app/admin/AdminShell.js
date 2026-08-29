@@ -562,6 +562,7 @@ const PAGE_TITLES = {
   "/admin/equipo":     "Equipo",
   "/admin/contactos":  "Mensajes",
   "/admin/reportes":  "Informes de Verificación",
+  "/admin/grupos":    "Grupos Empresariales",
   "/admin/inteligencia": "Inteligencia de Proveedores",
   "/admin/equipo/perfil": "Mi Perfil",
   "/admin/configuracion": "Configuración",

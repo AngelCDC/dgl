@@ -22,6 +22,8 @@ export async function GET() {
         registrosTotales: true,
         visible: true,
         createdAt: true,
+        grupoId: true,
+        grupo: { select: { id: true, nombre: true } },
       },
     })
     return NextResponse.json(reportes)

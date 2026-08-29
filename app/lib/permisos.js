@@ -17,6 +17,7 @@ const PERMISOS = {
     articulos:     'write',
     mensajes:      'write',
     reportes:      'write',
+    grupos:        'write',     // grupos empresariales (vinculación de informes)
     sistema:       'write',
     inteligencia:  'read',      // dashboard BI (solo lectura)
     perfil:        'write',
@@ -31,6 +32,7 @@ const PERMISOS = {
     articulos:     'read',
     mensajes:      'write',
     reportes:      null,       // sin acceso
+    grupos:        null,       // sin acceso
     sistema:       null,       // sin acceso
     inteligencia:  null,       // sin acceso — solo administrador
     perfil:        'write',
@@ -45,6 +47,7 @@ const PERMISOS = {
     articulos:     null,       // sin acceso
     mensajes:      'write',
     reportes:      null,       // sin acceso
+    grupos:        null,       // sin acceso
     sistema:       null,       // sin acceso
     inteligencia:  null,       // sin acceso
     perfil:        'write',
@@ -62,6 +65,7 @@ const RUTA_A_MODULO = [
   { modulo: 'articulos',     pattern: /^\/admin\/(articulos|categorias)/ },
   { modulo: 'mensajes',      pattern: /^\/admin\/contactos/ },
   { modulo: 'reportes',      pattern: /^\/admin\/reportes/ },
+  { modulo: 'grupos',        pattern: /^\/admin\/grupos/ },
   { modulo: 'inteligencia',  pattern: /^\/admin\/inteligencia/ },
   { modulo: 'sistema',       pattern: /^\/admin\/(equipo|planes|configuracion|roles)/ },
   { modulo: 'perfil',        pattern: /^\/admin\/equipo\/perfil/ },
@@ -189,7 +193,10 @@ export function getNavForRole(role) {
     })
     nav.push({
       title: 'Verificación',
-      items: [{ href: '/admin/reportes', label: 'Informes de Verificación', icon: 'reportes' }],
+      items: [
+        { href: '/admin/reportes', label: 'Informes de Verificación', icon: 'reportes' },
+        { href: '/admin/grupos', label: 'Grupos Empresariales', icon: 'proveedores' },
+      ],
     })
     nav.push({
       title: 'Inteligencia',

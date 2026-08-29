@@ -432,9 +432,25 @@ model ReporteVerificacion {
   createdById         String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+  grupoId             String?
+  grupo               GrupoEmpresarial? @relation(fields: [grupoId], references: [id], onDelete: SetNull)
   contratos           ContratoCompra[]
 
   @@index([createdAt])
+  @@index([grupoId])
+}
+
+// ─── Grupos empresariales (empresas relacionadas entre sí) ────────────────────
+model GrupoEmpresarial {
+  id               String   @id @default(uuid())
+  nombre           String               // ej. "Grupo Huawei"
+  nombreZh         String?              // nombre del grupo en chino, si aplica
+  empresaPrincipal String               // empresa matriz / cabecera del grupo
+  descripcion      String?              // notas internas
+  createdById      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  reportes         ReporteVerificacion[]
 }
 
 // ─── Contratos de Compra Internacional (proveedores chinos) ──────────────────

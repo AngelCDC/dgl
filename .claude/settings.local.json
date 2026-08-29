@@ -14,7 +14,9 @@
       "Bash(node scripts/validate_palette.js \"#008300,#eb6834\" --mode light --surface \"#ffffff\")",
       "Bash(npx esbuild *)",
       "Bash(node render-test.js)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(node -e 'const {PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);\\(async\\(\\)=>{const cols=await p.$queryRawUnsafe\\(\"SELECT column_name FROM information_schema.columns WHERE table_name='\\\\''ReporteVerificacion'\\\\'' AND column_name='\\\\''grupoId'\\\\''\"\\);const t=await p.$queryRawUnsafe\\(\"SELECT to_regclass\\('\\\\''public.\\\\\"GrupoEmpresarial\\\\\"'\\\\''\\) AS t\"\\);console.log\\('\\\\''grupoId col:'\\\\'',JSON.stringify\\(cols\\)\\);console.log\\('\\\\''tabla GrupoEmpresarial:'\\\\'',JSON.stringify\\(t\\)\\);await p.$disconnect\\(\\)}\\)\\(\\).catch\\(e=>{console.error\\(e.message\\);process.exit\\(1\\)}\\)')",
+      "Bash(node -e 'const {PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);\\(async\\(\\)=>{const cols=await p.$queryRawUnsafe\\(\"SELECT column_name FROM information_schema.columns WHERE table_name='\\\\''ReporteVerificacion'\\\\'' AND column_name='\\\\''grupoId'\\\\''\"\\);const t=await p.$queryRawUnsafe\\(\"SELECT to_regclass\\('\\\\''public.\\\\\"GrupoEmpresarial\\\\\"'\\\\''\\)::text AS t\"\\);const c=await p.grupoEmpresarial.count\\(\\);console.log\\('\\\\''grupoId col:'\\\\'',JSON.stringify\\(cols\\)\\);console.log\\('\\\\''tabla GrupoEmpresarial:'\\\\'',JSON.stringify\\(t\\)\\);console.log\\('\\\\''grupos count:'\\\\'',c\\);await p.$disconnect\\(\\)}\\)\\(\\).catch\\(e=>{console.error\\(e.message\\);process.exit\\(1\\)}\\)')"
     ],
     "additionalDirectories": [
       "c:\\Users\\itach\\Downloads\\dgl-platform"

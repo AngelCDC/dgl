@@ -32,7 +32,10 @@ export default async function ReporteVerificacionPage({ params }) {
   }
 
   const { id } = await params
-  const reporte = await prisma.reporteVerificacion.findUnique({ where: { id } })
+  const reporte = await prisma.reporteVerificacion.findUnique({
+    where: { id },
+    include: { grupo: true },
+  })
   if (!reporte) notFound()
 
   const n = normalizeReporte(reporte.data)
@@ -189,6 +192,7 @@ export default async function ReporteVerificacionPage({ params }) {
             <InfoCard label="Autoridad de Registro" value={c.autoridadRegistro} zh={c.autoridadRegistroZh} />
             <InfoCard label="Domicilio" value={c.domicilio} zh={c.domicilioZh} />
             <InfoCard label="Fecha de Constitucion" value={c.fechaConstitucion} />
+            <InfoCard label="Pertenece al grupo empresarial" value={reporte.grupo?.nombre} zh={reporte.grupo?.empresaPrincipal} />
           </div>
         </section>
 

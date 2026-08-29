@@ -6,6 +6,7 @@ import { normalizeReporte, metricColor, scoreColor, scoreLabel, isEmpty } from '
 
 export default function ReportesAdminPage() {
   const [reportes, setReportes] = useState([])
+  const [grupos, setGrupos] = useState([])
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState(null)
 
@@ -20,13 +21,36 @@ export default function ReportesAdminPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/reportes')
-      if (res.ok) setReportes(await res.json())
+      const [resReportes, resGrupos] = await Promise.all([
+        fetch('/api/admin/reportes'),
+        fetch('/api/admin/grupos'),
+      ])
+      if (resReportes.ok) setReportes(await resReportes.json())
+      if (resGrupos.ok) setGrupos(await resGrupos.json())
     } catch { /* silent */ }
     setLoading(false)
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  // ── Asignar/quitar grupo desde la lista ─────────────────────────────────────
+  async function handleGrupoChange(r, grupoId) {
+    try {
+      const res = await fetch(`/api/admin/reportes/${r.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grupoId: grupoId || null }),
+      })
+      if (res.ok) {
+        load()
+      } else {
+        const json = await res.json()
+        setMsg({ type: 'error', text: json.error || 'Error al asignar grupo' })
+      }
+    } catch {
+      setMsg({ type: 'error', text: 'Error de conexión' })
+    }
+  }
 
   // ── File selection ──────────────────────────────────────────────────────────
   function handleFileChange(e) {
@@ -265,6 +289,7 @@ export default function ReportesAdminPage() {
                   <th style={thStyle}>Empresa</th>
                   <th style={thStyle}>Código</th>
                   <th style={thStyle}>Riesgo</th>
+                  <th style={thStyle}>Grupo empresarial</th>
                   <th style={thStyle}>Visible</th>
                   <th style={thStyle}>Fecha</th>
                   <th style={{ ...thStyle, textAlign: 'right' }}>Acciones</th>
@@ -292,6 +317,30 @@ export default function ReportesAdminPage() {
                           </span>
                         )
                       })()}
+                    </td>
+                    <td style={tdStyle}>
+                      {r.grupo ? (
+                        <Link href={`/admin/grupos/${r.grupo.id}`} style={{ textDecoration: 'none' }}>
+                          <span style={{
+                            display: 'inline-block', padding: '4px 10px', borderRadius: 12, fontSize: 11.5, fontWeight: 600,
+                            background: '#eff6ff', color: '#1d4ed8', fontFamily: 'var(--font-dm)',
+                          }}>
+                            {r.grupo.nombre}
+                          </span>
+                        </Link>
+                      ) : (
+                        <select
+                          value=""
+                          onChange={e => handleGrupoChange(r, e.target.value)}
+                          style={{
+                            padding: '4px 8px', border: '1px solid #ddd', borderRadius: 8, fontSize: 11.5,
+                            color: '#888', background: '#fff', fontFamily: 'var(--font-dm)', cursor: 'pointer',
+                          }}
+                        >
+                          <option value="">Asignar grupo...</option>
+                          {grupos.map(g => <option key={g.id} value={g.id}>{g.nombre}</option>)}
+                        </select>
+                      )}
                     </td>
                     <td style={tdStyle}>
                       <button onClick={() => handleToggle(r)}
