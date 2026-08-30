@@ -34,7 +34,6 @@ export default async function AdminDashboard() {
     totalMensajesNuevos,
     totalSolicitudes,
     totalCatalogo,
-    totalGrupos,
     solicitudes,
     mensajes,
   ] = await Promise.all([
@@ -43,7 +42,6 @@ export default async function AdminDashboard() {
     prisma.contactRequest.count({ where: { status: 'new' } }),
     prisma.solicitudAdquisicion.count({ where: accessWhere }),
     prisma.productoCatalogo.count({ where: catalogoWhere }).catch(() => 0),
-    session?.user?.role === 'admin' ? prisma.grupoEmpresarial.count() : Promise.resolve(null),
     prisma.solicitudAdquisicion.findMany({
       where: accessWhere,
       take: 8,
@@ -80,9 +78,6 @@ export default async function AdminDashboard() {
         <StatCard label="Estudios de Mercado"  value={totalSolicitudes}            href="/admin/adquisiciones" icon="📊" color="#7c3aed" />
         <StatCard label="Productos catálogo"   value={totalCatalogo.toLocaleString()} href="/admin/catalogo"   icon="📦" color="#0d9488" />
         <StatCard label="Mensajes nuevos"      value={totalMensajesNuevos}         href="/admin/contactos"     icon="✉️" color="#dc2626" highlight={totalMensajesNuevos > 0} />
-        {totalGrupos !== null && (
-          <StatCard label="Grupos empresariales" value={totalGrupos}              href="/admin/grupos"        icon="🏢" color="#6d28d9" />
-        )}
       </div>
 
       {/* Dos columnas */}

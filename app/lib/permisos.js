@@ -193,10 +193,7 @@ export function getNavForRole(role) {
     })
     nav.push({
       title: 'Verificación',
-      items: [
-        { href: '/admin/reportes', label: 'Informes de Verificación', icon: 'reportes' },
-        { href: '/admin/grupos', label: 'Grupos Empresariales', icon: 'proveedores' },
-      ],
+      items: [{ href: '/admin/reportes', label: 'Informes de Verificación', icon: 'reportes' }],
     })
     nav.push({
       title: 'Inteligencia',

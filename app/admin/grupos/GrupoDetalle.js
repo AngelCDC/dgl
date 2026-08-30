@@ -219,7 +219,7 @@ export default function GrupoDetalle({ grupo: grupoInicial, todosLosReportes: re
     try {
       const res = await fetch(`/api/admin/grupos/${grupo.id}`, { method: 'DELETE' })
       if (res.ok) {
-        router.push('/admin/grupos')
+        router.push('/admin/reportes')
         return
       }
       const json = await res.json()
@@ -239,8 +239,8 @@ export default function GrupoDetalle({ grupo: grupoInicial, todosLosReportes: re
       {/* ── Cabecera ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: '24px', flexWrap: 'wrap' }}>
         <div>
-          <Link href="/admin/grupos" style={{ fontSize: 12, color: '#2563eb', textDecoration: 'none', fontFamily: 'var(--font-dm)' }}>
-            ← Grupos Empresariales
+          <Link href="/admin/reportes" style={{ fontSize: 12, color: '#2563eb', textDecoration: 'none', fontFamily: 'var(--font-dm)' }}>
+            ← Informes de Verificación
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111', letterSpacing: '-0.01em', margin: '6px 0 4px' }}>
             {grupo.nombre}
