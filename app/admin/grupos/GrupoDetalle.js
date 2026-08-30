@@ -81,6 +81,80 @@ function AnadirInformesModal({ disponibles, onClose, onAsignar }) {
   )
 }
 
+// ─── Modal "Añadir clientes existentes" (a nivel de módulo) ────────────────────
+function AnadirClientesModal({ disponibles, onClose, onAsignar }) {
+  const [filtro, setFiltro] = useState('')
+  const [seleccionados, setSeleccionados] = useState([])
+  const [saving, setSaving] = useState(false)
+
+  const lista = disponibles.filter(c =>
+    !filtro || (c.razonSocial + ' ' + c.cedulaRif).toLowerCase().includes(filtro.toLowerCase())
+  )
+
+  function toggle(id) {
+    setSeleccionados(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id])
+  }
+
+  async function asignar() {
+    if (seleccionados.length === 0) return
+    setSaving(true)
+    try {
+      await onAsignar(seleccionados)
+      onClose()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div style={overlayStyle}>
+      <div style={modalStyle}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 4 }}>Añadir clientes existentes</div>
+        <p style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>
+          Selecciona los clientes de la base que pertenecen a este grupo empresarial.
+        </p>
+
+        <input
+          value={filtro}
+          onChange={e => setFiltro(e.target.value)}
+          placeholder="Buscar por razón social o cédula/RIF..."
+          style={{ ...inputStyle, marginBottom: 12 }}
+        />
+
+        <div style={{ maxHeight: 260, overflowY: 'auto', border: '1px solid #eee', borderRadius: 8 }}>
+          {lista.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: '#aaa', fontSize: 12.5 }}>
+              {disponibles.length === 0 ? 'Todos los clientes ya pertenecen a un grupo.' : 'Sin coincidencias.'}
+            </div>
+          ) : (
+            lista.map(c => (
+              <label key={c.id} style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px',
+                cursor: 'pointer', borderBottom: '1px solid #f5f5f5', fontSize: 13, color: '#333',
+                background: seleccionados.includes(c.id) ? '#eff6ff' : '#fff',
+              }}>
+                <input type="checkbox" checked={seleccionados.includes(c.id)} onChange={() => toggle(c.id)} />
+                <span style={{ flex: 1 }}>{c.razonSocial}</span>
+                <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#aaa' }}>{c.cedulaRif}</span>
+              </label>
+            ))
+          )}
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
+          <span style={{ fontSize: 12, color: '#888' }}>{seleccionados.length} seleccionado(s)</span>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={onClose} disabled={saving} style={secBtnStyle}>Cancelar</button>
+            <button onClick={asignar} disabled={saving || seleccionados.length === 0} style={priBtnStyle}>
+              {saving ? 'Añadiendo...' : 'Añadir al grupo'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const overlayStyle = {
   position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
   display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
@@ -117,11 +191,12 @@ function StatBox({ label, value, sub, color = '#111' }) {
 }
 
 // ─── Componente principal ───────────────────────────────────────────────────────
-export default function GrupoDetalle({ grupo: grupoInicial, todosLosReportes: reportesIniciales }) {
+export default function GrupoDetalle({ grupo: grupoInicial, todosLosReportes: reportesIniciales, todosLosClientes: clientesIniciales }) {
   const router = useRouter()
 
   const [grupo, setGrupo] = useState(grupoInicial)
   const [reportesTodos, setReportesTodos] = useState(reportesIniciales)
+  const [clientesTodos, setClientesTodos] = useState(clientesIniciales)
   const [msg, setMsg] = useState(null)
   const [editando, setEditando] = useState(false)
   const [editForm, setEditForm] = useState({
@@ -129,18 +204,22 @@ export default function GrupoDetalle({ grupo: grupoInicial, todosLosReportes: re
     empresaPrincipal: grupoInicial.empresaPrincipal, descripcion: grupoInicial.descripcion ?? '',
   })
   const [selOpen, setSelOpen] = useState(false)
+  const [selClientesOpen, setSelClientesOpen] = useState(false)
   const [busy, setBusy] = useState(false)
 
   const recargar = useCallback(async () => {
-    const [g, todos] = await Promise.all([
+    const [g, todos, clientes] = await Promise.all([
       fetch(`/api/admin/grupos/${grupoInicial.id}`).then(r => r.json()),
       fetch('/api/admin/reportes').then(r => r.json()),
+      fetch('/api/admin/clientes?limit=100').then(r => r.json()).then(d => d.clientes || []),
     ])
     if (g && g.id) setGrupo(g)
     if (Array.isArray(todos)) setReportesTodos(todos)
+    if (Array.isArray(clientes)) setClientesTodos(clientes)
   }, [grupoInicial.id])
 
   const reportes = Array.isArray(grupo.reportes) ? grupo.reportes : []
+  const clientes = Array.isArray(grupo.clientes) ? grupo.clientes : []
 
   // ── Resumen agregado ──
   const contratos = reportes.flatMap(r => r.contratos || [])
@@ -213,6 +292,46 @@ export default function GrupoDetalle({ grupo: grupoInicial, todosLosReportes: re
     }
   }
 
+  async function asignarClientes(ids) {
+    setBusy(true)
+    try {
+      const results = await Promise.all(ids.map(id => {
+        const c = clientesTodos.find(x => x.id === id)
+        return fetch('/api/admin/clientes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cedulaRif: c.cedulaRif, razonSocial: c.razonSocial, grupoId: grupo.id }),
+        })
+      }))
+      if (results.some(r => !r.ok)) throw new Error('uno falló')
+      setMsg({ type: 'ok', text: `${ids.length} cliente(s) añadido(s) al grupo` })
+      await recargar()
+    } catch {
+      setMsg({ type: 'error', text: 'Error al asignar los clientes' })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function quitarCliente(c) {
+    if (!confirm(`¿Quitar "${c.razonSocial}" del grupo? El cliente no se elimina.`)) return
+    setBusy(true)
+    try {
+      const res = await fetch('/api/admin/clientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cedulaRif: c.cedulaRif, razonSocial: c.razonSocial, grupoId: null }),
+      })
+      if (!res.ok) throw new Error('falló')
+      setMsg({ type: 'ok', text: 'Cliente quitado del grupo' })
+      await recargar()
+    } catch {
+      setMsg({ type: 'error', text: 'Error al quitar el cliente' })
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function eliminarGrupo() {
     if (!confirm(`¿Eliminar el grupo "${grupo.nombre}"?\n\nLos informes del grupo NO se eliminan: quedan sin grupo.`)) return
     setBusy(true)
@@ -233,6 +352,7 @@ export default function GrupoDetalle({ grupo: grupoInicial, todosLosReportes: re
 
   // Informes disponibles para añadir: los que no pertenecen a ningún grupo
   const disponibles = reportesTodos.filter(r => !r.grupoId)
+  const clientesDisponibles = clientesTodos.filter(c => !c.grupoId)
 
   return (
     <div className="admin-page">
@@ -260,6 +380,7 @@ export default function GrupoDetalle({ grupo: grupoInicial, todosLosReportes: re
             {editando ? 'Cancelar edición' : '✎ Editar'}
           </button>
           <button onClick={() => setSelOpen(true)} style={priBtnStyle}>＋ Añadir informes</button>
+          <button onClick={() => setSelClientesOpen(true)} style={secBtnStyle}>＋ Añadir clientes</button>
           <button onClick={eliminarGrupo} disabled={busy}
             style={{ ...secBtnStyle, color: '#dc2626', borderColor: '#fecaca' }}>
             Eliminar grupo
@@ -314,6 +435,7 @@ export default function GrupoDetalle({ grupo: grupoInicial, todosLosReportes: re
       {/* ── Resumen agregado ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 24 }}>
         <StatBox label="Empresas en el grupo" value={reportes.length} />
+        <StatBox label="Clientes del grupo" value={clientes.length} sub="Compradores vinculados" />
         <StatBox
           label="Riesgo máximo"
           value={riesgoMax == null ? '—' : scoreLabel(riesgoMax)}
@@ -414,6 +536,59 @@ export default function GrupoDetalle({ grupo: grupoInicial, todosLosReportes: re
         )}
       </div>
 
+      {/* ── Clientes del grupo ── */}
+      <div style={{ background: '#fff', border: '1px solid #eee', borderRadius: 12, overflow: 'hidden', marginBottom: 24 }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '13px', fontWeight: '600', color: '#111' }}>Clientes del grupo ({clientes.length})</span>
+        </div>
+        {clientes.length === 0 ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: '#aaa', fontSize: 13 }}>
+            Este grupo aún no tiene clientes. Usa «Añadir clientes» para vincular compradores del conglomerado.
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-inter)', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: '#f9fafb', borderBottom: '1px solid #eee' }}>
+                  <th style={thStyle}>Cédula / RIF</th>
+                  <th style={thStyle}>Razón social</th>
+                  <th style={thStyle}>Ciudad</th>
+                  <th style={thStyle}>Sector</th>
+                  <th style={thStyle}>Representante legal</th>
+                  <th style={{ ...thStyle, textAlign: 'right' }}>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {clientes.map(c => (
+                  <tr key={c.id} style={{ borderBottom: '1px solid #f5f5f5' }}>
+                    <td style={{ ...tdStyle, fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: '#1e293b' }}>{c.cedulaRif}</td>
+                    <td style={tdStyle}>
+                      <div style={{ fontWeight: '500', color: '#111' }}>{c.razonSocial}</div>
+                      {c.nombreComercial && <div style={{ fontSize: 11, color: '#aaa' }}>{c.nombreComercial}</div>}
+                    </td>
+                    <td style={tdStyle}>{c.ciudad || '—'}</td>
+                    <td style={tdStyle}>{c.sectorIndustria || '—'}</td>
+                    <td style={tdStyle}>{c.representanteLegal || '—'}</td>
+                    <td style={{ ...tdStyle, textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                        <Link href="/admin/clientes"
+                          style={{ padding: '5px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 11, color: '#2563eb', textDecoration: 'none', fontFamily: 'var(--font-dm)' }}>
+                          Ver ficha
+                        </Link>
+                        <button onClick={() => quitarCliente(c)} disabled={busy}
+                          style={{ padding: '5px 10px', border: '1px solid #fecaca', borderRadius: 6, fontSize: 11, color: '#dc2626', background: '#fff', cursor: 'pointer', fontFamily: 'var(--font-dm)' }}>
+                          Quitar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {/* ── Línea de tiempo ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
         <div style={{ background: '#fff', border: '1px solid #eee', borderRadius: 12, overflow: 'hidden' }}>
@@ -470,6 +645,15 @@ export default function GrupoDetalle({ grupo: grupoInicial, todosLosReportes: re
           disponibles={disponibles}
           onClose={() => setSelOpen(false)}
           onAsignar={asignarInformes}
+        />
+      )}
+
+      {/* ── Modal añadir clientes ── */}
+      {selClientesOpen && (
+        <AnadirClientesModal
+          disponibles={clientesDisponibles}
+          onClose={() => setSelClientesOpen(false)}
+          onAsignar={asignarClientes}
         />
       )}
     </div>

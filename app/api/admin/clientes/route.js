@@ -22,6 +22,7 @@ export async function GET(req) {
     const cliente = await prisma.cliente.findUnique({
       where: { cedulaRif: cedula },
       include: {
+        grupo: { select: { id: true, nombre: true } },
         _count: { select: { solicitudes: true, contratos: true } },
       },
     })
@@ -45,7 +46,10 @@ export async function GET(req) {
       orderBy: { updatedAt: 'desc' },
       skip:  (page - 1) * limit,
       take:  limit,
-      include: { _count: { select: { solicitudes: true, contratos: true } } },
+      include: {
+        grupo: { select: { id: true, nombre: true } },
+        _count: { select: { solicitudes: true, contratos: true } },
+      },
     }),
   ])
 
@@ -59,6 +63,7 @@ const CAMPOS_CLIENTE = [
   'sectorIndustria', 'canalComercializacion',
   'contactoNombre', 'contactoCargo', 'contactoTelefono', 'contactoEmail',
   'representanteLegal', 'representanteCargo',
+  'grupoId', // grupo empresarial al que pertenece (null lo desvincula)
 ]
 
 function pickCampos(body) {
@@ -82,6 +87,12 @@ export async function POST(req) {
     if (!body.razonSocial?.trim()) return NextResponse.json({ error: 'Razón social es requerida' }, { status: 400 })
 
     const datos = pickCampos(body)
+
+    // Si se asigna a un grupo empresarial, validar que exista
+    if (datos.grupoId) {
+      const grupo = await prisma.grupoEmpresarial.findUnique({ where: { id: datos.grupoId } })
+      if (!grupo) return NextResponse.json({ error: 'Grupo empresarial no encontrado' }, { status: 404 })
+    }
 
     const cliente = await prisma.cliente.upsert({
       where:  { cedulaRif: cedulaRif.trim() },

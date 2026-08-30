@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmt(n) { return n?.toLocaleString('es-VE') ?? '—'; }
@@ -28,6 +29,253 @@ function Campo({ label, k, required, form, setForm }) {
   );
 }
 
+// ─── Modal de grupo empresarial para clientes (a nivel de módulo: evita perder
+//     el foco al teclear). Mismo flujo que en reportes: 1) crear grupo nuevo
+//     (este cliente como principal) o añadir a uno existente, 2) escoger otros
+//     clientes para completar el grupo. ─────────────────────────────────────────
+function ClienteGrupoModal({ cliente, grupos, clientesTodos, onClose, onDone }) {
+  const [paso, setPaso] = useState('inicio') // inicio | completar
+  const [modo, setModo] = useState('crear')   // crear | existente
+  const [form, setForm] = useState({
+    nombre: cliente.razonSocial,
+    empresaPrincipal: cliente.razonSocial,
+    descripcion: '',
+  })
+  const [grupoIdExistente, setGrupoIdExistente] = useState('')
+  const [grupoCreado, setGrupoCreado] = useState(null)
+  const [filtro, setFiltro] = useState('')
+  const [seleccionados, setSeleccionados] = useState([])
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
+
+  // Otros clientes disponibles: sin grupo y distintos al actual
+  const disponibles = (clientesTodos || []).filter(c => !c.grupoId && c.cedulaRif !== cliente.cedulaRif)
+  const listaFiltrada = disponibles.filter(c =>
+    !filtro || (c.razonSocial + ' ' + (c.nombreComercial || '') + ' ' + c.cedulaRif).toLowerCase().includes(filtro.toLowerCase())
+  )
+
+  function toggle(id) {
+    setSeleccionados(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id])
+  }
+
+  // Asignación vía POST upsert (requiere cédula/RIF + razón social)
+  async function asignarCliente(grupoId, c) {
+    const res = await fetch('/api/admin/clientes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cedulaRif: c.cedulaRif, razonSocial: c.razonSocial, grupoId }),
+    })
+    if (!res.ok) throw new Error('falló la asignación')
+  }
+
+  // ── Paso 1: definir el grupo y vincular este cliente ──
+  async function continuar() {
+    setSaving(true)
+    setError(null)
+    try {
+      let grupoId = null
+      if (modo === 'crear') {
+        if (!form.nombre.trim() || !form.empresaPrincipal.trim()) {
+          setError('El nombre del grupo y la empresa principal son obligatorios.')
+          return
+        }
+        const res = await fetch('/api/admin/grupos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form),
+        })
+        const json = await res.json()
+        if (!res.ok) { setError(json.error || 'Error al crear el grupo'); return }
+        grupoId = json.id
+        setGrupoCreado(json)
+      } else {
+        if (!grupoIdExistente) { setError('Selecciona un grupo.'); return }
+        grupoId = grupoIdExistente
+      }
+      await asignarCliente(grupoId, cliente)
+      setPaso('completar')
+    } catch {
+      setError('Error de conexión al crear el grupo')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // ── Paso 2: añadir los clientes escogidos y cerrar ──
+  async function finalizar() {
+    setSaving(true)
+    setError(null)
+    try {
+      const grupoId = grupoCreado?.id || grupoIdExistente
+      for (const id of seleccionados) {
+        const c = (clientesTodos || []).find(x => x.id === id)
+        if (c) await asignarCliente(grupoId, c)
+      }
+      onDone(grupoId)
+    } catch {
+      setError('Error al añadir los clientes seleccionados')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div style={grupoOverlayStyle}>
+      <div style={grupoModalStyle}>
+        {paso === 'inicio' ? (
+          <>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 4 }}>
+              Grupo empresarial — {cliente.razonSocial}
+            </div>
+            <p style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>
+              Agrupa clientes vinculados (compradores de un mismo grupo empresarial) para ver su panorama completo.
+            </p>
+
+            {/* Selector de modo */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+              <button onClick={() => setModo('crear')} style={modo === 'crear' ? grupoModoOnStyle : grupoModoOffStyle}>
+                ✚ Crear grupo nuevo
+              </button>
+              <button onClick={() => setModo('existente')} style={modo === 'existente' ? grupoModoOnStyle : grupoModoOffStyle}>
+                Añadir a grupo existente
+              </button>
+            </div>
+
+            {modo === 'crear' ? (
+              <>
+                <div style={{ marginBottom: 14 }}>
+                  <div style={grupoLblStyle}>Empresa principal (este cliente) *</div>
+                  <input value={form.empresaPrincipal} onChange={e => set('empresaPrincipal', e.target.value)} style={grupoInputStyle} />
+                </div>
+                <div style={{ marginBottom: 14 }}>
+                  <div style={grupoLblStyle}>Nombre del grupo *</div>
+                  <input value={form.nombre} onChange={e => set('nombre', e.target.value)} style={grupoInputStyle} />
+                </div>
+                <div style={{ marginBottom: 14 }}>
+                  <div style={grupoLblStyle}>Notas internas</div>
+                  <textarea value={form.descripcion} onChange={e => set('descripcion', e.target.value)}
+                    rows={2} style={{ ...grupoInputStyle, resize: 'vertical', fontFamily: 'var(--font-inter)' }} />
+                </div>
+              </>
+            ) : (
+              <div style={{ marginBottom: 18 }}>
+                <div style={grupoLblStyle}>Grupo existente</div>
+                <select value={grupoIdExistente} onChange={e => setGrupoIdExistente(e.target.value)} style={grupoInputStyle}>
+                  <option value="">Seleccionar grupo...</option>
+                  {grupos.map(g => (
+                    <option key={g.id} value={g.id}>
+                      {g.nombre} ({g._count?.reportes ?? 0} informe(s) · {g._count?.clientes ?? 0} cliente(s))
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {error && <div style={grupoErrStyle}>{error}</div>}
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={onClose} disabled={saving} style={grupoSecStyle}>Cancelar</button>
+              <button onClick={continuar} disabled={saving} style={grupoPriStyle}>
+                {saving ? 'Guardando...' : 'Continuar'}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 4 }}>
+              Añadir más clientes al grupo
+            </div>
+            <p style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>
+              {cliente.razonSocial} ya está en el grupo. Escoge otros clientes relacionados (opcional).
+            </p>
+
+            <input
+              value={filtro}
+              onChange={e => setFiltro(e.target.value)}
+              placeholder="Buscar por razón social o cédula/RIF..."
+              style={{ ...grupoInputStyle, marginBottom: 12 }}
+            />
+
+            <div style={{ maxHeight: 240, overflowY: 'auto', border: '1px solid #eee', borderRadius: 8 }}>
+              {listaFiltrada.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#aaa', fontSize: 12.5 }}>
+                  {disponibles.length === 0 ? 'No hay más clientes sin grupo disponibles.' : 'Sin coincidencias.'}
+                </div>
+              ) : (
+                listaFiltrada.map(c => (
+                  <label key={c.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px',
+                    cursor: 'pointer', borderBottom: '1px solid #f5f5f5', fontSize: 13, color: '#333',
+                    background: seleccionados.includes(c.id) ? '#eff6ff' : '#fff',
+                  }}>
+                    <input type="checkbox" checked={seleccionados.includes(c.id)} onChange={() => toggle(c.id)} />
+                    <span style={{ flex: 1 }}>{c.razonSocial}</span>
+                    <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#aaa' }}>{c.cedulaRif}</span>
+                  </label>
+                ))
+              )}
+            </div>
+
+            {error && <div style={grupoErrStyle}>{error}</div>}
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
+              <span style={{ fontSize: 12, color: '#888' }}>{seleccionados.length} seleccionado(s)</span>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={finalizar} disabled={saving} style={grupoSecStyle}>
+                  {seleccionados.length === 0 ? 'Finalizar sin añadir' : 'Saltar este paso'}
+                </button>
+                <button onClick={finalizar} disabled={saving || seleccionados.length === 0} style={grupoPriStyle}>
+                  {saving ? 'Añadiendo...' : `Añadir ${seleccionados.length || ''} al grupo`}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Estilos del modal de grupo (zIndex 1100: por encima del modal de detalle, que usa 1000)
+const grupoOverlayStyle = {
+  position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+  display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+  padding: '80px 16px', zIndex: 1100, backdropFilter: 'blur(2px)',
+}
+const grupoModalStyle = {
+  background: '#fff', borderRadius: 14, padding: 24, width: '100%', maxWidth: 520,
+  boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
+}
+const grupoInputStyle = {
+  width: '100%', padding: '9px 12px', border: '1px solid #ddd', borderRadius: 8,
+  fontSize: 13, color: '#111', fontFamily: 'var(--font-inter)', background: '#fff', boxSizing: 'border-box',
+}
+const grupoLblStyle = {
+  fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase',
+  letterSpacing: '0.05em', marginBottom: 5, fontFamily: 'var(--font-dm)',
+}
+const grupoErrStyle = {
+  padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca',
+  color: '#dc2626', fontSize: 12.5, borderRadius: 8, marginBottom: 14,
+}
+const grupoPriStyle = {
+  padding: '9px 20px', background: '#2563eb', color: '#fff', border: 'none',
+  borderRadius: 8, cursor: 'pointer', fontFamily: 'var(--font-dm)', fontSize: 13, fontWeight: 500,
+}
+const grupoSecStyle = {
+  padding: '9px 16px', background: '#fff', color: '#888', border: '1px solid #ddd',
+  borderRadius: 8, cursor: 'pointer', fontFamily: 'var(--font-dm)', fontSize: 13,
+}
+const grupoModoOnStyle = {
+  padding: '8px 14px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe',
+  borderRadius: 8, cursor: 'pointer', fontFamily: 'var(--font-dm)', fontSize: 12.5, fontWeight: 600,
+}
+const grupoModoOffStyle = {
+  padding: '8px 14px', background: '#fff', color: '#888', border: '1px solid #ddd',
+  borderRadius: 8, cursor: 'pointer', fontFamily: 'var(--font-dm)', fontSize: 12.5,
+}
+
 // ─── Página ──────────────────────────────────────────────────────────────────
 export default function ClientesPage() {
   const [q,         setQ]         = useState('');
@@ -40,6 +288,10 @@ export default function ClientesPage() {
   const [saving,    setSaving]    = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [nuevo,     setNuevo]     = useState(false); // modal en modo creación
+  const [userRole,      setUserRole] = useState(null); // grupos empresariales: solo admin
+  const [grupos,        setGrupos]   = useState([]);
+  const [clientesTodos, setClientesTodos] = useState([]); // para el paso 2 del modal de grupo
+  const [grupoModal,    setGrupoModal] = useState(null); // cliente sobre el que se abre el modal
   const debounce    = useRef(null);
 
   // ── fetch ─────────────────────────────────────────────────────────────────
@@ -61,6 +313,36 @@ export default function ClientesPage() {
   }, [q]);
 
   useEffect(() => { load(q, page); }, [page]);
+
+  // ── rol del usuario y datos de grupos (solo el admin puede agrupar clientes) ──
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(r => r.json())
+      .then(s => setUserRole(s?.user?.role ?? null))
+      .catch(() => setUserRole(null))
+  }, []);
+
+  useEffect(() => {
+    if (userRole !== 'admin') return
+    fetch('/api/admin/grupos')
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setGrupos(d) })
+      .catch(() => {})
+    fetch('/api/admin/clientes?limit=100')
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d.clientes)) setClientesTodos(d.clientes) })
+      .catch(() => {})
+  }, [userRole]);
+
+  // ── al cerrar el modal de grupo: refrescar lista y ficha ──
+  const onGrupoDone = async () => {
+    setGrupoModal(null)
+    load(q, page)
+    if (detail) {
+      const chk = await fetch(`/api/admin/clientes?cedula=${encodeURIComponent(detail.cedulaRif)}`).then(r => r.json())
+      if (chk.cliente) setDetail(chk.cliente)
+    }
+  };
 
   // ── cierre modal con Escape ───────────────────────────────────────────────
   useEffect(() => {
@@ -200,7 +482,19 @@ export default function ClientesPage() {
                 onMouseLeave={e => e.currentTarget.style.background = ''}
               >
                 <td style={{ padding: '10px 14px', fontFamily: 'monospace', fontWeight: 600, color: '#1e293b' }}>{c.cedulaRif}</td>
-                <td style={{ padding: '10px 14px', color: '#1e293b', fontWeight: 500 }}>{c.razonSocial}</td>
+                <td style={{ padding: '10px 14px', color: '#1e293b', fontWeight: 500 }}>
+                  {c.razonSocial}
+                  {userRole === 'admin' && c.grupo && (
+                    <Link
+                      href={`/admin/grupos/${c.grupo.id}`}
+                      onClick={e => e.stopPropagation()}
+                      style={{
+                        marginLeft: 8, padding: '1px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
+                        background: '#eff6ff', color: '#1d4ed8', textDecoration: 'none', whiteSpace: 'nowrap',
+                      }}
+                    >🏢 {c.grupo.nombre}</Link>
+                  )}
+                </td>
                 <td style={{ padding: '10px 14px', color: '#475569' }}>{c.ciudad || '—'}</td>
                 <td style={{ padding: '10px 14px', color: '#475569' }}>{c.sectorIndustria || '—'}</td>
                 <td style={{ padding: '10px 14px' }}>
@@ -362,6 +656,20 @@ export default function ClientesPage() {
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                     <span>Registrado: {fmtDate(detail.createdAt)}</span>
+                    {userRole === 'admin' && (detail.grupo ? (
+                      <Link href={`/admin/grupos/${detail.grupo.id}`}
+                        style={{
+                          fontSize: 12, padding: '6px 14px', border: '1px solid #bfdbfe', borderRadius: 8,
+                          background: '#eff6ff', color: '#1d4ed8', textDecoration: 'none', fontWeight: 600,
+                        }}>
+                        🏢 {detail.grupo.nombre}
+                      </Link>
+                    ) : (
+                      <button
+                        style={{ fontSize: 12, padding: '6px 16px', background: '#fff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: 8, cursor: 'pointer' }}
+                        onClick={() => setGrupoModal(detail)}
+                      >Grupo</button>
+                    ))}
                     <button className="sol-btn-preview" style={{ fontSize: 12, padding: '6px 16px' }} onClick={abrirEdicion}>Editar</button>
                   </div>
                 </div>
@@ -369,6 +677,17 @@ export default function ClientesPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* ── Modal grupo empresarial (solo admin) ── */}
+      {grupoModal && (
+        <ClienteGrupoModal
+          cliente={grupoModal}
+          grupos={grupos}
+          clientesTodos={clientesTodos}
+          onClose={() => setGrupoModal(null)}
+          onDone={onGrupoDone}
+        />
       )}
     </div>
   );

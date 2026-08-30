@@ -71,7 +71,45 @@ export async function POST(req) {
       },
     })
 
-    return NextResponse.json(reporte, { status: 201 })
+    // ── Sugerencia de grupo: si el nombre o el representante legal coincide
+    //    con un informe que ya pertenece a un grupo, sugerir ese grupo ──
+    const nuevoNombre   = (n.company.nombreEs || '').toLowerCase().trim()
+    const nuevoNombreZh = (n.company.nombreZh || '').toLowerCase().trim()
+    const nuevoRep      = (n.company.representanteLegal || '').toLowerCase().trim()
+
+    const miembros = await prisma.reporteVerificacion.findMany({
+      where: { grupoId: { not: null } },
+      select: {
+        id: true,
+        nombreEmpresa: true,
+        nombreEmpresaZh: true,
+        data: true,
+        grupo: { select: { id: true, nombre: true } },
+      },
+    })
+
+    let sugerencia = null
+    for (const m of miembros) {
+      // Representante legal del miembro (desde su JSON original)
+      let repMiembro = ''
+      try { repMiembro = (normalizeReporte(m.data).company.representanteLegal || '').toLowerCase().trim() } catch { /* datos antiguos */ }
+
+      const mismoNombre = (nuevoNombre && m.nombreEmpresa.toLowerCase().trim() === nuevoNombre)
+        || (nuevoNombreZh && (m.nombreEmpresaZh || '').toLowerCase().trim() === nuevoNombreZh)
+      const mismoRep = nuevoRep && repMiembro && repMiembro === nuevoRep
+
+      if (mismoNombre || mismoRep) {
+        sugerencia = {
+          grupoId: m.grupo.id,
+          grupoNombre: m.grupo.nombre,
+          motivo: mismoNombre ? 'nombre de empresa' : 'representante legal',
+          empresaCoincidente: m.nombreEmpresa,
+        }
+        break
+      }
+    }
+
+    return NextResponse.json({ ...reporte, sugerencia }, { status: 201 })
   } catch (err) {
     console.error('Error al crear reporte:', err)
     return NextResponse.json({ error: 'Error al crear reporte' }, { status: 500 })

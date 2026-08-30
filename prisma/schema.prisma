@@ -220,11 +220,17 @@ model Cliente {
   // Rubros asignados para acceso de clientes (filtra catálogo y proveedores)
   rubros  String[]
 
+  // Grupo empresarial al que pertenece (compradores vinculados)
+  grupoId String?
+  grupo   GrupoEmpresarial? @relation(fields: [grupoId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   solicitudes SolicitudProcura[]
   contratos   ContratoCompra[]
+
+  @@index([grupoId])
 
   @@index([cedulaRif])
 }
@@ -451,6 +457,7 @@ model GrupoEmpresarial {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   reportes         ReporteVerificacion[]
+  clientes         Cliente[]
 }
 
 // ─── Contratos de Compra Internacional (proveedores chinos) ──────────────────

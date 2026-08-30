@@ -27,6 +27,19 @@ export async function GET(req, { params }) {
             },
           },
         },
+        clientes: {
+          orderBy: { updatedAt: 'desc' },
+          select: {
+            id: true,
+            cedulaRif: true,
+            razonSocial: true,
+            nombreComercial: true,
+            ciudad: true,
+            sectorIndustria: true,
+            representanteLegal: true,
+            createdAt: true,
+          },
+        },
       },
     })
     if (!grupo) return NextResponse.json({ error: 'Grupo no encontrado' }, { status: 404 })

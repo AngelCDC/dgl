@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const grupos = await prisma.grupoEmpresarial.findMany({
       orderBy: { nombre: 'asc' },
-      include: { _count: { select: { reportes: true } } },
+      include: { _count: { select: { reportes: true, clientes: true } } },
     })
     return NextResponse.json(grupos)
   } catch {

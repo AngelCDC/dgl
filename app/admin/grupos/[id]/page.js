@@ -11,7 +11,7 @@ export default async function GrupoPage({ params }) {
 
   const { id } = await params
 
-  const [grupo, todosLosReportes] = await Promise.all([
+  const [grupo, todosLosReportes, todosLosClientes] = await Promise.all([
     prisma.grupoEmpresarial.findUnique({
       where: { id },
       include: {
@@ -30,15 +30,32 @@ export default async function GrupoPage({ params }) {
             },
           },
         },
+        clientes: {
+          orderBy: { updatedAt: 'desc' },
+          select: {
+            id: true,
+            cedulaRif: true,
+            razonSocial: true,
+            nombreComercial: true,
+            ciudad: true,
+            sectorIndustria: true,
+            representanteLegal: true,
+            createdAt: true,
+          },
+        },
       },
     }),
     prisma.reporteVerificacion.findMany({
       orderBy: { createdAt: 'desc' },
       select: { id: true, nombreEmpresa: true, nombreEmpresaZh: true, grupoId: true },
     }),
+    prisma.cliente.findMany({
+      orderBy: { updatedAt: 'desc' },
+      select: { id: true, cedulaRif: true, razonSocial: true, grupoId: true },
+    }),
   ])
 
   if (!grupo) notFound()
 
-  return <GrupoDetalle grupo={grupo} todosLosReportes={todosLosReportes} />
+  return <GrupoDetalle grupo={grupo} todosLosReportes={todosLosReportes} todosLosClientes={todosLosClientes} />
 }

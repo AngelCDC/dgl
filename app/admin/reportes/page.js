@@ -274,6 +274,8 @@ export default function ReportesAdminPage() {
   const [uploading, setUploading] = useState(false)
   const [parseError, setParseError] = useState(null)
   const [uploadResult, setUploadResult] = useState(null)
+  const [sugerencia, setSugerencia] = useState(null) // grupo sugerido tras subir
+  const [sugerenciaGuardando, setSugerenciaGuardando] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -298,6 +300,7 @@ export default function ReportesAdminPage() {
     setRaw(null)
     setParseError(null)
     setUploadResult(null)
+    setSugerencia(null)
 
     if (!f) return
 
@@ -338,6 +341,7 @@ export default function ReportesAdminPage() {
         return
       }
       setUploadResult(json)
+      setSugerencia(json.sugerencia || null)
       setFile(null)
       setPreview(null)
       setRaw(null)
@@ -347,6 +351,31 @@ export default function ReportesAdminPage() {
       setMsg({ type: 'error', text: 'Error de conexión al subir el informe' })
     } finally {
       setUploading(false)
+    }
+  }
+
+  // ── Aceptar sugerencia de grupo ─────────────────────────────────────────────
+  async function aceptarSugerencia() {
+    if (!uploadResult || !sugerencia) return
+    setSugerenciaGuardando(true)
+    try {
+      const res = await fetch(`/api/admin/reportes/${uploadResult.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grupoId: sugerencia.grupoId }),
+      })
+      if (res.ok) {
+        setMsg({ type: 'ok', text: `Informe añadido al grupo «${sugerencia.grupoNombre}»` })
+        setSugerencia(null)
+        load()
+      } else {
+        const json = await res.json()
+        setMsg({ type: 'error', text: json.error || 'Error al añadir al grupo' })
+      }
+    } catch {
+      setMsg({ type: 'error', text: 'Error de conexión al añadir al grupo' })
+    } finally {
+      setSugerenciaGuardando(false)
     }
   }
 
@@ -503,6 +532,33 @@ export default function ReportesAdminPage() {
                 Descargar PDF ↓
               </a>
             </div>
+
+            {/* Sugerencia de grupo detectada */}
+            {sugerencia && (
+              <div style={{ marginTop: '12px', padding: '12px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px' }}>
+                <div style={{ fontWeight: '600', color: '#92400e', marginBottom: '4px', fontFamily: 'var(--font-dm)' }}>
+                  💡 Sugerencia de grupo empresarial
+                </div>
+                <div style={{ color: '#78350f', fontSize: '12.5px', lineHeight: '1.5' }}>
+                  El {sugerencia.motivo} coincide con «{sugerencia.empresaCoincidente}», que pertenece al grupo
+                  <strong> «{sugerencia.grupoNombre}»</strong>.
+                </div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  <button onClick={aceptarSugerencia} disabled={sugerenciaGuardando}
+                    style={{
+                      padding: '7px 16px', background: '#2563eb', color: '#fff', border: 'none',
+                      borderRadius: 8, cursor: sugerenciaGuardando ? 'default' : 'pointer',
+                      fontFamily: 'var(--font-dm)', fontSize: 12, fontWeight: 500,
+                    }}>
+                    {sugerenciaGuardando ? 'Añadiendo...' : 'Añadir al grupo'}
+                  </button>
+                  <button onClick={() => setSugerencia(null)}
+                    style={{ padding: '7px 14px', background: '#fff', color: '#92400e', border: '1px solid #fde68a', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontFamily: 'var(--font-dm)' }}>
+                    Ignorar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
