@@ -191,7 +191,6 @@ export default async function ReporteVerificacionPage({ params }) {
             <InfoCard label="Representante Legal" value={c.representanteLegal} zh={c.representanteLegalZh} />
             <InfoCard label="Autoridad de Registro" value={c.autoridadRegistro} zh={c.autoridadRegistroZh} />
             <InfoCard label="Domicilio" value={c.domicilio} zh={c.domicilioZh} />
-            <InfoCard label="Fecha de Constitucion" value={c.fechaConstitucion} />
             <InfoCard label="Pertenece al grupo empresarial" value={reporte.grupo?.nombre} zh={reporte.grupo?.empresaPrincipal} />
           </div>
         </section>
@@ -208,6 +207,7 @@ export default async function ReporteVerificacionPage({ params }) {
             <InfoCard label="Capital Registrado" value={bl.capitalRegistrado} />
             <InfoCard label="Tipo de Entidad" value={bl.tipoEntidad} zh={bl.tipoEntidadZh} />
             <InfoCard label="Fecha de Aprobacion" value={bl.fechaAprobacion} />
+            <InfoCard label="Fecha de Constitucion" value={c.fechaConstitucion} />
           </div>
 
           {/* Alcance comercial */}
