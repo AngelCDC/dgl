@@ -30,7 +30,10 @@ const INK = "#000000";
 // el PDF generado. El código queda preparado para el cambio: basta con
 // apuntar `fontPath` al archivo .ttf de la fuente elegida.
 const CN_FONT = "SimHei";
+let CN_FONT_READY = false;
 try {
+  // 1) Filesystem (funciona en local; en Vercel serverless normalmente NO
+  //    porque archivos sueltos fuera del tracing de Next no se empaquetan).
   const fontPath = path.join(process.cwd(), "fonts", "simhei.ttf");
   if (fs.existsSync(fontPath)) {
     Font.register({
@@ -40,8 +43,23 @@ try {
         { src: fontPath, fontWeight: "bold" },
       ],
     });
+    CN_FONT_READY = true;
+  } else if (process.env.SIMHEI_FONT_URL) {
+    // 2) Fallback para serverless: sirve el .ttf desde /public y registra
+    //    por URL absoluta (react-pdf lo descarga en tiempo de render).
+    //    Define SIMHEI_FONT_URL, p.ej. https://dgl-henna.vercel.app/fonts/simhei.ttf
+    Font.register({
+      family: CN_FONT,
+      fonts: [
+        { src: process.env.SIMHEI_FONT_URL, fontWeight: "normal" },
+        { src: process.env.SIMHEI_FONT_URL, fontWeight: "bold" },
+      ],
+    });
+    CN_FONT_READY = true;
   } else {
-    console.error(`SimHei font not found at ${fontPath} (Chinese text may not render)`);
+    console.error(
+      `SimHei font not found at ${fontPath} and no SIMHEI_FONT_URL env var set — Chinese text will be rendered with a font lacking CJK glyphs, which crashes react-pdf's layout engine (Yoga) with "unsupported number".`
+    );
   }
 } catch (e) {
   console.error("SimHei font not registered (Chinese text may not render):", e.message);
@@ -67,12 +85,26 @@ const pickFont = (texto, fallback) =>
 // en el texto — para CJK, parte en cada carácter; para todo lo demás, se
 // comporta igual que antes (la palabra no se toca). `zws()` se deja como
 // función identidad para no tener que revertir cada punto de llamada.
-Font.registerHyphenationCallback((word) => {
-  if (CJK_RE.test(word)) {
-    return word.split("");
+// Defensivo: si la versión de @react-pdf/renderer instalada en el entorno
+// de despliegue no expone registerHyphenationCallback (o cambia de firma),
+// esto NO debe tumbar todo el endpoint de generación de PDF — solo se pierde
+// el ajuste de línea óptimo para CJK, el documento se sigue generando.
+try {
+  if (typeof Font.registerHyphenationCallback === "function") {
+    Font.registerHyphenationCallback((word) => {
+      if (CJK_RE.test(word)) {
+        return word.split("");
+      }
+      return [word];
+    });
+  } else {
+    console.error(
+      "Font.registerHyphenationCallback no está disponible en esta versión de @react-pdf/renderer — el ajuste de línea para chino puede salirse del margen."
+    );
   }
-  return [word];
-});
+} catch (e) {
+  console.error("No se pudo registrar el hyphenationCallback para CJK:", e.message);
+}
 const zws = (texto) => texto;
 
 // Texto que cambia automáticamente a la fuente china si contiene caracteres
@@ -96,7 +128,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: "Times-Roman",
     color: INK,
-    lineHeight: 1.6,
+    // NO lineHeight aquí — ver nota junto a `para`/`zhPara` más abajo.
   },
   pageLandscape: {
     backgroundColor: "#ffffff",
@@ -106,7 +138,7 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontFamily: "Times-Roman",
     color: INK,
-    lineHeight: 1.5,
+    // NO lineHeight aquí — ver nota junto a `para`/`zhPara` más abajo.
   },
 
   // ── Cabecera del documento ──
@@ -134,14 +166,24 @@ const styles = StyleSheet.create({
   },
 
   // ── Párrafos ──
+  // `lineHeight` se pone AQUÍ (en el nodo de texto), no en <Page> — un bug
+  // abierto en @react-pdf/renderer (issue #3452) hace que, en documentos de
+  // 10+ páginas con un pie de página `fixed` + `render(pageNumber/totalPages)`
+  // (como el nuestro), el lineHeight puesto a nivel de Page se multiplique
+  // sobre sí mismo en cada pasada de paginación hasta desbordar el rango
+  // numérico válido de PDF — eso es lo que producía "unsupported number:
+  // -9.44...e+21". Sin lineHeight en Page, ese camino de recálculo no se
+  // dispara.
   para: {
     textAlign: "justify",
     marginBottom: 8,
+    lineHeight: 1.6,
   },
   paraIndent: {
     textAlign: "justify",
     marginBottom: 8,
     marginLeft: 28,
+    lineHeight: 1.6,
   },
   // Bloque bilingüe: párrafo EN seguido del párrafo ZH, con un filete
   // izquierdo delgado que marca visualmente "esto es la traducción".
@@ -164,6 +206,7 @@ const styles = StyleSheet.create({
     // carácter (ver zws), justificar distribuiría espacio extra entre cada
     // ideograma y se vería desigual — no es así como se justifica el chino.
     textAlign: "left",
+    lineHeight: 1.6,
   },
   whereHeading: {
     fontSize: 10.5,
@@ -179,7 +222,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 8,
   },
-  leadIn: { textAlign: "justify", marginBottom: 4 },
+  leadIn: { textAlign: "justify", marginBottom: 4, lineHeight: 1.6 },
 
   // ── Artículos ──
   article: { marginTop: 12, marginBottom: 4 },
@@ -198,8 +241,8 @@ const styles = StyleSheet.create({
   },
 
   // ── Fields inline ──
-  labeled: { textAlign: "justify", marginBottom: 2 },
-  labeledZh: { textAlign: "justify", marginBottom: 8, fontFamily: CN_FONT, fontSize: 9.5 },
+  labeled: { textAlign: "justify", marginBottom: 2, lineHeight: 1.6 },
+  labeledZh: { textAlign: "justify", marginBottom: 8, fontFamily: CN_FONT, fontSize: 9.5, lineHeight: 1.6 },
 
   // ── Tablas ──
   table: {
@@ -282,11 +325,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 4,
   },
-  noticeLine: { fontSize: 9, marginBottom: 2 },
+  noticeLine: { fontSize: 9, marginBottom: 2, lineHeight: 1.4 },
 
   // ── Firmas ──
-  witness: { textAlign: "justify", marginTop: 14, marginBottom: 2 },
-  witnessZh: { textAlign: "justify", fontFamily: CN_FONT, fontSize: 9.5, marginBottom: 10 },
+  witness: { textAlign: "justify", marginTop: 14, marginBottom: 2, lineHeight: 1.6 },
+  witnessZh: { textAlign: "justify", fontFamily: CN_FONT, fontSize: 9.5, marginBottom: 10, lineHeight: 1.6 },
   signatureRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -322,11 +365,11 @@ const styles = StyleSheet.create({
   },
 
   bulletList: { marginLeft: 20, marginBottom: 6 },
-  bullet: { fontSize: 9.5, marginBottom: 2, textAlign: "justify" },
+  bullet: { fontSize: 9.5, marginBottom: 2, textAlign: "justify", lineHeight: 1.4 },
 
   checklistRow: { flexDirection: "row", marginBottom: 2 },
   checklistMark: { width: 24, fontSize: 9.5, fontFamily: "Times-Bold" },
-  checklistItem: { flex: 1, fontSize: 9.5 },
+  checklistItem: { flex: 1, fontSize: 9.5, lineHeight: 1.4 },
 
   // Cols Annex B (landscape, ancho útil ~762)
   cB1:  { width: 68 },
@@ -607,6 +650,15 @@ const BulletList = ({ items }) => (
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export const ContratoPDF = ({ data }) => {
+  // Falla rápido y con un mensaje legible en vez de dejar que Yoga truene
+  // con "unsupported number" cuando intenta medir texto chino sin una
+  // fuente CJK cargada — este documento SIEMPRE lleva chino (cláusulas
+  // fijas), así que sin fuente lista no tiene sentido seguir.
+  if (!CN_FONT_READY) {
+    throw new Error(
+      "ContratoPDF: la fuente SimHei no se pudo cargar (ni por filesystem ni por SIMHEI_FONT_URL). El documento requiere texto en chino para ser válido — revisa el registro de la fuente antes de generar el PDF."
+    );
+  }
   const partidas = Array.isArray(data.partidas) ? data.partidas : [];
   const pagos    = Array.isArray(data.pagos)    ? data.pagos    : [];
   const checklistC = Array.isArray(data.inspectionChecklist) ? data.inspectionChecklist : [];
