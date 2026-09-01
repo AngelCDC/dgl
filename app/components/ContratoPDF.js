@@ -176,28 +176,37 @@ const styles = StyleSheet.create({
   // dispara.
   para: {
     textAlign: "justify",
-    marginBottom: 8,
-    lineHeight: 1.6,
+    marginBottom: 9,
+    lineHeight: 1.4,
   },
   paraIndent: {
     textAlign: "justify",
-    marginBottom: 8,
+    marginBottom: 9,
     marginLeft: 28,
-    lineHeight: 1.6,
+    lineHeight: 1.4,
   },
-  // Bloque bilingüe: párrafo EN seguido del párrafo ZH, con un filete
-  // izquierdo delgado que marca visualmente "esto es la traducción".
+  // Bloque bilingüe: párrafo EN seguido del párrafo ZH. Fondo gris muy tenue
+  // + filete izquierdo, para que el ojo distinga "esto es la traducción" sin
+  // tener que leerlo — clave para poder escanear 30 artículos sin fatiga.
   zhBlock: {
-    borderLeft: `0.75pt solid ${INK}`,
+    backgroundColor: "#f6f6f6",
+    borderLeft: `1.5pt solid ${INK}`,
     paddingLeft: 8,
+    paddingRight: 6,
+    paddingVertical: 5,
     marginLeft: 1,
-    marginBottom: 8,
+    marginTop: 2,
+    marginBottom: 10,
   },
   zhBlockIndent: {
-    borderLeft: `0.75pt solid ${INK}`,
+    backgroundColor: "#f6f6f6",
+    borderLeft: `1.5pt solid ${INK}`,
     paddingLeft: 8,
+    paddingRight: 6,
+    paddingVertical: 5,
     marginLeft: 29,
-    marginBottom: 8,
+    marginTop: 2,
+    marginBottom: 10,
   },
   zhPara: {
     fontFamily: CN_FONT,
@@ -206,43 +215,63 @@ const styles = StyleSheet.create({
     // carácter (ver zws), justificar distribuiría espacio extra entre cada
     // ideograma y se vería desigual — no es así como se justifica el chino.
     textAlign: "left",
-    lineHeight: 1.6,
+    lineHeight: 1.4,
   },
   whereHeading: {
     fontSize: 10.5,
     fontFamily: "Times-Bold",
     textAlign: "center",
     letterSpacing: 3,
-    marginTop: 10,
+    marginTop: 14,
     marginBottom: 2,
   },
   whereHeadingZh: {
     fontSize: 10,
     fontFamily: CN_FONT,
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  leadIn: { textAlign: "justify", marginBottom: 4, lineHeight: 1.6 },
+  leadIn: { textAlign: "justify", marginBottom: 4, lineHeight: 1.4 },
 
   // ── Artículos ──
-  article: { marginTop: 12, marginBottom: 4 },
+  // Cada artículo es una "banda" con acento izquierdo y fondo tenue —
+  // rompe la monotonía de 30 títulos centrados idénticos y da un punto de
+  // anclaje visual claro al bajar por el documento.
+  article: { marginTop: 20, marginBottom: 4 },
+  articleHeader: {
+    backgroundColor: "#eef0f2",
+    borderLeft: `2.5pt solid ${INK}`,
+    paddingVertical: 6,
+    paddingLeft: 10,
+    marginBottom: 10,
+  },
   articleTitle: {
     fontSize: 10.5,
     fontFamily: "Times-Bold",
-    textAlign: "center",
+    textAlign: "left",
     letterSpacing: 0.5,
-    marginBottom: 2,
+    marginBottom: 1,
   },
   articleTitleZh: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontFamily: CN_FONT,
-    textAlign: "center",
-    marginBottom: 6,
+    textAlign: "left",
+    color: "#3a3a3a",
   },
 
   // ── Fields inline ──
-  labeled: { textAlign: "justify", marginBottom: 2, lineHeight: 1.6 },
-  labeledZh: { textAlign: "justify", marginBottom: 8, fontFamily: CN_FONT, fontSize: 9.5, lineHeight: 1.6 },
+  labeled: { textAlign: "justify", marginBottom: 1, lineHeight: 1.4 },
+  labeledZh: { textAlign: "justify", marginBottom: 6, fontFamily: CN_FONT, fontSize: 9.5, lineHeight: 1.4 },
+  // Caja de "datos clave": agrupa los campos Label/valor (precio, plazos,
+  // incoterm...) separados del texto legal corrido, para que se puedan
+  // escanear de un vistazo en vez de tener que leer el párrafo completo.
+  dataBox: {
+    border: `0.5pt solid ${INK}`,
+    backgroundColor: "#fbfbfa",
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+  },
 
   // ── Tablas ──
   table: {
@@ -325,11 +354,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 4,
   },
-  noticeLine: { fontSize: 9, marginBottom: 2, lineHeight: 1.4 },
+  noticeLine: { fontSize: 9, marginBottom: 2, lineHeight: 1.3 },
 
   // ── Firmas ──
-  witness: { textAlign: "justify", marginTop: 14, marginBottom: 2, lineHeight: 1.6 },
-  witnessZh: { textAlign: "justify", fontFamily: CN_FONT, fontSize: 9.5, marginBottom: 10, lineHeight: 1.6 },
+  witness: { textAlign: "justify", marginTop: 14, marginBottom: 2, lineHeight: 1.4 },
+  witnessZh: { textAlign: "justify", fontFamily: CN_FONT, fontSize: 9.5, marginBottom: 10, lineHeight: 1.4 },
   signatureRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -365,11 +394,11 @@ const styles = StyleSheet.create({
   },
 
   bulletList: { marginLeft: 20, marginBottom: 6 },
-  bullet: { fontSize: 9.5, marginBottom: 2, textAlign: "justify", lineHeight: 1.4 },
+  bullet: { fontSize: 9.5, marginBottom: 2, textAlign: "justify", lineHeight: 1.3 },
 
   checklistRow: { flexDirection: "row", marginBottom: 2 },
   checklistMark: { width: 24, fontSize: 9.5, fontFamily: "Times-Bold" },
-  checklistItem: { flex: 1, fontSize: 9.5, lineHeight: 1.4 },
+  checklistItem: { flex: 1, fontSize: 9.5, lineHeight: 1.3 },
 
   // Cols Annex B (landscape, ancho útil ~762)
   cB1:  { width: 68 },
@@ -531,11 +560,19 @@ const nbsp = (s) => (s ? s : "—");
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
 const Article = ({ number, title, children }) => (
-  <View style={styles.article} wrap={false}>
-    <Text style={styles.articleTitle}>ARTICLE {number} — {title}</Text>
-    <Text style={styles.articleTitleZh}>{zws(`第${number}条 — ${ARTICLE_TITLES_ZH[number] || ''}`)}</Text>
+  <View style={styles.article}>
+    <View style={styles.articleHeader} wrap={false}>
+      <Text style={styles.articleTitle}>ARTICLE {number} — {title}</Text>
+      <Text style={styles.articleTitleZh}>{zws(`第${number}条 — ${ARTICLE_TITLES_ZH[number] || ''}`)}</Text>
+    </View>
     {children}
   </View>
+);
+
+// Agrupa campos <BiLabeled> (precio, plazos, incoterm...) en una cajita
+// aparte del texto legal corrido, para que se puedan escanear de un vistazo.
+const DataBox = ({ children }) => (
+  <View style={styles.dataBox} wrap={false}>{children}</View>
 );
 
 const Para = ({ children }) => <Text style={styles.para}>{children}</Text>;
@@ -607,7 +644,14 @@ const LegalTable = ({ header, rows, widths }) => (
       ))}
     </View>
     {rows.map((row, ri) => (
-      <View key={ri} style={ri === rows.length - 1 ? styles.tableRowLast : styles.tableRow} wrap={false}>
+      <View
+        key={ri}
+        style={[
+          ri === rows.length - 1 ? styles.tableRowLast : styles.tableRow,
+          ri % 2 === 1 && { backgroundColor: "#f7f7f7" },
+        ]}
+        wrap={false}
+      >
         {row.map((cell, ci) => (
           <Text
             key={ci}
@@ -633,7 +677,7 @@ const CheckList = ({ options, selected }) => (
       return (
         <View key={i} style={styles.checklistRow} wrap={false}>
           <Text style={styles.checklistMark}>{on ? "[X]" : "[ ]"}</Text>
-          <Text style={styles.checklistItem}>{opt} / {zws(ANNEX_D_DOCS_ZH[opt] || '')}</Text>
+          <Text style={styles.checklistItem}>{opt} / <Text style={{ fontFamily: CN_FONT }}>{zws(ANNEX_D_DOCS_ZH[opt] || '')}</Text></Text>
         </View>
       );
     })}
@@ -801,7 +845,7 @@ export const ContratoPDF = ({ data }) => {
             ])}
           />
           <Text style={styles.totalLine}>
-            Total Contract Value / 合同总价: {fmtUSD(totalValue)} {data.currency || "USD"}
+            Total Contract Value / <Text style={{ fontFamily: CN_FONT }}>合同总价</Text>: {fmtUSD(totalValue)} {data.currency || "USD"}
           </Text>
           <BiPara k="products" />
         </Article>
@@ -813,13 +857,15 @@ export const ContratoPDF = ({ data }) => {
 
         {/* 5. PRICE */}
         <Article number="5" title="PRICE">
-          <BiLabeled labelEn="Total Purchase Price" labelZh="总价款">
-            {fmtUSD(totalValue)} {data.currency || "USD"}.
-          </BiLabeled>
-          <BiLabeled labelEn="Currency" labelZh="币种">{nbsp(data.currency)}.</BiLabeled>
-          <BiLabeled labelEn="Incoterm" labelZh="贸易术语">
-            {incoterm}{data.namedPlace ? `, ${data.namedPlace}` : ""}.
-          </BiLabeled>
+          <DataBox>
+            <BiLabeled labelEn="Total Purchase Price" labelZh="总价款">
+              {fmtUSD(totalValue)} {data.currency || "USD"}.
+            </BiLabeled>
+            <BiLabeled labelEn="Currency" labelZh="币种">{nbsp(data.currency)}.</BiLabeled>
+            <BiLabeled labelEn="Incoterm" labelZh="贸易术语">
+              {incoterm}{data.namedPlace ? `, ${data.namedPlace}` : ""}.
+            </BiLabeled>
+          </DataBox>
           <BiPara k="price" />
         </Article>
 
@@ -838,24 +884,28 @@ export const ContratoPDF = ({ data }) => {
               { text: fmtUSD(pg.monto) },
             ])}
           />
-          <BiLabeled labelEn="Method" labelZh="付款方式">{method}.</BiLabeled>
-          <BiLabeled labelEn="Freight" labelZh="运费">
-            {data.fletePago === "final"
-              ? "The freight amount is payable upon completion and is included in the final installment above."
-              : "The freight amount is included within the installment percentages above."}
-          </BiLabeled>
+          <DataBox>
+            <BiLabeled labelEn="Method" labelZh="付款方式">{method}.</BiLabeled>
+            <BiLabeled labelEn="Freight" labelZh="运费">
+              {data.fletePago === "final"
+                ? "The freight amount is payable upon completion and is included in the final installment above."
+                : "The freight amount is included within the installment percentages above."}
+            </BiLabeled>
+          </DataBox>
           <BiPara k="payment" />
         </Article>
 
         {/* 7. PRODUCTION AND DELIVERY */}
         <Article number="7" title="PRODUCTION AND DELIVERY">
-          <BiLabeled labelEn="Production completion within" labelZh="生产完成期限">
-            {data.productionDays ? `${data.productionDays} calendar days` : "—"}.
-          </BiLabeled>
-          <BiLabeled labelEn="Starting from" labelZh="起算日">{productionStart}.</BiLabeled>
-          <BiLabeled labelEn="Estimated Ready-to-Ship Date" labelZh="预计备货完成日期">
-            {nbsp(data.estimatedReadyToShipDate)}.
-          </BiLabeled>
+          <DataBox>
+            <BiLabeled labelEn="Production completion within" labelZh="生产完成期限">
+              {data.productionDays ? `${data.productionDays} calendar days` : "—"}.
+            </BiLabeled>
+            <BiLabeled labelEn="Starting from" labelZh="起算日">{productionStart}.</BiLabeled>
+            <BiLabeled labelEn="Estimated Ready-to-Ship Date" labelZh="预计备货完成日期">
+              {nbsp(data.estimatedReadyToShipDate)}.
+            </BiLabeled>
+          </DataBox>
           <BiPara k="production" />
         </Article>
 
@@ -881,10 +931,12 @@ export const ContratoPDF = ({ data }) => {
 
         {/* 12. WARRANTY */}
         <Article number="12" title="WARRANTY">
-          <BiLabeled labelEn="Warranty period" labelZh="保修期">
-            {data.warrantyMonths ? `${data.warrantyMonths} months` : "—"}.
-          </BiLabeled>
-          <BiLabeled labelEn="Starting from" labelZh="起算日">{nbsp(data.warrantyStart)}.</BiLabeled>
+          <DataBox>
+            <BiLabeled labelEn="Warranty period" labelZh="保修期">
+              {data.warrantyMonths ? `${data.warrantyMonths} months` : "—"}.
+            </BiLabeled>
+            <BiLabeled labelEn="Starting from" labelZh="起算日">{nbsp(data.warrantyStart)}.</BiLabeled>
+          </DataBox>
           <BiPara k="warranty" />
         </Article>
 
@@ -966,7 +1018,9 @@ export const ContratoPDF = ({ data }) => {
 
         {/* 25. LANGUAGE */}
         <Article number="25" title="LANGUAGE">
-          <BiLabeled labelEn="Executed in" labelZh="签署地">{nbsp(data.executedIn)}.</BiLabeled>
+          <DataBox>
+            <BiLabeled labelEn="Executed in" labelZh="签署地">{nbsp(data.executedIn)}.</BiLabeled>
+          </DataBox>
           <BiPara k="language" vars={{ CONTROLLING: data.controllingLanguage }} />
         </Article>
 
@@ -986,16 +1040,16 @@ export const ContratoPDF = ({ data }) => {
             <View style={styles.noticeBox}>
               <Text style={styles.noticeTitle}>THE BUYER</Text>
               <Text style={styles.noticeTitleZh}>{zws('买方')}</Text>
-              <Text style={styles.noticeLine}>Name / 姓名: {nbsp(data.buyerNoticeName)}</Text>
-              <Text style={styles.noticeLine}>Email / 电子邮箱: {nbsp(data.buyerNoticeEmail)}</Text>
-              <Text style={styles.noticeLine}>Address / 地址: {nbsp(data.buyerNoticeAddress)}</Text>
+              <Text style={styles.noticeLine}>Name / <Text style={{ fontFamily: CN_FONT }}>姓名</Text>: {nbsp(data.buyerNoticeName)}</Text>
+              <Text style={styles.noticeLine}>Email / <Text style={{ fontFamily: CN_FONT }}>电子邮箱</Text>: {nbsp(data.buyerNoticeEmail)}</Text>
+              <Text style={styles.noticeLine}>Address / <Text style={{ fontFamily: CN_FONT }}>地址</Text>: {nbsp(data.buyerNoticeAddress)}</Text>
             </View>
             <View style={styles.noticeBox}>
               <Text style={styles.noticeTitle}>THE SUPPLIER</Text>
               <Text style={styles.noticeTitleZh}>{zws('供方')}</Text>
-              <Text style={styles.noticeLine}>Name / 姓名: <CNText>{nbsp(data.supplierNoticeName)}</CNText></Text>
-              <Text style={styles.noticeLine}>Email / 电子邮箱: {nbsp(data.supplierNoticeEmail)}</Text>
-              <Text style={styles.noticeLine}>Address / 地址: <CNText>{nbsp(data.supplierNoticeAddress)}</CNText></Text>
+              <Text style={styles.noticeLine}>Name / <Text style={{ fontFamily: CN_FONT }}>姓名</Text>: <CNText>{nbsp(data.supplierNoticeName)}</CNText></Text>
+              <Text style={styles.noticeLine}>Email / <Text style={{ fontFamily: CN_FONT }}>电子邮箱</Text>: {nbsp(data.supplierNoticeEmail)}</Text>
+              <Text style={styles.noticeLine}>Address / <Text style={{ fontFamily: CN_FONT }}>地址</Text>: <CNText>{nbsp(data.supplierNoticeAddress)}</CNText></Text>
             </View>
           </View>
           <BiPara k="noticesBoilerplate" />
@@ -1047,7 +1101,7 @@ export const ContratoPDF = ({ data }) => {
 
         {/* Pie */}
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>{'International Purchase Agreement / ' + zws('国际采购协议')}</Text>
+          <Text style={styles.footerText}>International Purchase Agreement / <Text style={{ fontFamily: CN_FONT }}>{zws('国际采购协议')}</Text></Text>
           <Text
             style={styles.footerText}
             render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
@@ -1087,7 +1141,7 @@ export const ContratoPDF = ({ data }) => {
               ])}
             />
             <Text style={styles.totalLine}>
-              Total Contract Value / 合同总价: {fmtUSD(totalValue)} {data.currency || "USD"}
+              Total Contract Value / <Text style={{ fontFamily: CN_FONT }}>合同总价</Text>: {fmtUSD(totalValue)} {data.currency || "USD"}
             </Text>
           </>
         ) : (
@@ -1100,7 +1154,7 @@ export const ContratoPDF = ({ data }) => {
         />
 
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>{'Annex A — Technical Specifications / ' + zws('附件A——技术规格')}</Text>
+          <Text style={styles.footerText}>Annex A — Technical Specifications / <Text style={{ fontFamily: CN_FONT }}>{zws('附件A——技术规格')}</Text></Text>
           <Text
             style={styles.footerText}
             render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
@@ -1151,7 +1205,7 @@ export const ContratoPDF = ({ data }) => {
         />
 
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>{'Annex B — Commercial Terms / ' + zws('附件B——商业条款')}</Text>
+          <Text style={styles.footerText}>Annex B — Commercial Terms / <Text style={{ fontFamily: CN_FONT }}>{zws('附件B——商业条款')}</Text></Text>
           <Text
             style={styles.footerText}
             render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
@@ -1168,17 +1222,19 @@ export const ContratoPDF = ({ data }) => {
         <Text style={styles.annexSub}>International Purchase Agreement {data.numero ? `· Contract No. ${data.numero}` : ""}</Text>
         <View style={styles.titleRule} />
 
-        <BiLabeled labelEn="Inspection Company" labelZh="检验机构">{nbsp(data.inspectionCompany)}.</BiLabeled>
-        <BiLabeled labelEn="Location (Factory)" labelZh="地点（工厂）">{nbsp(data.inspectionLocation)}.</BiLabeled>
-        <BiLabeled labelEn="Date" labelZh="日期">{nbsp(data.inspectionDate)}.</BiLabeled>
+        <DataBox>
+          <BiLabeled labelEn="Inspection Company" labelZh="检验机构">{nbsp(data.inspectionCompany)}.</BiLabeled>
+          <BiLabeled labelEn="Location (Factory)" labelZh="地点（工厂）">{nbsp(data.inspectionLocation)}.</BiLabeled>
+          <BiLabeled labelEn="Date" labelZh="日期">{nbsp(data.inspectionDate)}.</BiLabeled>
+          <BiLabeled labelEn="Acceptance Standard" labelZh="验收标准">
+            {nbsp(inspectionStandard)}.
+          </BiLabeled>
+        </DataBox>
         <Text style={styles.labeled}><Text style={{ fontFamily: "Times-Bold" }}>Checklist:</Text></Text>
         <Text style={styles.labeledZh}><Text style={{ fontFamily: CN_FONT }}>检查清单：</Text></Text>
         {checklistC.length > 0
           ? <BulletList items={checklistC} />
           : <Para>{'—'}</Para>}
-        <BiLabeled labelEn="Acceptance Standard" labelZh="验收标准">
-          {nbsp(inspectionStandard)}.
-        </BiLabeled>
 
         {/* ANNEX D */}
         <View style={{ marginTop: 24 }} wrap={false}>
@@ -1195,13 +1251,13 @@ export const ContratoPDF = ({ data }) => {
           {data.annexDOther && (
             <View style={styles.checklistRow} wrap={false}>
               <Text style={styles.checklistMark}>[X]</Text>
-              <Text style={styles.checklistItem}>Other / 其他: {data.annexDOther}</Text>
+              <Text style={styles.checklistItem}>Other / <Text style={{ fontFamily: CN_FONT }}>其他</Text>: {data.annexDOther}</Text>
             </View>
           )}
         </View>
 
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>{'Annexes C & D / ' + zws('附件C及D')}</Text>
+          <Text style={styles.footerText}>Annexes C &amp; D / <Text style={{ fontFamily: CN_FONT }}>{zws('附件C及D')}</Text></Text>
           <Text
             style={styles.footerText}
             render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
