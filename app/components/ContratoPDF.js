@@ -20,15 +20,11 @@ const INK = "#000000";
 
 // ─── Fuente para caracteres chinos ────────────────────────────────────────────
 // Times-Roman/Times-Bold no incluyen glifos CJK; se registra SimHei (chino
-// simplificado) y se usa para cualquier bloque que contenga texto chino
-// (incluidas ahora las traducciones fijas de cada cláusula).
+// simplificado) y se usa para cualquier bloque que contenga texto chino.
 //
-// NOTA (ver observaciones): SimHei es una fuente propiedad de Microsoft.
-// Para un documento legal que se distribuye a un tercero, se recomienda
-// sustituirla por una fuente CJK de licencia libre (p.ej. Noto Serif SC,
-// SIL OFL) para evitar cualquier duda de licenciamiento al incrustarla en
-// el PDF generado. El código queda preparado para el cambio: basta con
-// apuntar `fontPath` al archivo .ttf de la fuente elegida.
+// NOTA: SimHei es propiedad de Microsoft. Para documentos que se distribuyan
+// a terceros se recomienda sustituirla por una fuente CJK de licencia libre
+// (p.ej. Noto Serif SC, SIL OFL).
 const CN_FONT = "SimHei";
 try {
   const fontPath = path.join(process.cwd(), "fonts", "simhei.ttf");
@@ -49,34 +45,47 @@ try {
 
 // Detecta ideogramas CJK / caracteres de ancho completo (chino simplificado)
 const CJK_RE = /[　-〿぀-ヿ㐀-䶿一-鿿豈-﫿＀-￯]/;
-const pickFont = (texto, fallback) =>
-  texto && CJK_RE.test(String(texto)) ? CN_FONT : fallback;
+const isCJKText = (text) => text != null && CJK_RE.test(String(text));
+const pickFont = (texto, fallback) => (isCJKText(texto) ? CN_FONT : fallback);
 
 // ─── Ajuste de línea para CJK ─────────────────────────────────────────────────
 // React-pdf solo rompe líneas en espacios en blanco. El chino no usa espacios
 // entre caracteres, así que un párrafo chino entero se trata como "una sola
-// palabra": no puede envolver y se sale del margen derecho de la página.
-// Solución: un hyphenation callback que le dice al motor de texto que cada
-// ideograma es un punto válido de ruptura, sin insertar ningún carácter en el
-// contenido. (El truco anterior — espacios de ancho cero U+200B tras cada
-// ideograma — no tiene glifo en SimHei y hacía fallar a Yoga al medir su
-// ancho: "unsupported number".)
+// palabra": no puede envolver y se sale del margen derecho.
+//
+// Solución: Font.registerHyphenationCallback le dice al motor de texto dónde
+// puede partir una "palabra" sin insertar caracteres invisibles en el contenido.
+// NO se usa \u200B (zero-width space) porque SimHei (y muchas fuentes CJK) no
+// incluyen glifo para ese carácter; al medir su ancho Yoga produce NaN/Infinity
+// y genera el error "unsupported number".
+//
 // Las corridas de caracteres no CJK (latín, cifras, "/", "."…) se mantienen
 // juntas para no partir "MSDS/SDS" o "UN38.3" a mitad de token, y las palabras
-// sin ideogramas se delegan al hyphenator en-us por defecto para conservar la
-// partición silábica del texto en inglés.
+// sin ideogramas se delegan al hyphenator en-us por defecto.
 const CJK_RUN_RE = /[\u3000-\u303F\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF]|[^\u3000-\u303F\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF]+/g;
 
+// Guardar el hyphenator por defecto ANTES de sobrescribirlo. Nota:
+// getHyphenationCallback() devuelve null si aún no se ha registrado ninguno,
+// por eso se respalda con una función identidad.
+const defaultHyphenationCallback = Font.getHyphenationCallback?.() || ((w) => [w]);
+
 Font.registerHyphenationCallback((word, fallback) => {
-  if (!word || !CJK_RE.test(String(word))) return fallback(word);
-  return String(word).match(CJK_RUN_RE) || [word];
+  if (!word || typeof word !== "string") return [word];
+  // Si no contiene CJK, delegamos al hyphenator en-us que provee el motor
+  // de texto (segundo argumento) para conservar la partición silábica del
+  // inglés; si no viene, usamos el que estuviera registrado antes.
+  if (!CJK_RE.test(word)) {
+    return (fallback || defaultHyphenationCallback)(word);
+  }
+  // Para texto CJK: cada ideograma es un punto de ruptura válido.
+  // El regex separa en tokens individuales CJK y bloques no-CJK.
+  return word.match(CJK_RUN_RE) || [word];
 });
 
-// Texto que cambia automáticamente a la fuente china si contiene caracteres
-// CJK (los puntos de ruptura para envolver la línea los aporta el
-// hyphenation callback registrado arriba).
+// Texto que cambia automáticamente a la fuente china si contiene caracteres CJK
 const CNText = ({ children, fallback = "Times-Roman", style }) => {
-  const isCJK = children && CJK_RE.test(String(children));
+  const text = children != null ? String(children) : "";
+  const isCJK = CJK_RE.test(text);
   return (
     <Text style={[{ fontFamily: isCJK ? CN_FONT : fallback }, style]}>
       {children}
@@ -158,9 +167,8 @@ const styles = StyleSheet.create({
     fontFamily: CN_FONT,
     fontSize: 9.5,
     // "left" en vez de "justify": con un punto de ruptura tras cada ideograma
-    // (ver el hyphenation callback), justificar distribuiría espacio extra
-    // entre cada carácter y se vería desigual — no es así como se justifica
-    // el chino.
+    // (ver hyphenation callback), justificar distribuiría espacio extra
+    // entre cada carácter y se vería desigual.
     textAlign: "left",
   },
   whereHeading: {
@@ -394,7 +402,7 @@ const FIXED_TEXT_EN = {
 // IMPORTANTE: esta traducción busca fidelidad de sentido jurídico general.
 // Para un contrato que se firmará y podrá exigirse ante autoridades o
 // tribunales chinos, se recomienda que un abogado bilingüe o traductor
-// jurado revise el texto final antes de su firma (ver observaciones).
+// jurado revise el texto final antes de su firma.
 const FIXED_TEXT_ZH = {
   summary: '本协议由买方与供方就双方约定规格项下产品的生产及/或销售事宜订立，内容涵盖规格、价格、付款、生产、检验、保证及其他相关商业与法律条款。',
   recital1: '买方希望根据本协议及其附件所载技术规格、商业条款及其他条件，购买由供方生产及/或供应的特定产品；及',
@@ -502,7 +510,7 @@ const BiPara = ({ k, vars, indent }) => {
   const en = vars ? fill(FIXED_TEXT_EN[k], vars) : FIXED_TEXT_EN[k];
   const zh = vars ? fill(FIXED_TEXT_ZH[k], vars) : FIXED_TEXT_ZH[k];
   return (
-    <View wrap>
+    <View>
       <Text style={indent ? styles.paraIndent : styles.para}>{en}</Text>
       <View style={indent ? styles.zhBlockIndent : styles.zhBlock}>
         <Text style={styles.zhPara}>{zh}</Text>
@@ -514,11 +522,11 @@ const BiPara = ({ k, vars, indent }) => {
 // Párrafo bilingüe de texto libre (no proviene de FIXED_TEXT, p.ej. recitales
 // y cláusula de partes que combinan texto fijo con datos capturados).
 // `en` puede ser un string o JSX (usar JSX cuando el párrafo en inglés puede
-// contener un campo de datos en chino, para envolverlo en <CNText> — ver
-// Artículo de PARTIES). `zh` se trata siempre como string; los puntos de
-// ruptura del chino los aporta el hyphenation callback global.
+// contener un campo de datos en chino, para envolverlo en <CNText>).
+// `zh` se trata siempre como string; los puntos de ruptura del chino los
+// aporta el hyphenation callback global.
 const BiParaRaw = ({ en, zh, indent }) => (
-  <View wrap>
+  <View>
     <Text style={indent ? styles.paraIndent : styles.para}>{en}</Text>
     <View style={indent ? styles.zhBlockIndent : styles.zhBlock}>
       <Text style={styles.zhPara}>{zh}</Text>
@@ -568,7 +576,7 @@ const LegalTable = ({ header, rows, widths }) => (
             style={[
               ci === row.length - 1 ? styles.tableCellLast : styles.tableCell,
               widths[ci],
-              pickFont(cell?.text) ? { fontFamily: CN_FONT } : null,
+              isCJKText(cell?.text) ? { fontFamily: CN_FONT } : null,
               cell?.bold ? { fontFamily: "Times-Bold" } : null,
             ]}
           >

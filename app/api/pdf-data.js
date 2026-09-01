@@ -1,11 +1,5 @@
-// RUTA TEMPORAL de prueba para el fix de CJK wrapping en ContratoPDF.
-// Se elimina después de verificar el renderizado.
-import { NextResponse } from 'next/server'
-import { renderToBuffer } from '@react-pdf/renderer'
-import { createElement } from 'react'
-import { ContratoPDF } from '../../components/ContratoPDF'
-
-const data = {
+// Datos de muestra TEMPORALES para las rutas de prueba del PDF (se elimina al final).
+export const testData = {
   fecha: '2026-08-31',
   numero: 'CJKTEST-001',
   buyerLegalName: 'Global Trading Partners Ltd.',
@@ -77,20 +71,4 @@ const data = {
   inspectionStandardOther: 'GB/T 2828.1-2012 抽样检验标准',
   annexDDocs: ['Commercial Invoice', 'Packing List', 'Bill of Lading/Sea Waybill', 'Certificate of Origin', 'Test Report', 'Warranty Certificate'],
   annexDOther: '产品中文标签备案文件',
-}
-
-export async function GET() {
-  try {
-    const buffer = await renderToBuffer(createElement(ContratoPDF, { data }))
-    return new NextResponse(buffer, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="pdf-test.pdf"',
-      },
-    })
-  } catch (error) {
-    console.error('Error generando PDF de prueba:', error)
-    return NextResponse.json({ error: String(error && error.message), stack: String(error && error.stack).split('\n').slice(0, 30) }, { status: 500 })
-  }
 }

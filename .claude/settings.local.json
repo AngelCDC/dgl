@@ -22,7 +22,9 @@
       "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\(JSON.stringify\\(p.scripts\\)\\)\")",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" --max-time 3 http://localhost:3000)",
       "Bash(echo \" \\(curl exit: $?\\)\")",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(curl -s -o pdf-test-output.pdf -w \"HTTP %{http_code} · %{size_download} bytes\\\\n\" http://localhost:3000/api/pdf-test)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const s=fs.readFileSync\\('pdf-test-output.pdf','utf8'\\);const m=s.match\\(/<title>\\([\\\\s\\\\S]*?\\)<\\\\/title>/\\);console.log\\('TITLE:',m&&m[1]\\);const d=s.match\\(/digest[\\\\\"':\\\\s]+\\([a-f0-9]+\\)/i\\);console.log\\('DIGEST:',d&&d[1]\\);const t=s.replace\\(/<[^>]+>/g,' '\\).replace\\(/&quot;/g,'\\\\\"'\\).replace\\(/&#x27;/g,\\\\\"'\\\\\"\\).replace\\(/&amp;/g,'&'\\).replace\\(/\\\\s+/g,' '\\).slice\\(0,1500\\);console.log\\('TEXT:',t\\)\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\itach\\Downloads\\dgl-platform"
