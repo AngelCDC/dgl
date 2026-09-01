@@ -16,7 +16,13 @@
       "Bash(node render-test.js)",
       "Bash(git checkout *)",
       "Bash(node -e 'const {PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);\\(async\\(\\)=>{const cols=await p.$queryRawUnsafe\\(\"SELECT column_name FROM information_schema.columns WHERE table_name='\\\\''ReporteVerificacion'\\\\'' AND column_name='\\\\''grupoId'\\\\''\"\\);const t=await p.$queryRawUnsafe\\(\"SELECT to_regclass\\('\\\\''public.\\\\\"GrupoEmpresarial\\\\\"'\\\\''\\) AS t\"\\);console.log\\('\\\\''grupoId col:'\\\\'',JSON.stringify\\(cols\\)\\);console.log\\('\\\\''tabla GrupoEmpresarial:'\\\\'',JSON.stringify\\(t\\)\\);await p.$disconnect\\(\\)}\\)\\(\\).catch\\(e=>{console.error\\(e.message\\);process.exit\\(1\\)}\\)')",
-      "Bash(node -e 'const {PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);\\(async\\(\\)=>{const cols=await p.$queryRawUnsafe\\(\"SELECT column_name FROM information_schema.columns WHERE table_name='\\\\''ReporteVerificacion'\\\\'' AND column_name='\\\\''grupoId'\\\\''\"\\);const t=await p.$queryRawUnsafe\\(\"SELECT to_regclass\\('\\\\''public.\\\\\"GrupoEmpresarial\\\\\"'\\\\''\\)::text AS t\"\\);const c=await p.grupoEmpresarial.count\\(\\);console.log\\('\\\\''grupoId col:'\\\\'',JSON.stringify\\(cols\\)\\);console.log\\('\\\\''tabla GrupoEmpresarial:'\\\\'',JSON.stringify\\(t\\)\\);console.log\\('\\\\''grupos count:'\\\\'',c\\);await p.$disconnect\\(\\)}\\)\\(\\).catch\\(e=>{console.error\\(e.message\\);process.exit\\(1\\)}\\)')"
+      "Bash(node -e 'const {PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);\\(async\\(\\)=>{const cols=await p.$queryRawUnsafe\\(\"SELECT column_name FROM information_schema.columns WHERE table_name='\\\\''ReporteVerificacion'\\\\'' AND column_name='\\\\''grupoId'\\\\''\"\\);const t=await p.$queryRawUnsafe\\(\"SELECT to_regclass\\('\\\\''public.\\\\\"GrupoEmpresarial\\\\\"'\\\\''\\)::text AS t\"\\);const c=await p.grupoEmpresarial.count\\(\\);console.log\\('\\\\''grupoId col:'\\\\'',JSON.stringify\\(cols\\)\\);console.log\\('\\\\''tabla GrupoEmpresarial:'\\\\'',JSON.stringify\\(t\\)\\);console.log\\('\\\\''grupos count:'\\\\'',c\\);await p.$disconnect\\(\\)}\\)\\(\\).catch\\(e=>{console.error\\(e.message\\);process.exit\\(1\\)}\\)')",
+      "Bash(node -e \"console.log\\(require\\('c:/Users/itach/Downloads/dgl-platform/node_modules/@react-pdf/renderer/package.json'\\).version\\)\")",
+      "Bash(node -e \"const r = require\\('@react-pdf/renderer'\\); console.log\\(typeof r.Font.registerHyphenationCallback\\)\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\(JSON.stringify\\(p.scripts\\)\\)\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --max-time 3 http://localhost:3000)",
+      "Bash(echo \" \\(curl exit: $?\\)\")",
+      "Bash(npm run *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\itach\\Downloads\\dgl-platform"

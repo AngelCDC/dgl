@@ -56,21 +56,30 @@ const pickFont = (texto, fallback) =>
 // React-pdf solo rompe líneas en espacios en blanco. El chino no usa espacios
 // entre caracteres, así que un párrafo chino entero se trata como "una sola
 // palabra": no puede envolver y se sale del margen derecho de la página.
-// Solución: insertar un espacio de ancho cero (U+200B) después de cada
-// carácter CJK, dando al motor de texto puntos válidos para partir la línea.
-// El regex solo apunta a rangos CJK, así que nombres, direcciones o cifras en
-// latín/números que vengan intercalados no se ven afectados.
-const CJK_CHAR_G = /([\u3000-\u303F\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF])/g;
-const zws = (texto) => (texto ? String(texto).replace(CJK_CHAR_G, "$1\u200B") : texto);
+// Solución: un hyphenation callback que le dice al motor de texto que cada
+// ideograma es un punto válido de ruptura, sin insertar ningún carácter en el
+// contenido. (El truco anterior — espacios de ancho cero U+200B tras cada
+// ideograma — no tiene glifo en SimHei y hacía fallar a Yoga al medir su
+// ancho: "unsupported number".)
+// Las corridas de caracteres no CJK (latín, cifras, "/", "."…) se mantienen
+// juntas para no partir "MSDS/SDS" o "UN38.3" a mitad de token, y las palabras
+// sin ideogramas se delegan al hyphenator en-us por defecto para conservar la
+// partición silábica del texto en inglés.
+const CJK_RUN_RE = /[\u3000-\u303F\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF]|[^\u3000-\u303F\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF]+/g;
+
+Font.registerHyphenationCallback((word, fallback) => {
+  if (!word || !CJK_RE.test(String(word))) return fallback(word);
+  return String(word).match(CJK_RUN_RE) || [word];
+});
 
 // Texto que cambia automáticamente a la fuente china si contiene caracteres
-// CJK, y en ese caso también inserta los espacios de ancho cero necesarios
-// para que la línea pueda partirse dentro del contenedor.
+// CJK (los puntos de ruptura para envolver la línea los aporta el
+// hyphenation callback registrado arriba).
 const CNText = ({ children, fallback = "Times-Roman", style }) => {
   const isCJK = children && CJK_RE.test(String(children));
   return (
     <Text style={[{ fontFamily: isCJK ? CN_FONT : fallback }, style]}>
-      {isCJK ? zws(children) : children}
+      {children}
     </Text>
   );
 };
@@ -148,9 +157,10 @@ const styles = StyleSheet.create({
   zhPara: {
     fontFamily: CN_FONT,
     fontSize: 9.5,
-    // "left" en vez de "justify": con un punto de ruptura después de cada
-    // carácter (ver zws), justificar distribuiría espacio extra entre cada
-    // ideograma y se vería desigual — no es así como se justifica el chino.
+    // "left" en vez de "justify": con un punto de ruptura tras cada ideograma
+    // (ver el hyphenation callback), justificar distribuiría espacio extra
+    // entre cada carácter y se vería desigual — no es así como se justifica
+    // el chino.
     textAlign: "left",
   },
   whereHeading: {
@@ -478,7 +488,7 @@ const nbsp = (s) => (s ? s : "—");
 const Article = ({ number, title, children }) => (
   <View style={styles.article} wrap={false}>
     <Text style={styles.articleTitle}>ARTICLE {number} — {title}</Text>
-    <Text style={styles.articleTitleZh}>{zws(`第${number}条 — ${ARTICLE_TITLES_ZH[number] || ''}`)}</Text>
+    <Text style={styles.articleTitleZh}>{`第${number}条 — ${ARTICLE_TITLES_ZH[number] || ''}`}</Text>
     {children}
   </View>
 );
@@ -495,7 +505,7 @@ const BiPara = ({ k, vars, indent }) => {
     <View wrap>
       <Text style={indent ? styles.paraIndent : styles.para}>{en}</Text>
       <View style={indent ? styles.zhBlockIndent : styles.zhBlock}>
-        <Text style={styles.zhPara}>{zws(zh)}</Text>
+        <Text style={styles.zhPara}>{zh}</Text>
       </View>
     </View>
   );
@@ -505,14 +515,13 @@ const BiPara = ({ k, vars, indent }) => {
 // y cláusula de partes que combinan texto fijo con datos capturados).
 // `en` puede ser un string o JSX (usar JSX cuando el párrafo en inglés puede
 // contener un campo de datos en chino, para envolverlo en <CNText> — ver
-// Artículo de PARTIES). `zh` se trata siempre como string y se le aplica
-// zws() automáticamente aquí, así el llamador no tiene que acordarse de
-// hacerlo en cada sitio.
+// Artículo de PARTIES). `zh` se trata siempre como string; los puntos de
+// ruptura del chino los aporta el hyphenation callback global.
 const BiParaRaw = ({ en, zh, indent }) => (
   <View wrap>
     <Text style={indent ? styles.paraIndent : styles.para}>{en}</Text>
     <View style={indent ? styles.zhBlockIndent : styles.zhBlock}>
-      <Text style={styles.zhPara}>{zws(zh)}</Text>
+      <Text style={styles.zhPara}>{zh}</Text>
     </View>
   </View>
 );
@@ -524,7 +533,7 @@ const BiLabeled = ({ labelEn, labelZh, children }) => (
       <Text style={{ fontFamily: "Times-Bold" }}>{labelEn}:</Text> <CNText>{children}</CNText>
     </Text>
     <Text style={styles.labeledZh}>
-      <Text style={{ fontFamily: CN_FONT }}>{zws(labelZh)}：</Text>
+      <Text style={{ fontFamily: CN_FONT }}>{labelZh}：</Text>
       <CNText>{children}</CNText>
     </Text>
   </View>
@@ -534,7 +543,7 @@ const BiLabeled = ({ labelEn, labelZh, children }) => (
 const BiHeaderCell = ({ en, zh, style }) => (
   <View style={[{ paddingVertical: 3 }, style]}>
     <Text style={styles.tableHeaderCell}>{en}</Text>
-    <Text style={styles.tableHeaderCellZh}>{zws(zh)}</Text>
+    <Text style={styles.tableHeaderCellZh}>{zh}</Text>
   </View>
 );
 
@@ -563,7 +572,7 @@ const LegalTable = ({ header, rows, widths }) => (
               cell?.bold ? { fontFamily: "Times-Bold" } : null,
             ]}
           >
-            {pickFont(cell?.text) ? zws(cell?.text) : (cell?.text ?? "—")}
+            {cell?.text ?? "—"}
           </Text>
         ))}
       </View>
@@ -578,7 +587,7 @@ const CheckList = ({ options, selected }) => (
       return (
         <View key={i} style={styles.checklistRow} wrap={false}>
           <Text style={styles.checklistMark}>{on ? "[X]" : "[ ]"}</Text>
-          <Text style={styles.checklistItem}>{opt} / {zws(ANNEX_D_DOCS_ZH[opt] || '')}</Text>
+          <Text style={styles.checklistItem}>{opt} / {ANNEX_D_DOCS_ZH[opt] || ''}</Text>
         </View>
       );
     })}
@@ -642,7 +651,7 @@ export const ContratoPDF = ({ data }) => {
 
         {/* Título */}
         <Text style={styles.docTitle}>INTERNATIONAL PURCHASE AGREEMENT</Text>
-        <Text style={styles.docTitleZh}>{zws('国际采购协议')}</Text>
+        <Text style={styles.docTitleZh}>{'国际采购协议'}</Text>
         <Text style={styles.docMeta}>
           Date: {nbsp(data.fecha)}{data.numero ? `     ·     Contract No.: ${data.numero}` : ""}
         </Text>
@@ -670,7 +679,8 @@ export const ContratoPDF = ({ data }) => {
             <CNText> porque el nombre/dirección/representante chino puede venir
             en caracteres CJK — sin ese envoltorio, ese fragmento se dibujaría
             con la fuente Times (sin glifos CJK) y saldría corrupto. El párrafo
-            ZH se arma como string plano; BiParaRaw le aplica zws() al vuelo. */}
+            ZH se arma como string plano; los puntos de ruptura los aporta el
+            hyphenation callback registrado arriba. */}
         <View wrap>
           <Text style={styles.paraIndent}>
             (2)  <CNText>{nbsp(data.supplierLegalName)}</CNText>
@@ -683,11 +693,9 @@ export const ContratoPDF = ({ data }) => {
           </Text>
           <View style={styles.zhBlockIndent}>
             <Text style={styles.zhPara}>
-              {zws(
-                `（二）${nbsp(data.supplierLegalName)}` +
+              {`（二）${nbsp(data.supplierLegalName)}` +
                 (data.supplierTradeName ? `（${data.supplierTradeName}）` : "") +
-                `，一家根据中华人民共和国法律正式注册并有效存续的公司，统一社会信用代码为${nbsp(data.supplierUscc)}，注册地址为${nbsp(data.supplierAddress)}，由${nbsp(data.supplierLegalRepresentative)}（职务：${nbsp(data.supplierPosition)}）代表（以下简称"供方"）。`
-              )}
+                `，一家根据中华人民共和国法律正式注册并有效存续的公司，统一社会信用代码为${nbsp(data.supplierUscc)}，注册地址为${nbsp(data.supplierAddress)}，由${nbsp(data.supplierLegalRepresentative)}（职务：${nbsp(data.supplierPosition)}）代表（以下简称"供方"）。`}
             </Text>
           </View>
         </View>
@@ -701,7 +709,7 @@ export const ContratoPDF = ({ data }) => {
 
         {/* Recitales */}
         <Text style={styles.whereHeading}>RECITALS</Text>
-        <Text style={styles.whereHeadingZh}>{zws('鉴于条款')}</Text>
+        <Text style={styles.whereHeadingZh}>{'鉴于条款'}</Text>
         <BiParaRaw indent en={`WHEREAS, ${FIXED_TEXT_EN.recital1}`} zh={`鉴于，${FIXED_TEXT_ZH.recital1}`} />
         <BiParaRaw indent en={`WHEREAS, ${FIXED_TEXT_EN.recital2}`} zh={`鉴于，${FIXED_TEXT_ZH.recital2}`} />
         <BiPara k="therefore" />
@@ -921,14 +929,14 @@ export const ContratoPDF = ({ data }) => {
           <View style={styles.noticesRow}>
             <View style={styles.noticeBox}>
               <Text style={styles.noticeTitle}>THE BUYER</Text>
-              <Text style={styles.noticeTitleZh}>{zws('买方')}</Text>
+              <Text style={styles.noticeTitleZh}>{'买方'}</Text>
               <Text style={styles.noticeLine}>Name / 姓名: {nbsp(data.buyerNoticeName)}</Text>
               <Text style={styles.noticeLine}>Email / 电子邮箱: {nbsp(data.buyerNoticeEmail)}</Text>
               <Text style={styles.noticeLine}>Address / 地址: {nbsp(data.buyerNoticeAddress)}</Text>
             </View>
             <View style={styles.noticeBox}>
               <Text style={styles.noticeTitle}>THE SUPPLIER</Text>
-              <Text style={styles.noticeTitleZh}>{zws('供方')}</Text>
+              <Text style={styles.noticeTitleZh}>{'供方'}</Text>
               <Text style={styles.noticeLine}>Name / 姓名: <CNText>{nbsp(data.supplierNoticeName)}</CNText></Text>
               <Text style={styles.noticeLine}>Email / 电子邮箱: {nbsp(data.supplierNoticeEmail)}</Text>
               <Text style={styles.noticeLine}>Address / 地址: <CNText>{nbsp(data.supplierNoticeAddress)}</CNText></Text>
@@ -949,12 +957,12 @@ export const ContratoPDF = ({ data }) => {
             authorized representatives as of the date first written above.
           </Text>
           <Text style={styles.witnessZh}>
-            {zws('兹证明，双方已促使其正式授权代表于文首所载日期签署本协议，以昭信守。')}
+            {'兹证明，双方已促使其正式授权代表于文首所载日期签署本协议，以昭信守。'}
           </Text>
           <View style={styles.signatureRow}>
             <View style={styles.signatureBox}>
               <Text style={styles.signatureFor}>For and on behalf of{"\n"}THE BUYER:</Text>
-              <Text style={styles.signatureForZh}>{zws('谨代表买方：')}</Text>
+              <Text style={styles.signatureForZh}>{'谨代表买方：'}</Text>
               <View style={styles.signatureLine} />
               <Text style={styles.signatureParty}>{nbsp(data.buyerLegalName)}</Text>
               <Text style={styles.signatureMeta}>Name: {nbsp(data.buyerSigner)}</Text>
@@ -963,11 +971,11 @@ export const ContratoPDF = ({ data }) => {
               <Text style={styles.signatureMetaZh}>职务</Text>
               <Text style={styles.signatureMeta}>Date: {nbsp(data.buyerSignDate)}</Text>
               <Text style={styles.signatureMeta}>(Company stamp / seal)</Text>
-              <Text style={styles.signatureMetaZh}>{zws('（公司印章）')}</Text>
+              <Text style={styles.signatureMetaZh}>{'（公司印章）'}</Text>
             </View>
             <View style={styles.signatureBox}>
               <Text style={styles.signatureFor}>For and on behalf of{"\n"}THE SUPPLIER:</Text>
-              <Text style={styles.signatureForZh}>{zws('谨代表供方：')}</Text>
+              <Text style={styles.signatureForZh}>{'谨代表供方：'}</Text>
               <View style={styles.signatureLine} />
               <Text style={styles.signatureParty}><CNText fallback="Times-Bold">{nbsp(data.supplierLegalName)}</CNText></Text>
               <Text style={styles.signatureMeta}>Name: <CNText>{nbsp(data.supplierSigner)}</CNText></Text>
@@ -976,14 +984,14 @@ export const ContratoPDF = ({ data }) => {
               <Text style={styles.signatureMetaZh}>职务</Text>
               <Text style={styles.signatureMeta}>Date: {nbsp(data.supplierSignDate)}</Text>
               <Text style={styles.signatureMeta}>(Company stamp / seal)</Text>
-              <Text style={styles.signatureMetaZh}>{'（公司印章 / ' + zws('公章）')}</Text>
+              <Text style={styles.signatureMetaZh}>{'（公司印章 / 公章）'}</Text>
             </View>
           </View>
         </Article>
 
         {/* Pie */}
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>{'International Purchase Agreement / ' + zws('国际采购协议')}</Text>
+          <Text style={styles.footerText}>{'International Purchase Agreement / 国际采购协议'}</Text>
           <Text
             style={styles.footerText}
             render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
@@ -994,7 +1002,7 @@ export const ContratoPDF = ({ data }) => {
       {/* ══ ANNEX A ══ */}
       <Page size="A4" style={styles.page} wrap>
         <Text style={styles.annexTitle}>ANNEX A — TECHNICAL SPECIFICATIONS</Text>
-        <Text style={styles.annexTitleZh}>{zws('附件A——技术规格')}</Text>
+        <Text style={styles.annexTitleZh}>{'附件A——技术规格'}</Text>
         <Text style={styles.annexSub}>International Purchase Agreement {data.numero ? `· Contract No. ${data.numero}` : ""}</Text>
         <View style={styles.titleRule} />
 
@@ -1036,7 +1044,7 @@ export const ContratoPDF = ({ data }) => {
         />
 
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>{'Annex A — Technical Specifications / ' + zws('附件A——技术规格')}</Text>
+          <Text style={styles.footerText}>{'Annex A — Technical Specifications / 附件A——技术规格'}</Text>
           <Text
             style={styles.footerText}
             render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
@@ -1047,7 +1055,7 @@ export const ContratoPDF = ({ data }) => {
       {/* ══ ANNEX B (landscape) ══ */}
       <Page size="A4" orientation="landscape" style={styles.pageLandscape} wrap>
         <Text style={styles.annexTitle}>ANNEX B — COMMERCIAL TERMS</Text>
-        <Text style={styles.annexTitleZh}>{zws('附件B——商业条款')}</Text>
+        <Text style={styles.annexTitleZh}>{'附件B——商业条款'}</Text>
         <Text style={styles.annexSub}>International Purchase Agreement {data.numero ? `· Contract No. ${data.numero}` : ""}</Text>
         <View style={styles.titleRule} />
 
@@ -1087,7 +1095,7 @@ export const ContratoPDF = ({ data }) => {
         />
 
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>{'Annex B — Commercial Terms / ' + zws('附件B——商业条款')}</Text>
+          <Text style={styles.footerText}>{'Annex B — Commercial Terms / 附件B——商业条款'}</Text>
           <Text
             style={styles.footerText}
             render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
@@ -1100,7 +1108,7 @@ export const ContratoPDF = ({ data }) => {
 
         {/* ANNEX C */}
         <Text style={styles.annexTitle}>ANNEX C — INSPECTION AND ACCEPTANCE PROTOCOL</Text>
-        <Text style={styles.annexTitleZh}>{zws('附件C——检验及验收协议')}</Text>
+        <Text style={styles.annexTitleZh}>{'附件C——检验及验收协议'}</Text>
         <Text style={styles.annexSub}>International Purchase Agreement {data.numero ? `· Contract No. ${data.numero}` : ""}</Text>
         <View style={styles.titleRule} />
 
@@ -1119,7 +1127,7 @@ export const ContratoPDF = ({ data }) => {
         {/* ANNEX D */}
         <View style={{ marginTop: 24 }} wrap={false}>
           <Text style={styles.annexTitle}>ANNEX D — SHIPPING DOCUMENTS</Text>
-          <Text style={styles.annexTitleZh}>{zws('附件D——运输单证')}</Text>
+          <Text style={styles.annexTitleZh}>{'附件D——运输单证'}</Text>
           <View style={styles.titleRule} />
           <Text style={styles.para}>
             The Supplier shall provide the following documents as required under this Agreement:
@@ -1137,7 +1145,7 @@ export const ContratoPDF = ({ data }) => {
         </View>
 
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>{'Annexes C & D / ' + zws('附件C及D')}</Text>
+          <Text style={styles.footerText}>{'Annexes C & D / 附件C及D'}</Text>
           <Text
             style={styles.footerText}
             render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
