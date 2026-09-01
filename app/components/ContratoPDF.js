@@ -1,5 +1,10 @@
-// components/ContratoPDF.js — International Purchase Agreement (EN)
+// components/ContratoPDF.js — International Purchase Agreement (EN / 中文 bilingual)
 // Formato legal tradicional: Times, texto justificado, sin branding corporativo.
+// Cada cláusula fija del cuerpo principal se presenta en inglés y, debajo,
+// su traducción al chino, para dar al documento validez formal ante la
+// contraparte china (供方). Los campos de datos libres (nombres, direcciones,
+// leyes aplicables, etc.) se muestran tal como el usuario los capturó — ver
+// nota sobre alcance de la traducción al final del archivo.
 import fs from "fs";
 import path from "path";
 import {
@@ -15,7 +20,15 @@ const INK = "#000000";
 
 // ─── Fuente para caracteres chinos ────────────────────────────────────────────
 // Times-Roman/Times-Bold no incluyen glifos CJK; se registra SimHei (chino
-// simplificado) y se usa solo cuando el texto contiene caracteres chinos.
+// simplificado) y se usa para cualquier bloque que contenga texto chino
+// (incluidas ahora las traducciones fijas de cada cláusula).
+//
+// NOTA (ver observaciones): SimHei es una fuente propiedad de Microsoft.
+// Para un documento legal que se distribuye a un tercero, se recomienda
+// sustituirla por una fuente CJK de licencia libre (p.ej. Noto Serif SC,
+// SIL OFL) para evitar cualquier duda de licenciamiento al incrustarla en
+// el PDF generado. El código queda preparado para el cambio: basta con
+// apuntar `fontPath` al archivo .ttf de la fuente elegida.
 const CN_FONT = "SimHei";
 try {
   const fontPath = path.join(process.cwd(), "fonts", "simhei.ttf");
@@ -35,13 +48,13 @@ try {
 }
 
 // Detecta ideogramas CJK / caracteres de ancho completo (chino simplificado)
-const CJK_RE = /[　-〿぀-ヿ㐀-䶿一-鿿豈-﫿＀-￯]/;
+const CJK_RE = /[　-〿぀-ヿ㐀-䶿一-鿿豈-﫿＀-￯]/;
 const pickFont = (texto, fallback) =>
   texto && CJK_RE.test(String(texto)) ? CN_FONT : fallback;
 
 // Texto que cambia automáticamente a la fuente china si contiene caracteres CJK
-const CNText = ({ children, fallback = "Times-Roman" }) => (
-  <Text style={{ fontFamily: pickFont(children, fallback) }}>{children}</Text>
+const CNText = ({ children, fallback = "Times-Roman", style }) => (
+  <Text style={[{ fontFamily: pickFont(children, fallback) }, style]}>{children}</Text>
 );
 
 const styles = StyleSheet.create({
@@ -72,6 +85,12 @@ const styles = StyleSheet.create({
     fontFamily: "Times-Bold",
     textAlign: "center",
     letterSpacing: 2,
+    marginBottom: 2,
+  },
+  docTitleZh: {
+    fontSize: 12,
+    fontFamily: CN_FONT,
+    textAlign: "center",
     marginBottom: 6,
   },
   docMeta: {
@@ -94,15 +113,40 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginLeft: 28,
   },
+  // Bloque bilingüe: párrafo EN seguido del párrafo ZH, con un filete
+  // izquierdo delgado que marca visualmente "esto es la traducción".
+  zhBlock: {
+    borderLeft: `0.75pt solid ${INK}`,
+    paddingLeft: 8,
+    marginLeft: 1,
+    marginBottom: 8,
+  },
+  zhBlockIndent: {
+    borderLeft: `0.75pt solid ${INK}`,
+    paddingLeft: 8,
+    marginLeft: 29,
+    marginBottom: 8,
+  },
+  zhPara: {
+    fontFamily: CN_FONT,
+    fontSize: 9.5,
+    textAlign: "justify",
+  },
   whereHeading: {
     fontSize: 10.5,
     fontFamily: "Times-Bold",
     textAlign: "center",
     letterSpacing: 3,
     marginTop: 10,
+    marginBottom: 2,
+  },
+  whereHeadingZh: {
+    fontSize: 10,
+    fontFamily: CN_FONT,
+    textAlign: "center",
     marginBottom: 8,
   },
-  leadIn: { textAlign: "justify", marginBottom: 8 },
+  leadIn: { textAlign: "justify", marginBottom: 4 },
 
   // ── Artículos ──
   article: { marginTop: 12, marginBottom: 4 },
@@ -111,11 +155,18 @@ const styles = StyleSheet.create({
     fontFamily: "Times-Bold",
     textAlign: "center",
     letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  articleTitleZh: {
+    fontSize: 10,
+    fontFamily: CN_FONT,
+    textAlign: "center",
     marginBottom: 6,
   },
 
   // ── Fields inline ──
-  labeled: { textAlign: "justify", marginBottom: 8 },
+  labeled: { textAlign: "justify", marginBottom: 2 },
+  labeledZh: { textAlign: "justify", marginBottom: 8, fontFamily: CN_FONT, fontSize: 9.5 },
 
   // ── Tablas ──
   table: {
@@ -129,11 +180,18 @@ const styles = StyleSheet.create({
     borderBottom: `0.5pt solid ${INK}`,
   },
   tableHeaderCell: {
-    fontSize: 8.5,
+    fontSize: 8,
     fontFamily: "Times-Bold",
     textAlign: "center",
     paddingVertical: 4,
     paddingHorizontal: 5,
+  },
+  tableHeaderCellZh: {
+    fontSize: 8,
+    fontFamily: CN_FONT,
+    textAlign: "center",
+    paddingHorizontal: 5,
+    paddingBottom: 3,
   },
   tableRow: {
     flexDirection: "row",
@@ -183,12 +241,19 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontFamily: "Times-Bold",
     textAlign: "center",
+    marginBottom: 1,
+  },
+  noticeTitleZh: {
+    fontSize: 9,
+    fontFamily: CN_FONT,
+    textAlign: "center",
     marginBottom: 4,
   },
   noticeLine: { fontSize: 9, marginBottom: 2 },
 
   // ── Firmas ──
-  witness: { textAlign: "justify", marginTop: 14, marginBottom: 10 },
+  witness: { textAlign: "justify", marginTop: 14, marginBottom: 2 },
+  witnessZh: { textAlign: "justify", fontFamily: CN_FONT, fontSize: 9.5, marginBottom: 10 },
   signatureRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -196,10 +261,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   signatureBox: { width: "42%", textAlign: "center" },
-  signatureFor: { fontSize: 9, fontFamily: "Times-Bold", textAlign: "center", marginBottom: 26 },
+  signatureFor: { fontSize: 9, fontFamily: "Times-Bold", textAlign: "center", marginBottom: 1 },
+  signatureForZh: { fontSize: 8.5, fontFamily: CN_FONT, textAlign: "center", marginBottom: 24 },
   signatureLine: { borderBottom: `0.5pt solid ${INK}`, marginBottom: 4, marginTop: 8 },
   signatureParty: { fontSize: 9.5, fontFamily: "Times-Bold", textAlign: "center", marginBottom: 2 },
   signatureMeta: { fontSize: 9, textAlign: "center", marginTop: 2 },
+  signatureMetaZh: { fontSize: 8, fontFamily: CN_FONT, textAlign: "center", marginTop: 1, color: "#333333" },
 
   // ── Anexos ──
   annexTitle: {
@@ -207,6 +274,12 @@ const styles = StyleSheet.create({
     fontFamily: "Times-Bold",
     textAlign: "center",
     letterSpacing: 1.5,
+    marginBottom: 2,
+  },
+  annexTitleZh: {
+    fontSize: 10.5,
+    fontFamily: CN_FONT,
+    textAlign: "center",
     marginBottom: 4,
   },
   annexSub: {
@@ -249,8 +322,8 @@ const styles = StyleSheet.create({
   footerText: { fontSize: 8, fontFamily: "Times-Roman" },
 });
 
-// ─── Textos fijos (cláusulas del formato base — no se guardan en BD) ──────────
-const FIXED_TEXT = {
+// ─── Textos fijos EN (cláusulas del formato base — no se guardan en BD) ──────
+const FIXED_TEXT_EN = {
   summary: 'This Agreement is entered into by and between the Buyer and the Supplier for the manufacture and/or sale of products under agreed specifications, pricing, payment, production, inspection, warranty, and related commercial and legal terms.',
   recital1: 'the Buyer wishes to purchase certain products manufactured and/or supplied by the Supplier, in accordance with the technical specifications, commercial terms and other conditions set forth in this Agreement and its Annexes; and',
   recital2: 'the Supplier has agreed to manufacture and/or supply such products to the Buyer, subject to the terms and conditions hereinafter set forth.',
@@ -286,12 +359,79 @@ const FIXED_TEXT = {
   noticesBoilerplate: 'All notices, requests, demands and other communications required or permitted under this Agreement shall be made in writing and delivered personally, by email, or by internationally recognized courier service to the addresses set forth above, or to such other address as a Party may designate in writing. Notices shall be deemed effective upon receipt if delivered personally or by email, or upon signature of receipt if sent by courier.',
 };
 
+// ─── Textos fijos ZH — traducción de cada cláusula anterior ──────────────────
+// IMPORTANTE: esta traducción busca fidelidad de sentido jurídico general.
+// Para un contrato que se firmará y podrá exigirse ante autoridades o
+// tribunales chinos, se recomienda que un abogado bilingüe o traductor
+// jurado revise el texto final antes de su firma (ver observaciones).
+const FIXED_TEXT_ZH = {
+  summary: '本协议由买方与供方就双方约定规格项下产品的生产及/或销售事宜订立，内容涵盖规格、价格、付款、生产、检验、保证及其他相关商业与法律条款。',
+  recital1: '买方希望根据本协议及其附件所载技术规格、商业条款及其他条件，购买由供方生产及/或供应的特定产品；及',
+  recital2: '供方同意按照本协议下文所载条款及条件，向买方生产及/或供应该等产品。',
+  therefore: '因此，双方兹以本协议所载相互约定及对价（其收讫及充分性于此确认）为约因，约定如下：',
+  parties: '各方陈述并保证其具备签署本协议并履行本协议项下义务的合法资格及完整的公司权力与授权，且代表其签署本协议的人员已获正式授权。',
+  purpose: '供方同意生产及/或销售，买方同意购买本协议、相应形式发票（PI）及技术规格中所述的产品。供方应严格按照约定的规格、数量、质量、包装、交付条件及附件供货。',
+  products: '详细规格载于附件A。未经买方事先书面批准，供方不得对规格、材料、部件或生产工艺作出实质性变更。',
+  quality: '产品必须符合约定规格，为全新、未使用且无缺陷，符合适用技术标准及认证要求，与经批准的样品、图纸及数据表相符，并适合预期的商业用途。任何偏差均须经买方事先书面批准。',
+  price: '除另有约定外，价格包含供方在约定贸易术语项下应承担的全部费用。订单确认后，未经买方事先书面同意，不得提高价格。',
+  payment: '尾款应在生产完成、检验合格、确认符合要求、收到所需单证并具备装运条件后支付。除买方另行书面批准外，付款仅可支付至已登记供方法律实体的银行账户。',
+  production: '供方应及时将任何预计延误通知买方，未经买方事先书面批准，不得实质性延误生产或交付。',
+  inspection: '买方可自行、委托第三方检验机构、授权代表或双方共同认可的机构进行装运前检验。检验范围可包括数量、尺寸、重量、外观、材料、功能、性能、包装、标签、附件、单证及是否符合技术规格。供方应为检验提供合理便利。检验未通过不构成验收。详情见附件C。',
+  nonConforming: '如产品不符合约定，买方可自行选择：要求修理或返工、要求更换、要求部分退款、拒收产品，或在实质性不符合的情形下要求全额退款。对可归责于供方的缺陷，供方应承担相关合理费用，包括返工、更换及运输费用。',
+  packaging: '供方应按约定规格包装产品，包装应适合国际运输，并能防止冲击、潮湿、腐蚀、粉尘、挤压及正常搬运造成的损坏。包装上应标注所需的运输唛头及产品与运输信息。',
+  shipping: '供方应根据交易性质及约定贸易术语提供所需单证，适用时包括：商业发票、装箱单、提单/海运单、原产地证书、合格证明、测试报告、保修证书、技术数据表、用户手册、MSDS/SDS、UN38.3、出口单证、检验证书及其他合理要求的单证。适用时应提供草拟运输单证以供审核。见附件D。',
+  warranty: '保修范围涵盖因制造、材料、工艺、部件及不符合规格所引起的缺陷；不包括误用、未经授权的改动、安装不当或供方无法控制之原因所致的缺陷，另有约定的除外。补救方式为：修理、更换或适当退款。',
+  warrantyClaim: '买方应将保修索赔连同支持证据通知供方。供方应在{RESPONSE}个工作日内予以回应，并在{CORRECTIVE}个工作日内提出纠正措施方案。',
+  delay: '如发生延误，供方应按每{PERIOD}延误货物价值的{PCT}%支付违约金，最高不超过受影响货物价值的{CAP}%。若延误超过{DAYS}个日历日，买方可在符合本协议争议解决条款的前提下，终止受影响部分的协议并要求退还未交付货物的款项。',
+  changeLocation: '未经买方事先书面批准，供方不得将生产转移至其他工厂、分包商或地点。任何未经授权的转移均构成对本协议的实质性违约。',
+  subcontracting: '无论是否存在分包，供方均应对质量、规格、交付及履约承担责任，并应就任何实质性分包事先获得买方书面批准。',
+  ip: '由买方提供或出资的图纸、设计、规格、美术作品、模具、工装、包装设计及技术信息，除另有约定外，归买方所有。供方不得滥用、转让、用于未经授权的生产，或披露相关保密信息。',
+  confidentiality: '各方应对另一方的非公开商业、技术、财务及业务信息予以保密。仅在获得书面授权、依法律要求，或为履行本协议所必需的范围内，方可披露。',
+  nonCircumvention: '凡买方作为采购代理、中介或代表行事的情形，供方不得为规避买方参与而故意绕开买方引荐的客户直接进行交易。期限：{YEARS}年。适用地域：{TERRITORY}。本条款仅适用于经直接引荐产生的商业机会。',
+  compliance: '供方声明产品符合适用的约定要求，并不得故意侵犯第三方知识产权。供方应就实际供应的产品提供有效的认证及测试报告，不得提供虚假、篡改、过期或误导性的单证。',
+  forceMajeure: '任何一方均不对因超出其合理控制范围的事件（包括自然灾害、战争、政府限制及禁运）所致的不履行承担责任。受影响方应及时通知另一方并提供证据。不可抗力不应自动免除该事件发生前已产生的义务。',
+  termination: '如发生实质性违约、无约定延期的逾期交付、产品实质性不符、虚假或欺诈性单证、未经授权变更生产地点、破产或停业，或屡次不合规，买方可终止本协议。买方可在符合适用法律及本协议争议解决条款的前提下，就未交付或被拒收的货物要求退款。',
+  governingLaw: '本协议受下列法律管辖并据其解释：{LAW}。选择适用法律不影响任何一方在法律允许的情况下寻求临时或保全措施的权利。',
+  dispute: '争议应首先通过友好协商解决。若争议在{DAYS}个日历日内未能解决，应提交{INSTITUTION}处理。仲裁地：{SEAT}。语言：{LANG}。在法律允许的范围内，裁决或裁定应为终局且具有约束力。',
+  language: '本协议可以英文、中文，或英文和中文两种文本签署。如两种文本存在不一致，以{CONTROLLING}文本为准。',
+  electronic: '在法律允许的范围内，电子签名及电子记录可作为证据使用。平台订单、付款及交易记录可通过明确引用并入本协议。',
+  entire: '本协议连同形式发票（PI）、采购订单（PO）、技术规格、检验协议及本协议明确并入的各附件，构成双方之间的完整协议。修改须以书面形式作出，并经双方授权代表批准。',
+  annexes: '下列附件附于本协议之后，构成本协议不可分割的一部分：附件A——技术规格；附件B——商业条款；附件C——检验及验收协议；附件D——运输单证。如本协议正文与任何附件存在冲突，除另有明确约定外，以正文为准。',
+  noticesBoilerplate: '本协议项下要求或允许发出的一切通知、请求、要求及其他通信，均应以书面形式作出，并以专人递送、电子邮件或国际公认快递服务方式送达上述地址，或送达一方书面指定的其他地址。以专人递送或电子邮件方式送达的，于收悉时视为生效；以快递方式送达的，于签收回执时视为生效。',
+};
+
+// Títulos de artículo EN / ZH
+const ARTICLE_TITLES_ZH = {
+  1: '当事人', 2: '协议目的', 3: '产品', 4: '质量与规格', 5: '价格',
+  6: '付款条件', 7: '生产与交付', 8: '检验', 9: '不合格产品', 10: '包装',
+  11: '装运及单证', 12: '保修', 13: '保修索赔程序', 14: '延误与违约金',
+  15: '生产地点变更', 16: '分包', 17: '知识产权与工装', 18: '保密',
+  19: '不规避', 20: '合规与产品安全', 21: '不可抗力', 22: '终止',
+  23: '适用法律', 24: '争议解决', 25: '语言', 26: '电子签名及电子记录',
+  27: '完整协议', 28: '通知', 29: '附件', 30: '签署',
+};
+
 const ANNEX_D_DOCS = [
   'Commercial Invoice', 'Packing List', 'Bill of Lading/Sea Waybill',
   'Certificate of Origin', 'Certificate of Conformity', 'Test Report',
   'Warranty Certificate', 'Technical Datasheet', 'User Manual',
   'MSDS/SDS', 'UN38.3', 'Export Documentation', 'Inspection Certificate',
 ];
+const ANNEX_D_DOCS_ZH = {
+  'Commercial Invoice': '商业发票',
+  'Packing List': '装箱单',
+  'Bill of Lading/Sea Waybill': '提单/海运单',
+  'Certificate of Origin': '原产地证书',
+  'Certificate of Conformity': '合格证明',
+  'Test Report': '测试报告',
+  'Warranty Certificate': '保修证书',
+  'Technical Datasheet': '技术数据表',
+  'User Manual': '用户手册',
+  'MSDS/SDS': '化学品安全数据表',
+  'UN38.3': 'UN38.3认证',
+  'Export Documentation': '出口单证',
+  'Inspection Certificate': '检验证书',
+};
 
 // ─── Utilidades ───────────────────────────────────────────────────────────────
 const fmtUSD = (valor) => {
@@ -317,30 +457,72 @@ const nbsp = (s) => (s ? s : "—");
 const Article = ({ number, title, children }) => (
   <View style={styles.article} wrap={false}>
     <Text style={styles.articleTitle}>ARTICLE {number} — {title}</Text>
+    <Text style={styles.articleTitleZh}>第{number}条 — {ARTICLE_TITLES_ZH[number] || ''}</Text>
     {children}
   </View>
 );
 
 const Para = ({ children }) => <Text style={styles.para}>{children}</Text>;
 
-// Párrafo con etiqueta en negrita ("Label: value.")
-const Labeled = ({ label, children }) => (
-  <Text style={styles.labeled}>
-    <Text style={{ fontFamily: "Times-Bold" }}>{label}:</Text> <CNText>{children}</CNText>
-  </Text>
+// Párrafo bilingüe: EN normal, ZH debajo con filete izquierdo distintivo.
+// `k` es la clave dentro de FIXED_TEXT_EN / FIXED_TEXT_ZH; `vars` son las
+// variables para fill() cuando la cláusula tiene placeholders {X}.
+const BiPara = ({ k, vars, indent }) => {
+  const en = vars ? fill(FIXED_TEXT_EN[k], vars) : FIXED_TEXT_EN[k];
+  const zh = vars ? fill(FIXED_TEXT_ZH[k], vars) : FIXED_TEXT_ZH[k];
+  return (
+    <View wrap>
+      <Text style={indent ? styles.paraIndent : styles.para}>{en}</Text>
+      <View style={indent ? styles.zhBlockIndent : styles.zhBlock}>
+        <Text style={styles.zhPara}>{zh}</Text>
+      </View>
+    </View>
+  );
+};
+
+// Párrafo bilingüe de texto libre (no proviene de FIXED_TEXT, p.ej. recitales
+// y cláusula de partes que combinan texto fijo con datos capturados).
+const BiParaRaw = ({ en, zh, indent }) => (
+  <View wrap>
+    <Text style={indent ? styles.paraIndent : styles.para}>{en}</Text>
+    <View style={indent ? styles.zhBlockIndent : styles.zhBlock}>
+      <Text style={styles.zhPara}>{zh}</Text>
+    </View>
+  </View>
 );
 
-// Tabla clásica con bordes
+// Etiqueta bilingüe ("Label / 标签: value.") para campos de datos.
+const BiLabeled = ({ labelEn, labelZh, children }) => (
+  <View wrap={false}>
+    <Text style={styles.labeled}>
+      <Text style={{ fontFamily: "Times-Bold" }}>{labelEn}:</Text> <CNText>{children}</CNText>
+    </Text>
+    <Text style={styles.labeledZh}>
+      <Text style={{ fontFamily: CN_FONT }}>{labelZh}：</Text>
+      <CNText>{children}</CNText>
+    </Text>
+  </View>
+);
+
+// Encabezado de tabla bilingüe: dos líneas, EN arriba (Times) y ZH abajo (CN_FONT)
+const BiHeaderCell = ({ en, zh, style }) => (
+  <View style={[{ paddingVertical: 3 }, style]}>
+    <Text style={styles.tableHeaderCell}>{en}</Text>
+    <Text style={styles.tableHeaderCellZh}>{zh}</Text>
+  </View>
+);
+
+// Tabla clásica con bordes — encabezados bilingües
 const LegalTable = ({ header, rows, widths }) => (
   <View style={styles.table}>
     <View style={styles.tableHeader} wrap={false}>
       {header.map((h, i) => (
-        <Text
+        <BiHeaderCell
           key={i}
-          style={[styles.tableHeaderCell, widths[i], i === header.length - 1 && { borderRight: "none" }]}
-        >
-          {h}
-        </Text>
+          en={h.en}
+          zh={h.zh}
+          style={[widths[i], i !== header.length - 1 && { borderRight: `0.5pt solid ${INK}` }]}
+        />
       ))}
     </View>
     {rows.map((row, ri) => (
@@ -370,7 +552,7 @@ const CheckList = ({ options, selected }) => (
       return (
         <View key={i} style={styles.checklistRow} wrap={false}>
           <Text style={styles.checklistMark}>{on ? "[X]" : "[ ]"}</Text>
-          <Text style={styles.checklistItem}>{opt}</Text>
+          <Text style={styles.checklistItem}>{opt} / {ANNEX_D_DOCS_ZH[opt] || ''}</Text>
         </View>
       );
     })}
@@ -434,62 +616,79 @@ export const ContratoPDF = ({ data }) => {
 
         {/* Título */}
         <Text style={styles.docTitle}>INTERNATIONAL PURCHASE AGREEMENT</Text>
+        <Text style={styles.docTitleZh}>国际采购协议</Text>
         <Text style={styles.docMeta}>
           Date: {nbsp(data.fecha)}{data.numero ? `     ·     Contract No.: ${data.numero}` : ""}
         </Text>
         <View style={styles.titleRule} />
 
         {/* Partes */}
+        <BiParaRaw
+          en={`THIS INTERNATIONAL PURCHASE AGREEMENT (this "Agreement") is made and entered into as of the date first written above, by and between:`}
+          zh={`本《国际采购协议》（"本协议"）于文首所载日期由以下各方订立：`}
+        />
+        <BiParaRaw
+          indent
+          en={
+            `(1)  ${nbsp(data.buyerLegalName)}` +
+            (data.buyerTradeName ? `, trading as ${data.buyerTradeName},` : ",") +
+            ` a company duly organized and validly existing under the laws of ${nbsp(data.buyerCountry)}, with its registered address at ${nbsp(data.buyerAddress)}, registration number ${nbsp(data.buyerTaxId)}, represented by ${nbsp(data.buyerRepresentative)}, ${nbsp(data.buyerPosition)} (hereinafter referred to as the "Buyer"); and`
+          }
+          zh={
+            `（一）${nbsp(data.buyerLegalName)}` +
+            (data.buyerTradeName ? `（商业名称：${data.buyerTradeName}）` : "") +
+            `，一家根据${nbsp(data.buyerCountry)}法律正式注册并有效存续的公司，注册地址为${nbsp(data.buyerAddress)}，注册号为${nbsp(data.buyerTaxId)}，由${nbsp(data.buyerRepresentative)}（职务：${nbsp(data.buyerPosition)}）代表（以下简称"买方"）；及`
+          }
+        />
+        <BiParaRaw
+          indent
+          en={
+            `(2)  ${nbsp(data.supplierLegalName)}` +
+            (data.supplierTradeName ? ` (${data.supplierTradeName}),` : ",") +
+            ` a company duly organized and validly existing under the laws of the People's Republic of China, holding Unified Social Credit Code No. ${nbsp(data.supplierUscc)}, with its registered address at ${nbsp(data.supplierAddress)}, represented by ${nbsp(data.supplierLegalRepresentative)}, ${nbsp(data.supplierPosition)} (hereinafter referred to as the "Supplier").`
+          }
+          zh={
+            `（二）${nbsp(data.supplierLegalName)}` +
+            (data.supplierTradeName ? `（${data.supplierTradeName}）` : "") +
+            `，一家根据中华人民共和国法律正式注册并有效存续的公司，统一社会信用代码为${nbsp(data.supplierUscc)}，注册地址为${nbsp(data.supplierAddress)}，由${nbsp(data.supplierLegalRepresentative)}（职务：${nbsp(data.supplierPosition)}）代表（以下简称"供方"）。`
+          }
+        />
         <Text style={styles.para}>
-          THIS INTERNATIONAL PURCHASE AGREEMENT (this “Agreement”) is made and entered
-          into as of the date first written above, by and between:
+          The Buyer and the Supplier are hereinafter referred to individually as a "Party"
+          and collectively as the "Parties".
         </Text>
-        <Text style={styles.paraIndent}>
-          (1)&nbsp;&nbsp;
-          <Text style={{ fontFamily: "Times-Bold" }}>{nbsp(data.buyerLegalName)}</Text>
-          {data.buyerTradeName ? `, trading as ${data.buyerTradeName},` : ","} a company duly organized
-          and validly existing under the laws of {nbsp(data.buyerCountry)}, with its registered address at{" "}
-          {nbsp(data.buyerAddress)}, registration number {nbsp(data.buyerTaxId)}, represented by{" "}
-          {nbsp(data.buyerRepresentative)}, {nbsp(data.buyerPosition)} (hereinafter referred to as the
-          “<Text style={{ fontFamily: "Times-Bold" }}>Buyer</Text>”); and
-        </Text>
-        <Text style={styles.paraIndent}>
-          (2)&nbsp;&nbsp;
-          <CNText fallback="Times-Bold">{nbsp(data.supplierLegalName)}</CNText>
-          {data.supplierTradeName ? <> (<CNText>{data.supplierTradeName}</CNText>),</> : ","} a company duly organized and
-          validly existing under the laws of the People’s Republic of China, holding Unified Social
-          Credit Code No. {nbsp(data.supplierUscc)}, with its registered address at{" "}
-          <CNText>{nbsp(data.supplierAddress)}</CNText>, represented by{" "}
-          <CNText>{nbsp(data.supplierLegalRepresentative)}</CNText>,{" "}
-          <CNText>{nbsp(data.supplierPosition)}</CNText> (hereinafter referred to as the
-          “<Text style={{ fontFamily: "Times-Bold" }}>Supplier</Text>”).
-        </Text>
-        <Text style={styles.para}>
-          The Buyer and the Supplier are hereinafter referred to individually as a “Party”
-          and collectively as the “Parties”.
-        </Text>
+        <View style={styles.zhBlock}>
+          <Text style={styles.zhPara}>买方与供方以下单独称为"一方"，合称"双方"。</Text>
+        </View>
 
         {/* Recitales */}
         <Text style={styles.whereHeading}>RECITALS</Text>
-        <Text style={styles.paraIndent}>WHEREAS, {FIXED_TEXT.recital1}</Text>
-        <Text style={styles.paraIndent}>WHEREAS, {FIXED_TEXT.recital2}</Text>
-        <Text style={styles.leadIn}>{FIXED_TEXT.therefore}</Text>
+        <Text style={styles.whereHeadingZh}>鉴 于 条 款</Text>
+        <BiParaRaw indent en={`WHEREAS, ${FIXED_TEXT_EN.recital1}`} zh={`鉴于，${FIXED_TEXT_ZH.recital1}`} />
+        <BiParaRaw indent en={`WHEREAS, ${FIXED_TEXT_EN.recital2}`} zh={`鉴于，${FIXED_TEXT_ZH.recital2}`} />
+        <BiPara k="therefore" />
 
         {/* 1. PARTIES */}
         <Article number="1" title="PARTIES">
-          <Para>{FIXED_TEXT.parties}</Para>
+          <BiPara k="parties" />
         </Article>
 
         {/* 2. PURPOSE */}
         <Article number="2" title="PURPOSE OF THE AGREEMENT">
-          <Para>{FIXED_TEXT.summary}</Para>
-          <Para>{FIXED_TEXT.purpose}</Para>
+          <BiPara k="summary" />
+          <BiPara k="purpose" />
         </Article>
 
         {/* 3. PRODUCTS */}
         <Article number="3" title="PRODUCTS">
           <LegalTable
-            header={["PRODUCT / MODEL", "SPECIFICATION", "QUANTITY", "UNIT PRICE (USD)", "TOTAL (USD)"]}
+            header={[
+              { en: "PRODUCT / MODEL", zh: "产品/型号" },
+              { en: "SPECIFICATION", zh: "规格" },
+              { en: "QUANTITY", zh: "数量" },
+              { en: "UNIT PRICE (USD)", zh: "单价（美元）" },
+              { en: "TOTAL (USD)", zh: "总价（美元）" },
+            ]}
             widths={[styles.cProduct, styles.cSpec, styles.cQty, styles.cPrice, styles.cTotal]}
             rows={partidas.map(p => [
               { text: p.producto, bold: p.esFlete },
@@ -500,32 +699,36 @@ export const ContratoPDF = ({ data }) => {
             ])}
           />
           <Text style={styles.totalLine}>
-            Total Contract Value: {fmtUSD(totalValue)} {data.currency || "USD"}
+            Total Contract Value / 合同总价: {fmtUSD(totalValue)} {data.currency || "USD"}
           </Text>
-          <Para>{FIXED_TEXT.products}</Para>
+          <BiPara k="products" />
         </Article>
 
         {/* 4. QUALITY */}
         <Article number="4" title="QUALITY AND SPECIFICATIONS">
-          <Para>{FIXED_TEXT.quality}</Para>
+          <BiPara k="quality" />
         </Article>
 
         {/* 5. PRICE */}
         <Article number="5" title="PRICE">
-          <Labeled label="Total Purchase Price">
+          <BiLabeled labelEn="Total Purchase Price" labelZh="总价款">
             {fmtUSD(totalValue)} {data.currency || "USD"}.
-          </Labeled>
-          <Labeled label="Currency">{nbsp(data.currency)}.</Labeled>
-          <Labeled label="Incoterm">
+          </BiLabeled>
+          <BiLabeled labelEn="Currency" labelZh="币种">{nbsp(data.currency)}.</BiLabeled>
+          <BiLabeled labelEn="Incoterm" labelZh="贸易术语">
             {incoterm}{data.namedPlace ? `, ${data.namedPlace}` : ""}.
-          </Labeled>
-          <Para>{FIXED_TEXT.price}</Para>
+          </BiLabeled>
+          <BiPara k="price" />
         </Article>
 
         {/* 6. PAYMENT TERMS */}
         <Article number="6" title="PAYMENT TERMS">
           <LegalTable
-            header={["INSTALLMENT", "PERCENT", "AMOUNT (USD)"]}
+            header={[
+              { en: "INSTALLMENT", zh: "分期" },
+              { en: "PERCENT", zh: "比例" },
+              { en: "AMOUNT (USD)", zh: "金额（美元）" },
+            ]}
             widths={[styles.cConcepto, styles.cPct, styles.cMonto]}
             rows={pagos.map(pg => [
               { text: pg.concepto },
@@ -533,146 +736,146 @@ export const ContratoPDF = ({ data }) => {
               { text: fmtUSD(pg.monto) },
             ])}
           />
-          <Labeled label="Method">{method}.</Labeled>
-          <Labeled label="Freight">
+          <BiLabeled labelEn="Method" labelZh="付款方式">{method}.</BiLabeled>
+          <BiLabeled labelEn="Freight" labelZh="运费">
             {data.fletePago === "final"
               ? "The freight amount is payable upon completion and is included in the final installment above."
               : "The freight amount is included within the installment percentages above."}
-          </Labeled>
-          <Para>{FIXED_TEXT.payment}</Para>
+          </BiLabeled>
+          <BiPara k="payment" />
         </Article>
 
         {/* 7. PRODUCTION AND DELIVERY */}
         <Article number="7" title="PRODUCTION AND DELIVERY">
-          <Labeled label="Production completion within">
+          <BiLabeled labelEn="Production completion within" labelZh="生产完成期限">
             {data.productionDays ? `${data.productionDays} calendar days` : "—"}.
-          </Labeled>
-          <Labeled label="Starting from">{productionStart}.</Labeled>
-          <Labeled label="Estimated Ready-to-Ship Date">
+          </BiLabeled>
+          <BiLabeled labelEn="Starting from" labelZh="起算日">{productionStart}.</BiLabeled>
+          <BiLabeled labelEn="Estimated Ready-to-Ship Date" labelZh="预计备货完成日期">
             {nbsp(data.estimatedReadyToShipDate)}.
-          </Labeled>
-          <Para>{FIXED_TEXT.production}</Para>
+          </BiLabeled>
+          <BiPara k="production" />
         </Article>
 
         {/* 8. INSPECTION */}
         <Article number="8" title="INSPECTION">
-          <Para>{FIXED_TEXT.inspection}</Para>
+          <BiPara k="inspection" />
         </Article>
 
         {/* 9. NON-CONFORMING PRODUCTS */}
         <Article number="9" title="NON-CONFORMING PRODUCTS">
-          <Para>{FIXED_TEXT.nonConforming}</Para>
+          <BiPara k="nonConforming" />
         </Article>
 
         {/* 10. PACKAGING */}
         <Article number="10" title="PACKAGING">
-          <Para>{FIXED_TEXT.packaging}</Para>
+          <BiPara k="packaging" />
         </Article>
 
         {/* 11. SHIPPING AND DOCUMENTATION */}
         <Article number="11" title="SHIPPING AND DOCUMENTATION">
-          <Para>{FIXED_TEXT.shipping}</Para>
+          <BiPara k="shipping" />
         </Article>
 
         {/* 12. WARRANTY */}
         <Article number="12" title="WARRANTY">
-          <Labeled label="Warranty period">
+          <BiLabeled labelEn="Warranty period" labelZh="保修期">
             {data.warrantyMonths ? `${data.warrantyMonths} months` : "—"}.
-          </Labeled>
-          <Labeled label="Starting from">{nbsp(data.warrantyStart)}.</Labeled>
-          <Para>{FIXED_TEXT.warranty}</Para>
+          </BiLabeled>
+          <BiLabeled labelEn="Starting from" labelZh="起算日">{nbsp(data.warrantyStart)}.</BiLabeled>
+          <BiPara k="warranty" />
         </Article>
 
         {/* 13. WARRANTY CLAIM PROCEDURE */}
         <Article number="13" title="WARRANTY CLAIM PROCEDURE">
-          <Para>{fill(FIXED_TEXT.warrantyClaim, {
+          <BiPara k="warrantyClaim" vars={{
             RESPONSE: data.warrantyResponseDays,
             CORRECTIVE: data.warrantyCorrectiveDays,
-          })}</Para>
+          }} />
         </Article>
 
         {/* 14. DELAY AND LIQUIDATED DAMAGES */}
         <Article number="14" title="DELAY AND LIQUIDATED DAMAGES">
-          <Para>{fill(FIXED_TEXT.delay, {
+          <BiPara k="delay" vars={{
             PCT:    data.delayPercent,
             PERIOD: data.delayPeriod,
             CAP:    data.delayCapPercent,
             DAYS:   data.delayTerminationDays,
-          })}</Para>
+          }} />
         </Article>
 
         {/* 15. CHANGE OF MANUFACTURING LOCATION */}
         <Article number="15" title="CHANGE OF MANUFACTURING LOCATION">
-          <Para>{FIXED_TEXT.changeLocation}</Para>
+          <BiPara k="changeLocation" />
         </Article>
 
         {/* 16. SUBCONTRACTING */}
         <Article number="16" title="SUBCONTRACTING">
-          <Para>{FIXED_TEXT.subcontracting}</Para>
+          <BiPara k="subcontracting" />
         </Article>
 
         {/* 17. INTELLECTUAL PROPERTY AND TOOLING */}
         <Article number="17" title="INTELLECTUAL PROPERTY AND TOOLING">
-          <Para>{FIXED_TEXT.ip}</Para>
+          <BiPara k="ip" />
         </Article>
 
         {/* 18. CONFIDENTIALITY */}
         <Article number="18" title="CONFIDENTIALITY">
-          <Para>{FIXED_TEXT.confidentiality}</Para>
+          <BiPara k="confidentiality" />
         </Article>
 
         {/* 19. NON-CIRCUMVENTION */}
         <Article number="19" title="NON-CIRCUMVENTION">
-          <Para>{fill(FIXED_TEXT.nonCircumvention, {
+          <BiPara k="nonCircumvention" vars={{
             YEARS:     data.ncDurationYears,
             TERRITORY: data.ncTerritory,
-          })}</Para>
+          }} />
         </Article>
 
         {/* 20. COMPLIANCE AND PRODUCT SAFETY */}
         <Article number="20" title="COMPLIANCE AND PRODUCT SAFETY">
-          <Para>{FIXED_TEXT.compliance}</Para>
+          <BiPara k="compliance" />
         </Article>
 
         {/* 21. FORCE MAJEURE */}
         <Article number="21" title="FORCE MAJEURE">
-          <Para>{FIXED_TEXT.forceMajeure}</Para>
+          <BiPara k="forceMajeure" />
         </Article>
 
         {/* 22. TERMINATION */}
         <Article number="22" title="TERMINATION">
-          <Para>{FIXED_TEXT.termination}</Para>
+          <BiPara k="termination" />
         </Article>
 
         {/* 23. GOVERNING LAW */}
         <Article number="23" title="GOVERNING LAW">
-          <Para>{fill(FIXED_TEXT.governingLaw, { LAW: data.governingLaw })}</Para>
+          <BiPara k="governingLaw" vars={{ LAW: data.governingLaw }} />
         </Article>
 
         {/* 24. DISPUTE RESOLUTION */}
         <Article number="24" title="DISPUTE RESOLUTION">
-          <Para>{fill(FIXED_TEXT.dispute, {
+          <BiPara k="dispute" vars={{
             DAYS:        data.negotiationDays || "30",
             INSTITUTION: data.arbitrationInstitution,
             SEAT:        data.arbitrationSeat,
             LANG:        arbLang,
-          })}</Para>
+          }} />
         </Article>
 
         {/* 25. LANGUAGE */}
         <Article number="25" title="LANGUAGE">
-          <Labeled label="Executed in">{nbsp(data.executedIn)}.</Labeled>
-          <Para>{fill(FIXED_TEXT.language, { CONTROLLING: data.controllingLanguage })}</Para>
+          <BiLabeled labelEn="Executed in" labelZh="签署地">{nbsp(data.executedIn)}.</BiLabeled>
+          <BiPara k="language" vars={{ CONTROLLING: data.controllingLanguage }} />
         </Article>
 
         {/* 26. ELECTRONIC SIGNATURES */}
         <Article number="26" title="ELECTRONIC SIGNATURES AND DIGITAL RECORDS">
-          <Para>{FIXED_TEXT.electronic}</Para>
+          <BiPara k="electronic" />
         </Article>
 
         {/* 27. ENTIRE AGREEMENT */}
         <Article number="27" title="ENTIRE AGREEMENT">
-          <Para>{FIXED_TEXT.entire}</Para>
+          <BiPara k="entire" />
         </Article>
 
         {/* 28. NOTICES */}
@@ -680,23 +883,25 @@ export const ContratoPDF = ({ data }) => {
           <View style={styles.noticesRow}>
             <View style={styles.noticeBox}>
               <Text style={styles.noticeTitle}>THE BUYER</Text>
-              <Text style={styles.noticeLine}>Name: {nbsp(data.buyerNoticeName)}</Text>
-              <Text style={styles.noticeLine}>Email: {nbsp(data.buyerNoticeEmail)}</Text>
-              <Text style={styles.noticeLine}>Address: {nbsp(data.buyerNoticeAddress)}</Text>
+              <Text style={styles.noticeTitleZh}>买方</Text>
+              <Text style={styles.noticeLine}>Name / 姓名: {nbsp(data.buyerNoticeName)}</Text>
+              <Text style={styles.noticeLine}>Email / 电子邮箱: {nbsp(data.buyerNoticeEmail)}</Text>
+              <Text style={styles.noticeLine}>Address / 地址: {nbsp(data.buyerNoticeAddress)}</Text>
             </View>
             <View style={styles.noticeBox}>
               <Text style={styles.noticeTitle}>THE SUPPLIER</Text>
-              <Text style={styles.noticeLine}>Name: <CNText>{nbsp(data.supplierNoticeName)}</CNText></Text>
-              <Text style={styles.noticeLine}>Email: {nbsp(data.supplierNoticeEmail)}</Text>
-              <Text style={styles.noticeLine}>Address: <CNText>{nbsp(data.supplierNoticeAddress)}</CNText></Text>
+              <Text style={styles.noticeTitleZh}>供方</Text>
+              <Text style={styles.noticeLine}>Name / 姓名: <CNText>{nbsp(data.supplierNoticeName)}</CNText></Text>
+              <Text style={styles.noticeLine}>Email / 电子邮箱: {nbsp(data.supplierNoticeEmail)}</Text>
+              <Text style={styles.noticeLine}>Address / 地址: <CNText>{nbsp(data.supplierNoticeAddress)}</CNText></Text>
             </View>
           </View>
-          <Para>{FIXED_TEXT.noticesBoilerplate}</Para>
+          <BiPara k="noticesBoilerplate" />
         </Article>
 
         {/* 29. ANNEXES */}
         <Article number="29" title="ANNEXES">
-          <Para>{FIXED_TEXT.annexes}</Para>
+          <BiPara k="annexes" />
         </Article>
 
         {/* 30. SIGNATURES */}
@@ -705,31 +910,42 @@ export const ContratoPDF = ({ data }) => {
             IN WITNESS WHEREOF, the Parties have caused this Agreement to be executed by their duly
             authorized representatives as of the date first written above.
           </Text>
+          <Text style={styles.witnessZh}>
+            兹证明，双方已促使其正式授权代表于文首所载日期签署本协议，以昭信守。
+          </Text>
           <View style={styles.signatureRow}>
             <View style={styles.signatureBox}>
               <Text style={styles.signatureFor}>For and on behalf of{"\n"}THE BUYER:</Text>
+              <Text style={styles.signatureForZh}>谨代表买方：</Text>
               <View style={styles.signatureLine} />
               <Text style={styles.signatureParty}>{nbsp(data.buyerLegalName)}</Text>
               <Text style={styles.signatureMeta}>Name: {nbsp(data.buyerSigner)}</Text>
+              <Text style={styles.signatureMetaZh}>姓名</Text>
               <Text style={styles.signatureMeta}>Title: {nbsp(data.buyerSignerPosition)}</Text>
+              <Text style={styles.signatureMetaZh}>职务</Text>
               <Text style={styles.signatureMeta}>Date: {nbsp(data.buyerSignDate)}</Text>
               <Text style={styles.signatureMeta}>(Company stamp / seal)</Text>
+              <Text style={styles.signatureMetaZh}>（公司印章）</Text>
             </View>
             <View style={styles.signatureBox}>
               <Text style={styles.signatureFor}>For and on behalf of{"\n"}THE SUPPLIER:</Text>
+              <Text style={styles.signatureForZh}>谨代表供方：</Text>
               <View style={styles.signatureLine} />
               <Text style={styles.signatureParty}><CNText fallback="Times-Bold">{nbsp(data.supplierLegalName)}</CNText></Text>
               <Text style={styles.signatureMeta}>Name: <CNText>{nbsp(data.supplierSigner)}</CNText></Text>
+              <Text style={styles.signatureMetaZh}>姓名</Text>
               <Text style={styles.signatureMeta}>Title: <CNText>{nbsp(data.supplierSignerPosition)}</CNText></Text>
+              <Text style={styles.signatureMetaZh}>职务</Text>
               <Text style={styles.signatureMeta}>Date: {nbsp(data.supplierSignDate)}</Text>
               <Text style={styles.signatureMeta}>(Company stamp / seal)</Text>
+              <Text style={styles.signatureMetaZh}>（公司印章 / 公章）</Text>
             </View>
           </View>
         </Article>
 
         {/* Pie */}
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>International Purchase Agreement</Text>
+          <Text style={styles.footerText}>International Purchase Agreement / 国际采购协议</Text>
           <Text
             style={styles.footerText}
             render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
@@ -740,18 +956,25 @@ export const ContratoPDF = ({ data }) => {
       {/* ══ ANNEX A ══ */}
       <Page size="A4" style={styles.page} wrap>
         <Text style={styles.annexTitle}>ANNEX A — TECHNICAL SPECIFICATIONS</Text>
+        <Text style={styles.annexTitleZh}>附件A——技术规格</Text>
         <Text style={styles.annexSub}>International Purchase Agreement {data.numero ? `· Contract No. ${data.numero}` : ""}</Text>
         <View style={styles.titleRule} />
 
-        <Para>
-          The technical specifications of the Products are those set forth in Article 3
-          (Products) of this Agreement, reproduced below for convenience:
-        </Para>
+        <BiParaRaw
+          en="The technical specifications of the Products are those set forth in Article 3 (Products) of this Agreement, reproduced below for convenience:"
+          zh="产品的技术规格如本协议第3条（产品）所载，为方便查阅，转录如下："
+        />
 
         {partidas.length > 0 ? (
           <>
             <LegalTable
-              header={["PRODUCT / MODEL", "SPECIFICATION", "QUANTITY", "UNIT PRICE (USD)", "TOTAL (USD)"]}
+              header={[
+                { en: "PRODUCT / MODEL", zh: "产品/型号" },
+                { en: "SPECIFICATION", zh: "规格" },
+                { en: "QUANTITY", zh: "数量" },
+                { en: "UNIT PRICE (USD)", zh: "单价（美元）" },
+                { en: "TOTAL (USD)", zh: "总价（美元）" },
+              ]}
               widths={[styles.cProduct, styles.cSpec, styles.cQty, styles.cPrice, styles.cTotal]}
               rows={partidas.map(p => [
                 { text: p.producto },
@@ -762,23 +985,20 @@ export const ContratoPDF = ({ data }) => {
               ])}
             />
             <Text style={styles.totalLine}>
-              Total Contract Value: {fmtUSD(totalValue)} {data.currency || "USD"}
+              Total Contract Value / 合同总价: {fmtUSD(totalValue)} {data.currency || "USD"}
             </Text>
           </>
         ) : (
           <Para>{'—'}</Para>
         )}
 
-        <Para>
-          The Products shall comply with the quality requirements, standards and
-          specifications set forth in Article 4 (Quality and Specifications) of this
-          Agreement. The Supplier shall not make material changes to the specifications,
-          materials, components or production processes without the Buyer’s prior written
-          approval.
-        </Para>
+        <BiParaRaw
+          en="The Products shall comply with the quality requirements, standards and specifications set forth in Article 4 (Quality and Specifications) of this Agreement. The Supplier shall not make material changes to the specifications, materials, components or production processes without the Buyer's prior written approval."
+          zh="产品应符合本协议第4条（质量与规格）所载的质量要求、标准及规格。未经买方事先书面批准，供方不得对规格、材料、部件或生产工艺作出实质性变更。"
+        />
 
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>Annex A — Technical Specifications</Text>
+          <Text style={styles.footerText}>Annex A — Technical Specifications / 附件A——技术规格</Text>
           <Text
             style={styles.footerText}
             render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
@@ -789,16 +1009,29 @@ export const ContratoPDF = ({ data }) => {
       {/* ══ ANNEX B (landscape) ══ */}
       <Page size="A4" orientation="landscape" style={styles.pageLandscape} wrap>
         <Text style={styles.annexTitle}>ANNEX B — COMMERCIAL TERMS</Text>
+        <Text style={styles.annexTitleZh}>附件B——商业条款</Text>
         <Text style={styles.annexSub}>International Purchase Agreement {data.numero ? `· Contract No. ${data.numero}` : ""}</Text>
         <View style={styles.titleRule} />
 
-        <Para>
-          The following commercial terms are those set forth in the main body of this
-          Agreement (Articles 3, 5, 6, 7 and 12), summarized by Product:
-        </Para>
+        <BiParaRaw
+          en="The following commercial terms are those set forth in the main body of this Agreement (Articles 3, 5, 6, 7 and 12), summarized by Product:"
+          zh="下列商业条款为本协议正文（第3条、第5条、第6条、第7条及第12条）所载内容，按产品汇总如下："
+        />
 
         <LegalTable
-          header={["PO NUMBER", "PRODUCT", "QTY", "UNIT PRICE", "TOTAL", "INCOTERM", "LOADING PORT", "DESTINATION", "LEAD TIME", "PAYMENT TERMS", "WARRANTY"]}
+          header={[
+            { en: "PO NUMBER", zh: "订单号" },
+            { en: "PRODUCT", zh: "产品" },
+            { en: "QTY", zh: "数量" },
+            { en: "UNIT PRICE", zh: "单价" },
+            { en: "TOTAL", zh: "总价" },
+            { en: "INCOTERM", zh: "贸易术语" },
+            { en: "LOADING PORT", zh: "装运港" },
+            { en: "DESTINATION", zh: "目的地" },
+            { en: "LEAD TIME", zh: "交货周期" },
+            { en: "PAYMENT TERMS", zh: "付款条件" },
+            { en: "WARRANTY", zh: "保修" },
+          ]}
           widths={[styles.cB1, styles.cB2, styles.cB3, styles.cB4, styles.cB5, styles.cB6, styles.cB7, styles.cB8, styles.cB9, styles.cB10, styles.cB11]}
           rows={partidas.map(p => [
             { text: data.numero },
@@ -816,7 +1049,7 @@ export const ContratoPDF = ({ data }) => {
         />
 
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>Annex B — Commercial Terms</Text>
+          <Text style={styles.footerText}>Annex B — Commercial Terms / 附件B——商业条款</Text>
           <Text
             style={styles.footerText}
             render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
@@ -829,38 +1062,44 @@ export const ContratoPDF = ({ data }) => {
 
         {/* ANNEX C */}
         <Text style={styles.annexTitle}>ANNEX C — INSPECTION AND ACCEPTANCE PROTOCOL</Text>
+        <Text style={styles.annexTitleZh}>附件C——检验及验收协议</Text>
         <Text style={styles.annexSub}>International Purchase Agreement {data.numero ? `· Contract No. ${data.numero}` : ""}</Text>
         <View style={styles.titleRule} />
 
-        <Labeled label="Inspection Company">{nbsp(data.inspectionCompany)}.</Labeled>
-        <Labeled label="Location (Factory)">{nbsp(data.inspectionLocation)}.</Labeled>
-        <Labeled label="Date">{nbsp(data.inspectionDate)}.</Labeled>
+        <BiLabeled labelEn="Inspection Company" labelZh="检验机构">{nbsp(data.inspectionCompany)}.</BiLabeled>
+        <BiLabeled labelEn="Location (Factory)" labelZh="地点（工厂）">{nbsp(data.inspectionLocation)}.</BiLabeled>
+        <BiLabeled labelEn="Date" labelZh="日期">{nbsp(data.inspectionDate)}.</BiLabeled>
         <Text style={styles.labeled}><Text style={{ fontFamily: "Times-Bold" }}>Checklist:</Text></Text>
+        <Text style={styles.labeledZh}><Text style={{ fontFamily: CN_FONT }}>检查清单：</Text></Text>
         {checklistC.length > 0
           ? <BulletList items={checklistC} />
           : <Para>{'—'}</Para>}
-        <Labeled label="Acceptance Standard">
+        <BiLabeled labelEn="Acceptance Standard" labelZh="验收标准">
           {nbsp(inspectionStandard)}.
-        </Labeled>
+        </BiLabeled>
 
         {/* ANNEX D */}
         <View style={{ marginTop: 24 }} wrap={false}>
           <Text style={styles.annexTitle}>ANNEX D — SHIPPING DOCUMENTS</Text>
+          <Text style={styles.annexTitleZh}>附件D——运输单证</Text>
           <View style={styles.titleRule} />
           <Text style={styles.para}>
             The Supplier shall provide the following documents as required under this Agreement:
           </Text>
+          <View style={styles.zhBlock}>
+            <Text style={styles.zhPara}>供方应按本协议要求提供下列单证：</Text>
+          </View>
           <CheckList options={ANNEX_D_DOCS} selected={docsD} />
           {data.annexDOther && (
             <View style={styles.checklistRow} wrap={false}>
               <Text style={styles.checklistMark}>[X]</Text>
-              <Text style={styles.checklistItem}>Other: {data.annexDOther}</Text>
+              <Text style={styles.checklistItem}>Other / 其他: {data.annexDOther}</Text>
             </View>
           )}
         </View>
 
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>Annexes C &amp; D</Text>
+          <Text style={styles.footerText}>Annexes C &amp; D / 附件C及D</Text>
           <Text
             style={styles.footerText}
             render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
