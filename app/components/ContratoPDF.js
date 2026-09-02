@@ -837,7 +837,7 @@ export const ContratoPDF = ({ data }) => {
             ]}
             widths={[styles.cProduct, styles.cSpec, styles.cQty, styles.cPrice, styles.cTotal]}
             rows={partidas.map(p => [
-              { text: p.producto, bold: p.esFlete },
+              { text: p.producto === "Flete" ? "Freight" : p.producto, bold: p.esFlete },
               { text: p.especificacion, bold: p.esFlete },
               { text: p.cantidad, bold: p.esFlete },
               { text: fmtUSD(p.precioUnitario), bold: p.esFlete },

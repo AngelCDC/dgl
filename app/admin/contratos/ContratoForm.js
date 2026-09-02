@@ -301,7 +301,7 @@ export default function ContratoForm({ contrato, reportes = [], clientes = [], s
 
   const [partidas, setPartidas] = useState(partidasIniciales?.length ? partidasIniciales : [defaultPartida()]);
   const [flete, setFlete] = useState({
-    producto: 'Flete',
+    producto: 'Freight',
     especificacion: fleteInicial?.especificacion ?? '',
     cantidad: '1',
     precioUnitario: fleteInicial?.precioUnitario ?? '',
@@ -442,7 +442,7 @@ export default function ContratoForm({ contrato, reportes = [], clientes = [], s
           sortOrder: i,
         }));
       partidasPayload.push({
-        producto: 'Flete',
+        producto: 'Freight',
         especificacion: flete.especificacion || null,
         cantidad: '1',
         precioUnitario: flete.precioUnitario,
@@ -757,7 +757,7 @@ export default function ContratoForm({ contrato, reportes = [], clientes = [], s
               background: '#eff6ff', border: '1px dashed #93c5fd', borderRadius: 8, padding: 6,
             }}>
               <input
-                value="Flete"
+                value="Freight"
                 readOnly
                 tabIndex={-1}
                 style={{
