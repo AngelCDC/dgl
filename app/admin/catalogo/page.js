@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import GaleriaImagenes from '../../components/GaleriaImagenes'
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function CatalogoPage() {
@@ -505,6 +506,7 @@ export default function CatalogoPage() {
           isInCart={selectedProducts.some(p => p.id === detail.id)}
           onAddToCart={() => { addToSelection(detail); setDetail(null) }}
           onRemoveFromCart={() => removeFromSelection(detail.id)}
+          onImagenesChange={imgs => setDetail({ ...detail, imagenes: imgs })}
         />
       )}
 
@@ -904,7 +906,7 @@ function ImportPanel({ onDone }) {
 }
 
 // ─── Modal de detalle ─────────────────────────────────────────────────────────
-function DetailModal({ producto: p, onClose, isInCart, onAddToCart, onRemoveFromCart }) {
+function DetailModal({ producto: p, onClose, isInCart, onAddToCart, onRemoveFromCart, onImagenesChange }) {
   useEffect(() => {
     const h = e => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', h)
@@ -965,6 +967,18 @@ function DetailModal({ producto: p, onClose, isInCart, onAddToCart, onRemoveFrom
             )}
           </div>
         )}
+
+        {/* Galería de imágenes */}
+        <div style={{ padding: '16px 24px', borderBottom: '1px solid #f5f5f5' }}>
+          <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '600' }}>
+            Imágenes del producto
+          </div>
+          <GaleriaImagenes
+            productoId={p.id}
+            imagenes={p.imagenes}
+            onChange={onImagenesChange}
+          />
+        </div>
 
         {/* Campos del producto */}
         <div style={{ padding: '20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', borderBottom: '1px solid #f5f5f5' }}>

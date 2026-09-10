@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import Sidebar from '../../components/Sidebar'
+import ProductoCatalogoCard from '../../components/ProductoCatalogoCard'
 
 export async function generateMetadata({ params }) {
   const { slug } = await params
@@ -46,6 +47,22 @@ export default async function ProveedorPage({ params }) {
   })
 
   if (!proveedor || proveedor.status !== 'active') notFound()
+
+  // Catálogo de productos (ProductoCatalogo): por vínculo FK o por nombre de
+  // proveedor (el import Excel vincula por nombre; puede haber filas sin FK)
+  const catalogo = await prisma.productoCatalogo.findMany({
+    where: {
+      OR: [
+        { supplierId: proveedor.id },
+        { proveedor: { equals: proveedor.name, mode: 'insensitive' } },
+      ],
+    },
+    include: {
+      imagenes: { orderBy: [{ orden: 'asc' }, { createdAt: 'asc' }] },
+      variantes: { orderBy: { createdAt: 'asc' } },
+    },
+    orderBy: [{ rubro: 'asc' }, { nombre: 'asc' }],
+  })
 
   return (
     <>
@@ -152,6 +169,20 @@ export default async function ProveedorPage({ params }) {
                 ))}
               </div>
             </div>
+
+            {/* Catálogo */}
+            {catalogo.length > 0 && (
+              <div style={{ background: '#fff', border: '1px solid var(--border)', padding: '24px', marginTop: '20px' }}>
+                <div style={{ fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '500', color: 'var(--navy)', letterSpacing: '0.08em', textTransform: 'uppercase', borderBottom: '2px solid var(--navy)', paddingBottom: '10px', marginBottom: '20px' }}>
+                  Catálogo
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px' }}>
+                  {catalogo.map(pc => (
+                    <ProductoCatalogoCard key={pc.id} producto={pc} />
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Productos y servicios */}
             {proveedor.products.length > 0 && (

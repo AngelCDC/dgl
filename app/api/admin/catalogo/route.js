@@ -83,6 +83,9 @@ export async function GET(req) {
         variantes: {
           orderBy: { createdAt: 'asc' },
         },
+        imagenes: {
+          orderBy: [{ orden: 'asc' }, { createdAt: 'asc' }],
+        },
         supplier: {
           select: { id: true, name: true, email: true },
         },

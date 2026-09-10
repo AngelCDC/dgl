@@ -401,6 +401,7 @@ model ProductoCatalogo {
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
   variantes    VarianteCatalogo[]
+  imagenes     ProductoImagen[]
 
   @@index([proveedor])
   @@index([supplierId])
@@ -422,6 +423,17 @@ model VarianteCatalogo {
 
   @@index([productoId])
   @@index([codigo])
+}
+
+model ProductoImagen {
+  id         String           @id @default(uuid())
+  productoId String
+  producto   ProductoCatalogo @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  url        String
+  orden      Int              @default(0)
+  createdAt  DateTime         @default(now())
+
+  @@index([productoId])
 }
 
 // ─── Informes de Verificación de Empresas (Due Diligence) ──────────────────
