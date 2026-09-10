@@ -1,8 +1,8 @@
 // ─── Matriz de permisos por rol ────────────────────────────────────────────────
 //
-//  admin       → acceso total
-//  trabajador  → operativo: gestiona solicitudes, proveedores, catálogo, clientes
-//                artículos solo lectura, sin acceso a Sistema
+//  admin       → acceso total; único rol que sube productos e imágenes
+//  trabajador  → operativo: gestiona solicitudes, proveedores, clientes;
+//                catálogo y artículos solo lectura, sin acceso a Sistema
 //  cliente     → vista limitada: solo sus solicitudes/adquisiciones,
 //                catálogo y proveedores filtrados por rubros
 
@@ -26,7 +26,7 @@ const PERMISOS = {
     solicitudes:   'write',
     adquisiciones: 'write',
     contratos:     'write',
-    catalogo:      'write',
+    catalogo:      'read',      // solo lectura: subir productos/imágenes es exclusivo del admin
     proveedores:   'write',
     clientes:      'write',
     articulos:     'read',
@@ -160,7 +160,7 @@ export function getNavForRole(role) {
     })
     nav.push({
       title: 'Proveedores',
-      items: [links.proveedores, links.catalogo],
+      items: [links.proveedores, { ...links.catalogo, hint: 'lectura' }],
     })
     nav.push({
       title: 'Clientes',

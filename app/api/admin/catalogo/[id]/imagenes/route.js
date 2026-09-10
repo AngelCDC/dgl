@@ -5,11 +5,11 @@ import { authOptions } from '../../../../auth/[...nextauth]/route'
 import { syncImagenEspejo } from '../../../../../lib/imagenesCatalogo'
 import { del } from '@vercel/blob'
 
-// ── Guarda para escrituras: sesión requerida, rol cliente sin permiso ─────────
+// ── Guarda para escrituras: solo el administrador puede modificar imágenes ────
 async function authWrite() {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-  if (session.user?.role === 'cliente') return NextResponse.json({ error: 'Sin permisos para modificar imágenes' }, { status: 403 })
+  if (session.user?.role !== 'admin') return NextResponse.json({ error: 'Solo el administrador puede modificar imágenes' }, { status: 403 })
   return null
 }
 

@@ -1,14 +1,18 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import LightboxImagenes from './LightboxImagenes'
 
 // ─── Galería de imágenes de un producto del catálogo (admin) ─────────────────
 // Sube a /api/upload (Vercel Blob) y registra la URL en
 // /api/admin/catalogo/{productoId}/imagenes. La primera imagen es la principal.
-export default function GaleriaImagenes({ productoId, imagenes, onChange }) {
-  const [items,      setItems]      = useState(imagenes ?? [])
-  const [uploading,  setUploading]  = useState(false)
-  const [error,      setError]      = useState('')
+// readOnly: solo muestra la galería sin controles de escritura (no-admin).
+// Clic en una miniatura abre el visor grande (LightboxImagenes), para todos.
+export default function GaleriaImagenes({ productoId, imagenes, onChange, readOnly = false }) {
+  const [items,       setItems]       = useState(imagenes ?? [])
+  const [uploading,   setUploading]   = useState(false)
+  const [error,       setError]       = useState('')
+  const [lightboxIdx, setLightboxIdx] = useState(null)  // null = visor cerrado
   const fileRef = useRef(null)
 
   async function subirArchivo(file) {
@@ -86,32 +90,36 @@ export default function GaleriaImagenes({ productoId, imagenes, onChange }) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
-        <button
-          onClick={() => fileRef.current?.click()}
-          disabled={uploading}
-          style={{
-            border: '1px solid #2563eb',
-            background: 'white',
-            color: '#2563eb',
-            borderRadius: '6px',
-            padding: '6px 14px',
-            fontSize: '12px',
-            fontWeight: '600',
-            cursor: uploading ? 'default' : 'pointer',
-            opacity: uploading ? 0.5 : 1,
-            fontFamily: 'inherit',
-          }}
-        >
-          {uploading ? 'Subiendo…' : 'Subir imagen'}
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          multiple
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          style={{ display: 'none' }}
-          onChange={e => handleFiles(e.target.files)}
-        />
+        {!readOnly && (
+          <>
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              style={{
+                border: '1px solid #2563eb',
+                background: 'white',
+                color: '#2563eb',
+                borderRadius: '6px',
+                padding: '6px 14px',
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: uploading ? 'default' : 'pointer',
+                opacity: uploading ? 0.5 : 1,
+                fontFamily: 'inherit',
+              }}
+            >
+              {uploading ? 'Subiendo…' : 'Subir imagen'}
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              multiple
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              style={{ display: 'none' }}
+              onChange={e => handleFiles(e.target.files)}
+            />
+          </>
+        )}
         <span style={{ fontSize: '12px', color: '#888' }}>{items.length} {items.length === 1 ? 'imagen' : 'imágenes'}</span>
       </div>
 
@@ -126,15 +134,21 @@ export default function GaleriaImagenes({ productoId, imagenes, onChange }) {
               key={img.id}
               style={{
                 position: 'relative',
-                width: '80px',
-                height: '80px',
+                width: '96px',
+                height: '96px',
                 border: '1px solid #e8e8e8',
                 borderRadius: '8px',
                 overflow: 'hidden',
                 background: '#fafafa',
               }}
             >
-              <img src={img.url} alt={`Imagen ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img
+                src={img.url}
+                alt={`Imagen ${idx + 1}`}
+                title="Ver en grande"
+                onClick={() => setLightboxIdx(idx)}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'zoom-in' }}
+              />
               {idx === 0 && (
                 <span style={{
                   position: 'absolute', top: '4px', left: '4px',
@@ -146,39 +160,49 @@ export default function GaleriaImagenes({ productoId, imagenes, onChange }) {
                   Principal
                 </span>
               )}
-              <div style={{
-                position: 'absolute', bottom: 0, left: 0, right: 0,
-                display: 'flex', justifyContent: 'center', gap: '4px',
-                padding: '3px', background: 'rgba(0,0,0,0.45)',
-              }}>
-                <button
-                  onClick={() => hacerPrincipal(idx)}
-                  title="Hacer principal"
-                  style={{
-                    border: 'none', background: 'white', color: '#111',
-                    borderRadius: '4px', padding: '1px 6px',
-                    fontSize: '10px', cursor: 'pointer', fontWeight: '600',
-                  }}
-                >
-                  ★
-                </button>
-                <button
-                  onClick={() => eliminar(idx)}
-                  title="Eliminar"
-                  style={{
-                    border: 'none', background: 'white', color: '#dc2626',
-                    borderRadius: '4px', padding: '1px 7px',
-                    fontSize: '10px', cursor: 'pointer',
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
+              {!readOnly && (
+                <div style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0,
+                  display: 'flex', justifyContent: 'center', gap: '4px',
+                  padding: '3px', background: 'rgba(0,0,0,0.45)',
+                }}>
+                  <button
+                    onClick={() => hacerPrincipal(idx)}
+                    title="Hacer principal"
+                    style={{
+                      border: 'none', background: 'white', color: '#111',
+                      borderRadius: '4px', padding: '1px 6px',
+                      fontSize: '10px', cursor: 'pointer', fontWeight: '600',
+                    }}
+                  >
+                    ★
+                  </button>
+                  <button
+                    onClick={() => eliminar(idx)}
+                    title="Eliminar"
+                    style={{
+                      border: 'none', background: 'white', color: '#dc2626',
+                      borderRadius: '4px', padding: '1px 7px',
+                      fontSize: '10px', cursor: 'pointer',
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
       ) : (
         <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>Este producto aún no tiene imágenes.</p>
+      )}
+
+      {lightboxIdx !== null && (
+        <LightboxImagenes
+          imagenes={items}
+          indiceInicial={lightboxIdx}
+          onClose={() => setLightboxIdx(null)}
+        />
       )}
     </div>
   )

@@ -15,6 +15,7 @@ import * as XLSX from 'xlsx'
 export async function POST(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (session.user?.role !== 'admin') return NextResponse.json({ error: 'Solo el administrador puede importar productos' }, { status: 403 })
 
   try {
     const url  = new URL(req.url)

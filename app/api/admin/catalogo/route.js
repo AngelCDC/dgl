@@ -148,6 +148,7 @@ export async function GET(req) {
 export async function DELETE(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (session.user?.role !== 'admin') return NextResponse.json({ error: 'Solo el administrador puede eliminar productos' }, { status: 403 })
 
   const { searchParams } = new URL(req.url)
   const id = searchParams.get('id')

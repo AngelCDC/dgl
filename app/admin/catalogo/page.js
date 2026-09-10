@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import GaleriaImagenes from '../../components/GaleriaImagenes'
 
 // ─── Componente principal ─────────────────────────────────────────────────────
@@ -24,6 +25,8 @@ export default function CatalogoPage() {
   const [cartOpen,         setCartOpen]         = useState(false)
 
   const router = useRouter()
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'admin'
 
   // Listas para selects — cascada: rubro → categoría → subcategoría
   const [rubros,        setRubros]        = useState([])
@@ -129,27 +132,29 @@ export default function CatalogoPage() {
               : 'Base de datos de productos ofertados por proveedores con sus variantes'}
           </p>
         </div>
-        <button
-          onClick={() => setImportUI(v => !v)}
-          style={{
-            height: '36px',
-            padding: '0 16px',
-            background: importUI ? '#f4f4f5' : '#111',
-            color: importUI ? '#555' : 'white',
-            border: importUI ? '1px solid #e0e0e0' : 'none',
-            borderRadius: '8px',
-            fontSize: '13px',
-            fontWeight: '500',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {importUI ? '✕ Cerrar importador' : '⬆ Importar Excel'}
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setImportUI(v => !v)}
+            style={{
+              height: '36px',
+              padding: '0 16px',
+              background: importUI ? '#f4f4f5' : '#111',
+              color: importUI ? '#555' : 'white',
+              border: importUI ? '1px solid #e0e0e0' : 'none',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {importUI ? '✕ Cerrar importador' : '⬆ Importar Excel'}
+          </button>
+        )}
       </div>
 
       {/* ── Importador ── */}
@@ -476,25 +481,27 @@ export default function CatalogoPage() {
             El catálogo está vacío
           </div>
           <p style={{ fontSize: '13px', color: '#9ca3af', maxWidth: '320px', margin: '0 auto 24px', lineHeight: '1.6' }}>
-            Importa tu primer archivo Excel con hojas "Productos" y "Variantes" para empezar.
+            {isAdmin ? 'Importa tu primer archivo Excel con hojas "Productos" y "Variantes" para empezar.' : 'Aún no hay productos registrados en el catálogo.'}
           </p>
-          <button
-            onClick={() => setImportUI(true)}
-            style={{
-              height: '36px',
-              padding: '0 18px',
-              background: '#111',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            ⬆ Importar Excel
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setImportUI(true)}
+              style={{
+                height: '36px',
+                padding: '0 18px',
+                background: '#111',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              ⬆ Importar Excel
+            </button>
+          )}
         </div>
       )}
 
@@ -507,6 +514,7 @@ export default function CatalogoPage() {
           onAddToCart={() => { addToSelection(detail); setDetail(null) }}
           onRemoveFromCart={() => removeFromSelection(detail.id)}
           onImagenesChange={imgs => setDetail({ ...detail, imagenes: imgs })}
+          readOnly={!isAdmin}
         />
       )}
 
@@ -906,7 +914,7 @@ function ImportPanel({ onDone }) {
 }
 
 // ─── Modal de detalle ─────────────────────────────────────────────────────────
-function DetailModal({ producto: p, onClose, isInCart, onAddToCart, onRemoveFromCart, onImagenesChange }) {
+function DetailModal({ producto: p, onClose, isInCart, onAddToCart, onRemoveFromCart, onImagenesChange, readOnly }) {
   useEffect(() => {
     const h = e => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', h)
@@ -977,6 +985,7 @@ function DetailModal({ producto: p, onClose, isInCart, onAddToCart, onRemoveFrom
             productoId={p.id}
             imagenes={p.imagenes}
             onChange={onImagenesChange}
+            readOnly={readOnly}
           />
         </div>
 

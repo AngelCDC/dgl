@@ -1,26 +1,51 @@
 'use client'
 
 import { useState } from 'react'
+import LightboxImagenes from './LightboxImagenes'
 
 // ─── Tarjeta pública de un producto del catálogo (ProductoCatalogo) ──────────
 // Se usa en la sección "Catálogo" de la página del proveedor. La primera imagen
-// es la principal; las miniaturas permiten cambiarla sin lightbox.
+// es la principal; las miniaturas la cambian. Clic en la imagen principal o en
+// una miniatura abre el visor grande (LightboxImagenes).
 export default function ProductoCatalogoCard({ producto: pc }) {
   const imagenes = pc.imagenes ?? []
   const [idx, setIdx] = useState(0)
+  const [lightboxIdx, setLightboxIdx] = useState(null)  // null = visor cerrado
 
   const principal = imagenes.length > 0 ? imagenes[Math.min(idx, imagenes.length - 1)] : null
   const precio = pc.variantes?.[0]?.precio
 
   return (
     <div style={{ border: '1px solid var(--border)', borderTop: '3px solid var(--accent)', padding: '16px', display: 'flex', flexDirection: 'column' }}>
-      {/* Imagen principal */}
-      <div style={{ background: 'var(--bg)', aspectRatio: '4/3', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+      {/* Imagen principal: clic abre el visor en grande */}
+      <div style={{ position: 'relative', background: 'var(--bg)', aspectRatio: '4/3', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
         {principal ? (
-          <img src={principal.url} alt={pc.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img
+            src={principal.url}
+            alt={pc.nombre}
+            title="Ver en grande"
+            onClick={() => setLightboxIdx(idx)}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'zoom-in' }}
+          />
         ) : (
           <span style={{ fontFamily: 'var(--font-dm)', fontWeight: '800', fontSize: '36px', color: 'var(--border)' }}>
             {pc.nombre.charAt(0)}
+          </span>
+        )}
+        {principal && (
+          <span
+            title="Ver en grande"
+            onClick={() => setLightboxIdx(idx)}
+            style={{
+              position: 'absolute', top: '8px', right: '8px',
+              width: '28px', height: '28px', borderRadius: '50%',
+              background: 'rgba(0,0,0,0.45)', color: '#fff',
+              fontSize: '14px', lineHeight: 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'zoom-in',
+            }}
+          >
+            🔍
           </span>
         )}
       </div>
@@ -31,8 +56,8 @@ export default function ProductoCatalogoCard({ producto: pc }) {
           {imagenes.map((img, i) => (
             <button
               key={img.id}
-              onClick={() => setIdx(i)}
-              aria-label={`Ver imagen ${i + 1}`}
+              onClick={() => { setIdx(i); setLightboxIdx(i) }}
+              aria-label={`Ver imagen ${i + 1} en grande`}
               style={{
                 width: '40px',
                 height: '40px',
@@ -93,6 +118,14 @@ export default function ProductoCatalogoCard({ producto: pc }) {
         <a href={pc.archivoPdf} target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '500', color: 'var(--navy)', marginTop: '10px', textDecoration: 'underline' }}>
           Ver ficha PDF →
         </a>
+      )}
+
+      {lightboxIdx !== null && (
+        <LightboxImagenes
+          imagenes={imagenes}
+          indiceInicial={lightboxIdx}
+          onClose={() => setLightboxIdx(null)}
+        />
       )}
     </div>
   )
