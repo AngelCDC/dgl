@@ -15,8 +15,8 @@ const empresaLinks = [
 
 export default function Footer() {
   return (
-    <footer style={{ background: 'var(--navy)', padding: '48px 32px 32px' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <footer style={{ background: 'var(--navy)', padding: '48px var(--gutter) 32px' }}>
+      <div style={{ maxWidth: 'var(--container-max)', margin: '0 auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: '48px', paddingBottom: '32px', borderBottom: '1px solid var(--corp)' }}>
 
           <div>

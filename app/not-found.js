@@ -6,7 +6,7 @@ export default function NotFound() {
   return (
     <>
       <Navbar />
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px' }}>
+      <main style={{ maxWidth: 'var(--container-max)', margin: '0 auto', padding: '0 var(--gutter)' }}>
         <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', flexDirection: 'column', gap: '24px', padding: '80px 0' }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '8px' }}>
             En construcción

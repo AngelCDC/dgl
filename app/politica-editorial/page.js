@@ -67,7 +67,7 @@ export default function PoliticaEditorialPage() {
   return (
     <>
       <Navbar />
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px 80px' }}>
+      <main style={{ maxWidth: 'var(--container-max)', margin: '0 auto', padding: '0 var(--gutter) 80px' }}>
 
         {/* Encabezado */}
         <div style={{ paddingTop: '48px', paddingBottom: '40px', borderBottom: '1px solid var(--border)', marginBottom: '56px' }}>

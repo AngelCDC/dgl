@@ -19,6 +19,8 @@
   --font-dm: "DM Sans", sans-serif;
   --font-inter: "Inter", sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
+  --container-max: 90rem;               /* 1440px — ancho máximo del contenido */
+  --gutter: clamp(1rem, 2.5vw, 1.5rem); /* padding lateral fluido: 16px → 24px */
 }
 
 html {
@@ -41,14 +43,8 @@ img {
 }
 
 /* Layout */
-.main-content { max-width: 1500px; margin: 0 auto; padding: 32px 32px 80px; }
+.main-content { max-width: var(--container-max); margin: 0 auto; padding: 2rem var(--gutter) 5rem; }
 
-.articulos-layout {
-  display: grid;
-  grid-template-columns: 1fr 280px;
-  gap: 32px;
-  align-items: start;
-}
 /* Hero */
 .hero-block {
   background: var(--navy);
@@ -310,7 +306,7 @@ img {
 /* Navbar */
 .navbar-top {
   background: var(--navy);
-  padding: 7px 32px;
+  padding: 7px max(var(--gutter), calc((100% - var(--container-max)) / 2));
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -322,7 +318,7 @@ img {
 .navbar-logo-row {
   background: #fff;
   border-bottom: 2px solid var(--border);
-  padding: 16px 32px;
+  padding: 16px max(var(--gutter), calc((100% - var(--container-max)) / 2));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -338,14 +334,14 @@ img {
 .navbar-nav {
   background: #fff;
   border-bottom: 1px solid var(--border);
-  padding: 0 32px;
+  padding: 0 max(var(--gutter), calc((100% - var(--container-max)) / 2));
   display: flex;
   overflow-x: auto;
 }
 
 /* Footer */
 .footer-inner {
-  max-width: 1200px;
+  max-width: var(--container-max);
   margin: 0 auto;
 }
 .footer-grid {
@@ -381,9 +377,9 @@ img {
 
 /* Proveedores page */
 .proveedores-main {
-  max-width: 1100px;
+  max-width: var(--container-max);
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--gutter);
 }
 .proveedores-grid {
   display: grid;
@@ -469,7 +465,7 @@ img {
   display: block;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .sidebar-desktop {
     display: none;
   }
@@ -772,8 +768,8 @@ img {
 /* Articulos layout */
 .articulos-layout {
   display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 40px;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); /* 70/30 */
+  gap: clamp(1.5rem, 2.5vw, 2.5rem);
   align-items: start;
 }
 
@@ -843,7 +839,7 @@ img {
   min-width: 0;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .articulos-layout {
     grid-template-columns: 1fr;
   }
