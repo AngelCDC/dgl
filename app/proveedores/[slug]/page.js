@@ -4,6 +4,9 @@ import Link from 'next/link'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import Sidebar from '../../components/Sidebar'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../../api/auth/[...nextauth]/route'
+import LoginCTA from '../../components/LoginCTA'
 import ProductoCatalogoCard from '../../components/ProductoCatalogoCard'
 
 export async function generateMetadata({ params }) {
@@ -37,6 +40,7 @@ export async function generateMetadata({ params }) {
 
 export default async function ProveedorPage({ params }) {
   const { slug } = await params
+  const session = await getServerSession(authOptions)
   const proveedor = await prisma.supplier.findUnique({
     where: { slug },
     include: {
@@ -49,20 +53,23 @@ export default async function ProveedorPage({ params }) {
   if (!proveedor || proveedor.status !== 'active') notFound()
 
   // Catálogo de productos (ProductoCatalogo): por vínculo FK o por nombre de
-  // proveedor (el import Excel vincula por nombre; puede haber filas sin FK)
-  const catalogo = await prisma.productoCatalogo.findMany({
-    where: {
-      OR: [
-        { supplierId: proveedor.id },
-        { proveedor: { equals: proveedor.name, mode: 'insensitive' } },
-      ],
-    },
-    include: {
-      imagenes: { orderBy: [{ orden: 'asc' }, { createdAt: 'asc' }] },
-      variantes: { orderBy: { createdAt: 'asc' } },
-    },
-    orderBy: [{ rubro: 'asc' }, { nombre: 'asc' }],
-  })
+  // proveedor (el import Excel vincula por nombre; puede haber filas sin FK).
+  // Solo se carga para usuarios logueados — no debe emitirse al público.
+  const catalogo = session
+    ? await prisma.productoCatalogo.findMany({
+        where: {
+          OR: [
+            { supplierId: proveedor.id },
+            { proveedor: { equals: proveedor.name, mode: 'insensitive' } },
+          ],
+        },
+        include: {
+          imagenes: { orderBy: [{ orden: 'asc' }, { createdAt: 'asc' }] },
+          variantes: { orderBy: { createdAt: 'asc' } },
+        },
+        orderBy: [{ rubro: 'asc' }, { nombre: 'asc' }],
+      })
+    : []
 
   return (
     <>
@@ -117,7 +124,8 @@ export default async function ProveedorPage({ params }) {
                 </p>
               )}
 
-              {/* Contacto */}
+              {/* Contacto — solo visible para usuarios logueados */}
+              {session && (
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 {proveedor.website && (
                   <a href={proveedor.website} target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--font-dm)', fontSize: '12px', fontWeight: '500', padding: '8px 16px', border: '1px solid var(--border)', color: 'var(--ink)', letterSpacing: '0.04em' }}>
@@ -140,6 +148,7 @@ export default async function ProveedorPage({ params }) {
                   </a>
                 )}
               </div>
+              )}
             </div>
 
             {/* Ficha técnica */}
@@ -170,8 +179,17 @@ export default async function ProveedorPage({ params }) {
               </div>
             </div>
 
+            {/* CTA de login para visitantes anónimos */}
+            {!session && (
+              <LoginCTA
+                callbackUrl={`/proveedores/${slug}`}
+                title="Información de contacto y catálogo"
+                description="Inicia sesión para ver los datos de contacto, el catálogo de productos, precios y fichas técnicas de este proveedor."
+              />
+            )}
+
             {/* Catálogo */}
-            {catalogo.length > 0 && (
+            {session && catalogo.length > 0 && (
               <div style={{ background: '#fff', border: '1px solid var(--border)', padding: '24px', marginTop: '20px' }}>
                 <div style={{ fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '500', color: 'var(--navy)', letterSpacing: '0.08em', textTransform: 'uppercase', borderBottom: '2px solid var(--navy)', paddingBottom: '10px', marginBottom: '20px' }}>
                   Catálogo
@@ -185,7 +203,7 @@ export default async function ProveedorPage({ params }) {
             )}
 
             {/* Productos y servicios */}
-            {proveedor.products.length > 0 && (
+            {session && proveedor.products.length > 0 && (
               <div style={{ background: '#fff', border: '1px solid var(--border)', padding: '24px' }}>
                 <div style={{ fontFamily: 'var(--font-dm)', fontSize: '11px', fontWeight: '500', color: 'var(--navy)', letterSpacing: '0.08em', textTransform: 'uppercase', borderBottom: '2px solid var(--navy)', paddingBottom: '10px', marginBottom: '20px' }}>
                   Productos y Servicios

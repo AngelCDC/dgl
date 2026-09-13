@@ -3,6 +3,9 @@ import Link from 'next/link'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import Sidebar from '../components/Sidebar'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../api/auth/[...nextauth]/route'
+import LoginCTA from '../components/LoginCTA'
 
 export const metadata = {
   title: 'Productos en Tendencia — DUBOIS Global Trade Intelligence',
@@ -11,6 +14,8 @@ export const metadata = {
 
 export default async function ProductosPage({ searchParams }) {
   const { categoria } = await searchParams
+  const session = await getServerSession(authOptions)
+  const callbackUrl = categoria ? `/productos?categoria=${encodeURIComponent(categoria)}` : '/productos'
 
   const [productos, categorias] = await Promise.all([
     prisma.supplierProduct.findMany({
@@ -53,7 +58,9 @@ export default async function ProductosPage({ searchParams }) {
           <span className="category-pill-accent" style={{ marginBottom: '16px' }}>Productos en Tendencia</span>
           <h1 className="hero-title">Catálogo Global de Productos</h1>
           <p className="hero-excerpt">
-            Productos verificados de proveedores internacionales activos en nuestra red. Encuentra especificaciones, rangos de precio y contacto directo con el proveedor.
+            {session
+              ? 'Productos verificados de proveedores internacionales activos en nuestra red. Encuentra especificaciones, rangos de precio y contacto directo con el proveedor.'
+              : 'Productos verificados de proveedores internacionales activos en nuestra red. Inicia sesión para acceder a rangos de precio y contacto directo con el proveedor.'}
           </p>
           <div style={{ display: 'flex', gap: '24px', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
             <span>{productos.length} productos disponibles</span>
@@ -83,6 +90,15 @@ export default async function ProductosPage({ searchParams }) {
                 />
               ))}
             </div>
+
+            {/* CTA de login para visitantes anónimos */}
+            {!session && (
+              <LoginCTA
+                callbackUrl={callbackUrl}
+                title="Precios y MOQ para usuarios registrados"
+                description="Inicia sesión para ver precios de referencia y cantidades mínimas de cada producto, y para contactar directamente al proveedor."
+              />
+            )}
 
             {/* Grid de productos */}
             {productos.length === 0 ? (
@@ -135,7 +151,8 @@ export default async function ProductosPage({ searchParams }) {
                           </p>
                         )}
 
-                        {/* Meta: MOQ / Precio */}
+                        {/* Meta: MOQ / Precio — solo visible para usuarios logueados */}
+                        {session && (p.moq || p.priceRange) && (
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                           {p.moq && (
                             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', background: 'var(--bg)', color: 'var(--steel)', padding: '2px 8px', border: '1px solid var(--border)' }}>
@@ -148,6 +165,7 @@ export default async function ProductosPage({ searchParams }) {
                             </span>
                           )}
                         </div>
+                        )}
 
                         {/* Proveedor */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '8px', borderTop: '1px solid var(--border)', marginTop: 'auto' }}>

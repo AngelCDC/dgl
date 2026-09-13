@@ -1,14 +1,23 @@
 'use client'
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Sanitización anti open-redirect: solo rutas internas relativas.
+  // Si no hay callbackUrl (login directo), se mantiene /admin como default.
+  const rawCallback = searchParams.get('callbackUrl')
+  const callbackUrl =
+    rawCallback && rawCallback.startsWith('/') && !rawCallback.startsWith('//') && !rawCallback.startsWith('/login')
+      ? rawCallback
+      : '/admin'
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -25,14 +34,15 @@ export default function LoginPage() {
       setError('Email o contraseña incorrectos')
       setLoading(false)
     } else {
-      router.push('/admin')
+      router.push(callbackUrl)
+      router.refresh()
     }
   }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' }}>
       <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', border: '1px solid #eee', width: '100%', maxWidth: '380px' }}>
-        <h1 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '4px' }}>DGL Back Office</h1>
+        <h1 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '4px' }}>Iniciar sesión — DUBOIS</h1>
         <p style={{ color: '#888', fontSize: '14px', marginBottom: '24px' }}>Ingresa con tu cuenta</p>
 
         <form onSubmit={handleSubmit}>
@@ -67,5 +77,13 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   )
 }
